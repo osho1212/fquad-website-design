@@ -1,52 +1,29 @@
 {
   "name": "fquad-website",
-  "version": "1.0.0",
-  "description": "F.QUAD Architecture & Interior Design Studio Website",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "start": "next start -p 3001",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@gsap/react": "^2.1.2",
-    "@prisma/client": "^5.18.0",
-    "@types/three": "^0.185.3",
-    "bcryptjs": "^2.4.3",
-    "ffmpeg-static": "^5.2.0",
-    "ffprobe-static": "^3.1.0",
-    "fluent-ffmpeg": "^2.1.3",
-    "framer-motion": "^12.43.0",
-    "gsap": "^3.15.0",
-    "jose": "^5.6.0",
-    "lenis": "^1.3.25",
-    "lucide-react": "^0.408.0",
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "react-leaflet": "^4.2.1",
-    "resend": "^2.0.0",
-    "sharp": "^0.33.0",
-    "three": "^0.185.1"
+    "clsx": "^2.1.1",
+    "gsap": "^3.12.7",
+    "lucide-react": "^1.16.0",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.1"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/fluent-ffmpeg": "^2.1.24",
-    "@types/leaflet": "^1.9.21",
-    "@types/node": "^20.11.0",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "autoprefixer": "^10.4.0",
-    "postcss": "^8.4.0",
-    "prisma": "^5.18.0",
-    "tailwindcss": "^3.4.0",
-    "tsx": "^4.16.0",
-    "typescript": "^5.4.0"
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
   }
 }

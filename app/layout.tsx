@@ -1,29 +1,28 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import LoadingScreen from './components/LoadingScreen';
-import SmoothScroll from './components/SmoothScroll';
-import PageTransition from './components/PageTransition';
-import FloatingSocial from './components/FloatingSocial';
+import type { Metadata } from "next";
+import "./globals.css";
+import { BackgroundVideo } from "@/components/ui/background-video";
 
 export const metadata: Metadata = {
-  title: 'F.QUAD — Architecture & Interior Design Studio',
+  title: "F.QUAD — Architecture & Interior Design Studio",
   description:
-    'Architecture and interior design studio based in Hyderabad, working across homes, workplaces, and hospitality spaces.',
+    "F.QUAD Studio — architecture and interior design practice based in Hyderabad. Functional, Futuristic, Friendly, Flexible.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en">
-      <body>
-        <LoadingScreen />
-        <SmoothScroll>
-          <PageTransition>{children}</PageTransition>
-          <FloatingSocial />
-        </SmoothScroll>
+    <html lang="en" className="dark">
+      <body className="bg-black text-white antialiased min-h-screen selection:bg-white selection:text-black relative">
+        {/* Global Ambient Background Video */}
+        <BackgroundVideo />
+
+        {/* Page Content */}
+        <div className="relative z-10">
+          {children}
+        </div>
       </body>
     </html>
   );
