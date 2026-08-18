@@ -118,9 +118,9 @@ export function FourFsSection() {
       className="relative h-[480vh] bg-transparent text-white"
     >
       {/* Pinned Full-Screen Viewport */}
-      <div className="sticky top-0 h-screen w-full flex flex-col justify-center items-center px-4 sm:px-11 py-6 overflow-hidden">
+      <div className="sticky top-0 h-screen w-full flex flex-col justify-center items-center px-4 sm:px-8 md:px-12 py-5 overflow-hidden">
         {/* Section Top Header Pill Bar */}
-        <div className="w-full max-w-7xl flex justify-between items-center mb-4 px-2">
+        <div className="w-full flex justify-between items-center mb-3 px-1">
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-none bg-[#c39a5f] animate-pulse" />
             <span className="text-[10px] tracking-[0.24em] text-white/70 uppercase font-medium">
@@ -134,7 +134,7 @@ export function FourFsSection() {
         </div>
 
         {/* Full-Screen Elegant Carousel */}
-        <div className="w-full max-w-7xl flex-1 flex flex-col justify-center min-h-0">
+        <div className="w-full flex-1 flex flex-col justify-center min-h-0">
           <ElegantCarousel
             slides={fourFsSlides}
             controlledIndex={activeIndex}

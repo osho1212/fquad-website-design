@@ -43,9 +43,9 @@ const recentProjects = [
 
 export function RecentWorks() {
   return (
-    <section className="px-6 sm:px-11 pb-8 bg-transparent">
+    <section className="px-4 sm:px-8 md:px-12 pb-10 bg-transparent w-full">
       {/* Section Header */}
-      <div className="flex justify-between items-baseline border-t border-white/15 pt-6 mb-10 max-w-7xl mx-auto">
+      <div className="flex justify-between items-baseline border-t border-white/15 pt-6 mb-8 w-full">
         <div className="flex items-center gap-3">
           <span className="w-1.5 h-1.5 rounded-none bg-[#c39a5f]" />
           <span className="text-[10px] tracking-[0.24em] text-white/60 uppercase font-medium">
@@ -61,12 +61,12 @@ export function RecentWorks() {
       </div>
 
       {/* React Bits AccordionGallery Component */}
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         <AccordionGallery
           items={recentProjects}
           defaultIndex={1}
-          expandRatio={0.48}
-          height={520}
+          expandRatio={0.46}
+          height={560}
           gap={14}
           radius={0}
           accentColor="#c39a5f"
@@ -83,7 +83,7 @@ export function RecentWorks() {
       </div>
 
       {/* Bottom Subtext */}
-      <div className="max-w-7xl mx-auto mt-6 flex flex-col sm:flex-row justify-between items-center text-[9.5px] tracking-[0.2em] text-white/40 uppercase">
+      <div className="w-full mt-6 flex flex-col sm:flex-row justify-between items-center text-[9.5px] tracking-[0.2em] text-white/40 uppercase">
         <span>INTERACTIVE ARCHITECTURAL SHOWCASE · HOVER TO EXPAND</span>
         <span>HYDERABAD · 2005 — PRESENT</span>
       </div>

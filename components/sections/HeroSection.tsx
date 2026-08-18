@@ -125,9 +125,8 @@ export function HeroSection() {
             transform: `translateY(${initialTextTranslate}px)`,
             display: initialTextOpacity <= 0.01 ? "none" : "flex",
           }}
-          className={`absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center transition-all duration-75 ease-out ${
-            initialTextOpacity > 0.3 ? "pointer-events-auto" : "pointer-events-none"
-          }`}
+          className={`absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center transition-all duration-75 ease-out ${initialTextOpacity > 0.3 ? "pointer-events-auto" : "pointer-events-none"
+            }`}
         >
           <h1 className="m-0 font-bold text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight text-white uppercase drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">
             SPACE IS OUR MEDIUM
@@ -158,14 +157,14 @@ export function HeroSection() {
         {/* Layer 1.5: White Illumination Overlay behind Stencil to make F.QUAD Pop */}
         <div
           style={{
-            opacity: surroundingDarkness * 0.45,
+            opacity: surroundingDarkness * 0.0,
             display: surroundingDarkness <= 0.01 ? "none" : "block",
           }}
           className="absolute inset-0 z-15 pointer-events-none transition-opacity duration-75 ease-out bg-white"
         />
         <div
           style={{
-            opacity: surroundingDarkness * 0.8,
+            opacity: surroundingDarkness * 0.67,
             display: surroundingDarkness <= 0.01 ? "none" : "block",
           }}
           className="absolute inset-0 z-15 pointer-events-none transition-opacity duration-75 ease-out bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0.4)_45%,transparent_75%)]"
@@ -189,7 +188,7 @@ export function HeroSection() {
               <mask id="fquad-stationary-stencil">
                 {/* White background: keeps surrounding black stage visible */}
                 <rect x="-2000" y="-2000" width="6000" height="5000" fill="white" />
-                
+
                 {/* Black centered cutout: punches transparent hole showing finished building canvas inside */}
                 <text
                   x="960"
