@@ -22,7 +22,7 @@ export function HeroSection() {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
-    const frameCount = 150;
+    const frameCount = 114;
     const images: HTMLImageElement[] = [];
     const seq = { frame: 0 };
 
@@ -112,7 +112,7 @@ export function HeroSection() {
   return (
     <section id="top" ref={containerRef} className="relative h-[420vh] bg-black">
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-black bg-[url('/assets/hero-sequence/ezgif-frame-001.jpg')] bg-cover bg-center flex flex-col justify-center items-center">
-        {/* Layer 0: 151-Frame Construction Canvas (Full Screen Background) */}
+        {/* Layer 0: 114-Frame Construction Canvas (Full Screen Background) */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full object-cover block z-0"
