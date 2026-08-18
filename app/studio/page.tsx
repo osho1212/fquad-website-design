@@ -104,7 +104,7 @@ export default function StudioPage() {
           OUR STORY
         </div>
         <div>
-          <p className="m-0 font-normal uppercase text-2xl sm:text-4xl md:text-5xl leading-snug max-w-[28ch] text-white">
+          <p className="font-display m-0 font-normal uppercase text-2xl sm:text-4xl md:text-5xl leading-snug max-w-[28ch] text-white">
             F.Quad Studio began with a simple belief—
           </p>
           <p className="mt-8 text-base sm:text-lg leading-relaxed text-white/70 max-w-[62ch]">
@@ -230,7 +230,7 @@ export default function StudioPage() {
       {/* Studio CTA Banner */}
       <section id="studio-cta" className="px-6 sm:px-14 py-28 bg-black border-t border-white/15">
         <div className="pb-16 border-b border-white/15">
-          <p className="m-0 font-normal uppercase text-3xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight max-w-[26ch] text-white">
+          <p className="font-display m-0 font-normal uppercase text-3xl sm:text-5xl md:text-6xl lg:text-7xl leading-tight max-w-[26ch] text-white">
             At F.Quad Studio, every project is an opportunity to create spaces that inspire, perform, and endure.
           </p>
           <p className="mt-8 text-base sm:text-lg leading-relaxed text-white/65 max-w-[60ch]">

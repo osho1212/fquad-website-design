@@ -26,12 +26,15 @@ html {
   scrollbar-width: none; /* Firefox */
 }
 
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-good-times);
+}
+
 body {
   margin: 0;
   padding: 0;
   background-color: transparent;
   color: #ffffff;
-  font-family: var(--font-good-times);
   overflow-x: hidden;
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */

@@ -15,7 +15,7 @@ export function StudioSection() {
         </div>
 
         <div>
-          <p className="m-0 font-light text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-[1.3] tracking-tight max-w-[32ch] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.8)]">
+          <p className="font-display m-0 font-light text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-[1.3] tracking-tight max-w-[32ch] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.8)]">
             Founded in 2005, F.Quad Studio is an award-winning architecture and interior design practice based in Hyderabad.
           </p>
 

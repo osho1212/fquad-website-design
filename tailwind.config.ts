@@ -19,7 +19,7 @@ const config: Config = {
         "brass-deep": "#8a6b3d",
       },
       fontFamily: {
-        sans: ["var(--font-good-times)", "system-ui", "sans-serif"],
+        sans: ["var(--font-montserrat)", "system-ui", "sans-serif"],
         display: ["var(--font-good-times)", "system-ui", "sans-serif"],
       },
       keyframes: {
