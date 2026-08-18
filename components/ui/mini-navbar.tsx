@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 
 interface NavLink {
   label: string;
@@ -56,6 +57,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const { openModal } = useStartProjectModal();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -117,13 +119,14 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
 
       {/* Right Action & Mobile Toggle */}
       <div className="pointer-events-auto flex items-center gap-3">
-        <a
-          href="/#contact"
-          className="btn-metallic hidden sm:inline-flex text-[9.5px] py-2 px-5 tracking-[0.18em] rounded-none font-display"
+        <button
+          type="button"
+          onClick={() => openModal()}
+          className="btn-metallic hidden sm:inline-flex text-[9.5px] py-2 px-5 tracking-[0.18em] rounded-none font-display cursor-pointer"
           style={{ fontFamily: "var(--font-good-times)" }}
         >
           START A PROJECT
-        </a>
+        </button>
 
         {/* Mobile Hamburger Button */}
         <button
@@ -188,13 +191,16 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
             {link.label}
           </Link>
         ))}
-        <a
-          href="/#contact"
-          onClick={() => setIsOpen(false)}
-          className="btn-metallic w-full text-center mt-2 text-[10px] py-2.5 rounded-none"
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(false);
+            openModal();
+          }}
+          className="btn-metallic w-full text-center mt-2 text-[10px] py-2.5 rounded-none cursor-pointer"
         >
           START A PROJECT
-        </a>
+        </button>
       </div>
     </header>
   );

@@ -3,11 +3,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const { openModal } = useStartProjectModal();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -135,12 +137,13 @@ export function HeroSection() {
             >
               EXPLORE WORK ↓
             </a>
-            <a
-              href="#contact"
-              className="text-[9.5px] tracking-[0.2em] px-4 py-2 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase bg-black/50 backdrop-blur-md"
+            <button
+              type="button"
+              onClick={() => openModal()}
+              className="text-[9.5px] tracking-[0.2em] px-4 py-2 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase bg-black/50 backdrop-blur-md cursor-pointer"
             >
               START A PROJECT
-            </a>
+            </button>
           </div>
 
           <div className="flex flex-col items-center gap-2 text-white/50 text-[9.5px] tracking-[0.24em] uppercase mt-7 pointer-events-none">

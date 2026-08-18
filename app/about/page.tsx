@@ -170,7 +170,7 @@ export default async function AboutPage() {
           <p className="about-closing-sub reveal">Whether designing a home, workplace, retail environment, or public space, our focus remains the same—to deliver thoughtful design that reflects our clients&apos; vision and stands the test of time.</p>
           <div className="about-closing-buttons reveal">
             <Link href="/projects" className="about-btn-outline">VIEW OUR WORK</Link>
-            <Link href="/contact" className="about-btn-solid">START A PROJECT</Link>
+            <Link href="#start-project" data-start-project="true" className="about-btn-solid">START A PROJECT</Link>
           </div>
         </section>
       </RevealOnScroll>

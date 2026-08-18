@@ -2,8 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
+import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 
 export function ContactFooter() {
+  const { openModal } = useStartProjectModal();
   return (
     <section
       id="contact"
@@ -32,12 +34,13 @@ export function ContactFooter() {
             >
               WHATSAPP
             </a>
-            <a
-              href="mailto:admin@fquad.com"
-              className="btn-metallic text-xs uppercase font-medium"
+            <button
+              type="button"
+              onClick={() => openModal()}
+              className="btn-metallic text-xs uppercase font-medium cursor-pointer"
             >
               START A PROJECT →
-            </a>
+            </button>
           </div>
         </div>
 

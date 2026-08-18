@@ -3,6 +3,7 @@
 import React from "react";
 import { Navbar } from "@/components/ui/mini-navbar";
 import Link from "next/link";
+import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 
 const servicesDetailed = [
   {
@@ -90,6 +91,7 @@ const projectTypes = [
 ];
 
 export default function ServicesPage() {
+  const { openModal } = useStartProjectModal();
   return (
     <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
       {/* Floating Pill Navbar */}
@@ -283,12 +285,13 @@ export default function ServicesPage() {
             >
               WHATSAPP
             </a>
-            <a
-              href="mailto:admin@fquad.com"
-              className="btn-metallic text-xs uppercase font-medium"
+            <button
+              type="button"
+              onClick={() => openModal()}
+              className="btn-metallic text-xs uppercase font-medium cursor-pointer"
             >
-              ENQUIRE →
-            </a>
+              ENQUIRE / START A PROJECT →
+            </button>
           </div>
         </div>
 
