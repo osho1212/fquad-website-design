@@ -7,6 +7,7 @@ const PROJECT_TYPES = [
   'Residential Architecture',
   'Commercial & Workplace',
   'Luxury Interior Design',
+  'Farmhouse & Estate',
   'Villa / Bungalow',
   'Hospitality & Retail',
   'Turnkey (Design + Build)',

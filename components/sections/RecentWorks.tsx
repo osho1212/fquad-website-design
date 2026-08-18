@@ -7,9 +7,9 @@ const recentProjects = [
   {
     image: "/assets/images/a3.jpg",
     label: "Jubilee Hills Residence",
-    category: "Landscape & Outdoor",
+    category: "Farmhouse & Estate",
     link: "#work",
-    alt: "Private Residence Landscape and Deck at Dusk",
+    alt: "Private Farmhouse Residence Deck and Grounds at Dusk",
   },
   {
     image: "/assets/images/b25.jpg",

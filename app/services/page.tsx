@@ -24,10 +24,10 @@ const servicesDetailed = [
   },
   {
     num: "03",
-    title: "Landscape",
-    desc: "Outdoor spaces that extend the architecture into its surroundings.",
+    title: "Farmhouse",
+    desc: "Bespoke weekend homes, luxury estates, and rural retreats designed in harmony with the natural landscape.",
     image: "/assets/images/a3.jpg",
-    alt: "Deck and landscape at dusk",
+    alt: "Farmhouse deck and estate outdoor living at dusk",
     hasLink: false,
   },
   {
@@ -87,7 +87,7 @@ const projectTypes = [
   "Restaurant",
   "Hotel",
   "Retail",
-  "Landscape",
+  "Farmhouse",
 ];
 
 export default function ServicesPage() {

@@ -15,8 +15,8 @@ const servicesList = [
   },
   {
     num: "03",
-    title: "Landscape",
-    desc: "Outdoor spaces that extend the architecture into its surroundings.",
+    title: "Farmhouse",
+    desc: "Bespoke weekend homes, luxury estates, and rural retreats designed in harmony with the natural landscape.",
   },
   {
     num: "04",
