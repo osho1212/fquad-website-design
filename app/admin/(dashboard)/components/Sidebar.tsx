@@ -51,7 +51,7 @@ export default function Sidebar({ email, role }: { email: string; role: string }
     >
       <style>{sidebarLinkHoverStyles}</style>
       <div>
-        <img src="/fquad-logo.png" alt="F.QUAD" style={{ height: 36, width: 'auto', display: 'block', filter: 'invert(1) brightness(2)', marginBottom: 4, paddingLeft: 12 }} />
+        <img src="/assets/images/fquad-white-logo.svg" alt="F.QUAD" style={{ height: 36, width: 'auto', display: 'block', filter: 'invert(1) brightness(2)', marginBottom: 4, paddingLeft: 12 }} />
         <div style={{ fontSize: 11, letterSpacing: '0.18em', color: '#7A7870', marginBottom: 4, paddingLeft: 12 }}>
           STUDIO ADMIN
         </div>

@@ -47,7 +47,7 @@ export function RecentWorks() {
       {/* Section Header */}
       <div className="flex justify-between items-baseline border-t border-white/15 pt-6 mb-10 max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#c39a5f]" />
+          <span className="w-1.5 h-1.5 rounded-none bg-[#c39a5f]" />
           <span className="text-[10px] tracking-[0.24em] text-white/60 uppercase font-medium">
             FEATURED PROJECTS · RECENT WORKS
           </span>
@@ -68,7 +68,7 @@ export function RecentWorks() {
           expandRatio={0.48}
           height={520}
           gap={14}
-          radius={16}
+          radius={0}
           accentColor="#c39a5f"
           overlayColor="#000000"
           textColor="#ffffff"

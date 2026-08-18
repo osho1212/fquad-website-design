@@ -137,7 +137,7 @@ export function HeroSection() {
             </a>
             <a
               href="#contact"
-              className="text-[9.5px] tracking-[0.2em] px-4 py-2 border border-white/40 hover:border-white text-white rounded-full transition-colors uppercase bg-black/50 backdrop-blur-md"
+              className="text-[9.5px] tracking-[0.2em] px-4 py-2 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase bg-black/50 backdrop-blur-md"
             >
               START A PROJECT
             </a>
@@ -171,7 +171,7 @@ export function HeroSection() {
                 {/* Black centered cutout: punches transparent hole showing finished building canvas inside */}
                 <text
                   x="960"
-                  y="515"
+                  y="495"
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="black"
@@ -184,7 +184,7 @@ export function HeroSection() {
                 </text>
                 <text
                   x="960"
-                  y="605"
+                  y="585"
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="black"
@@ -194,6 +194,19 @@ export function HeroSection() {
                   letterSpacing="0.32em"
                 >
                   ARCHITECTURE &amp; INTERIOR DESIGN STUDIO
+                </text>
+                <text
+                  x="960"
+                  y="622"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="black"
+                  fontFamily="Good Times, sans-serif"
+                  fontWeight="400"
+                  fontSize="12.5"
+                  letterSpacing="0.28em"
+                >
+                  BY AMIT &amp; ASHMI
                 </text>
               </mask>
             </defs>

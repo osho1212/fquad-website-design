@@ -32,17 +32,18 @@ const AnimatedNavLink = ({
     <Link
       href={href}
       onClick={onClick}
-      className={`group relative block overflow-hidden h-7 px-3.5 text-[9.5px] tracking-[0.18em] uppercase rounded-full transition-all duration-300 ${
+      className={`group relative block overflow-hidden h-7 px-3.5 text-[9px] tracking-[0.18em] uppercase rounded-none font-display transition-all duration-300 ${
         isActive
-          ? "bg-black text-white border border-white/30 shadow-[0_2px_8px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.25)] font-semibold"
+          ? "bg-white text-black border border-white font-bold"
           : "text-white/70 hover:text-white hover:bg-white/10 border border-transparent"
       }`}
+      style={{ fontFamily: "var(--font-good-times)" }}
     >
       <div className="flex flex-col transition-transform duration-300 ease-out transform group-hover:-translate-y-1/2">
         <span className="h-7 leading-7 flex items-center justify-center whitespace-nowrap">
           {children}
         </span>
-        <span className="h-7 leading-7 flex items-center justify-center whitespace-nowrap text-white font-medium">
+        <span className="h-7 leading-7 flex items-center justify-center whitespace-nowrap text-white font-bold">
           {children}
         </span>
       </div>
@@ -73,35 +74,30 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const getIsActive = (link: NavLink) => {
-    if (link.href === "/services" && pathname === "/services") return true;
-    if (link.href === "/studio" && pathname === "/studio") return true;
-    if (link.href.startsWith("/#") && pathname === "/") return true;
-    return false;
-  };
-
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-11 py-3.5 pointer-events-none transition-transform duration-500 ease-out ${
         isVisible ? "translate-y-0" : "-translate-y-full"
       }`}
     >
-      {/* Brand Pill with Official F.QUAD Logo */}
+      {/* Standalone Brand Logo (No container background) */}
       <Link
         href="/"
-        className="pointer-events-auto inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-[#121212]/60 backdrop-blur-xl border border-white/15 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.35)] text-white hover:bg-[#1c1c1c]/80 hover:border-white/30 hover:-translate-y-0.5 transition-all duration-300 group"
+        className="pointer-events-auto inline-flex items-center justify-center p-0.5 text-white hover:opacity-85 hover:-translate-y-0.5 transition-all duration-300 group"
         aria-label="F.QUAD Home"
       >
         <img
-          src="/assets/images/fquad-logo.png"
+          src="/assets/images/fquad-icon.svg"
           alt="F.QUAD Logo"
-          className="w-5 h-5 object-contain block group-hover:scale-105 transition-transform"
+          className="w-7 h-7 sm:w-8 sm:h-8 object-contain block group-hover:scale-105 transition-transform drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
         />
-        <span className="font-semibold text-[11px] tracking-[0.2em]">F.QUAD</span>
       </Link>
 
-      {/* Center Nav Capsule (Desktop - Absolute Center Alignment) */}
-      <nav className="pointer-events-auto hidden md:inline-flex items-center gap-1 px-1.5 py-1 bg-[#121212]/60 backdrop-blur-2xl border border-white/15 rounded-full shadow-[0_6px_30px_rgba(0,0,0,0.4)] absolute left-1/2 -translate-x-1/2">
+      {/* Center Nav Box (Desktop - Absolute Center Alignment & Sharp Geometric Edges) */}
+      <nav
+        className="pointer-events-auto hidden md:inline-flex items-center gap-1 px-1.5 py-1 bg-[#121212]/80 backdrop-blur-2xl border border-white/20 rounded-none shadow-[0_6px_30px_rgba(0,0,0,0.5)] absolute left-1/2 -translate-x-1/2 font-display"
+        style={{ fontFamily: "var(--font-good-times)" }}
+      >
         {links.map((link) => (
           <AnimatedNavLink
             key={link.label}
@@ -123,7 +119,8 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
       <div className="pointer-events-auto flex items-center gap-3">
         <a
           href="/#contact"
-          className="btn-metallic hidden sm:inline-flex text-[9.5px] py-2 px-5 tracking-[0.18em]"
+          className="btn-metallic hidden sm:inline-flex text-[9.5px] py-2 px-5 tracking-[0.18em] rounded-none font-display"
+          style={{ fontFamily: "var(--font-good-times)" }}
         >
           START A PROJECT
         </a>
@@ -132,7 +129,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
         <button
           onClick={toggleMenu}
           aria-label={isOpen ? "Close Menu" : "Open Menu"}
-          className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-[#121212]/70 backdrop-blur-xl border border-white/15 text-white/80 hover:text-white"
+          className="md:hidden flex items-center justify-center w-8 h-8 rounded-none bg-[#121212]/80 backdrop-blur-xl border border-white/20 text-white/80 hover:text-white"
         >
           {isOpen ? (
             <svg
@@ -142,8 +139,8 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
               viewBox="0 0 24 24"
             >
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
                 strokeWidth="2"
                 d="M6 18L18 6M6 6l12 12"
               />
@@ -156,8 +153,8 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
               viewBox="0 0 24 24"
             >
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
                 strokeWidth="2"
                 d="M4 6h16M4 12h16M4 18h16"
               />
@@ -168,22 +165,23 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
 
       {/* Mobile Drawer */}
       <div
-        className={`md:hidden pointer-events-auto fixed top-16 left-6 right-6 p-5 rounded-2xl bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/15 shadow-2xl flex flex-col items-center gap-3 transition-all duration-300 ${
+        className={`md:hidden pointer-events-auto fixed top-16 left-6 right-6 p-5 rounded-none bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/20 shadow-2xl flex flex-col items-center gap-3 transition-all duration-300 font-display ${
           isOpen
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 scale-95 pointer-events-none"
         }`}
+        style={{ fontFamily: "var(--font-good-times)" }}
       >
         {links.map((link) => (
           <Link
             key={link.label}
             href={link.href}
             onClick={() => setIsOpen(false)}
-            className={`w-full py-2 text-center text-[10px] tracking-[0.2em] rounded-full transition-colors ${
+            className={`w-full py-2.5 text-center text-[10px] tracking-[0.2em] rounded-none transition-colors ${
               (link.href === "/services" && pathname === "/services") ||
               (link.href === "/studio" && pathname === "/studio") ||
               (link.href.startsWith("/#") && pathname === "/" && link.label === "WORK")
-                ? "bg-white text-black font-semibold"
+                ? "bg-white text-black font-bold"
                 : "text-white/70 hover:text-white"
             }`}
           >
@@ -193,7 +191,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
         <a
           href="/#contact"
           onClick={() => setIsOpen(false)}
-          className="btn-metallic w-full text-center mt-2 text-[10px] py-2"
+          className="btn-metallic w-full text-center mt-2 text-[10px] py-2.5 rounded-none"
         >
           START A PROJECT
         </a>

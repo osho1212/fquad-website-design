@@ -31,7 +31,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
       <div className="page-fade">
       <nav className="nav nav-solid" id="site-nav">
-        <Link href="/" className="nav-logo" style={{display:'flex',alignItems:'center'}}><img src="/fquad-logo.png" alt="F.QUAD" className="site-logo" style={{height:48,width:'auto',display:'block'}} /></Link>
+        <Link href="/" className="nav-logo" style={{display:'flex',alignItems:'center'}}><img src="/assets/images/fquad-white-logo.svg" alt="F.QUAD" className="site-logo" style={{height:48,width:'auto',display:'block'}} /></Link>
         <ul className="nav-links">
           <li><Link href="/">HOME</Link></li>
           <li><Link href="/about">ABOUT</Link></li>
@@ -101,7 +101,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       <footer>
         <div className="footer-grid">
           <div>
-            <img src="/fquad-logo.png" alt="F.QUAD" style={{height:40,width:'auto',display:'block',filter:'invert(1) brightness(2)',marginBottom:12}} />
+            <img src="/assets/images/fquad-white-logo.svg" alt="F.QUAD" style={{height:40,width:'auto',display:'block',filter:'invert(1) brightness(2)',marginBottom:12}} />
             <p className="footer-tagline">Architecture &amp; Interior Design Studio, Hyderabad</p>
             <div className="footer-social">
               <a href={instagramUrl} target="_blank" rel="noopener noreferrer">INSTAGRAM</a>

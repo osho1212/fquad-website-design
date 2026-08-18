@@ -14,6 +14,7 @@
   --background: #000000;
   --foreground: #ffffff;
   --font-good-times: 'Good Times', system-ui, sans-serif;
+  --font-montserrat: var(--font-montserrat, 'Montserrat', sans-serif);
 }
 
 html {
@@ -26,38 +27,51 @@ html {
   scrollbar-width: none; /* Firefox */
 }
 
-h1, h2, h3, h4, h5, h6, .font-display {
-  font-family: var(--font-good-times);
-}
-
 body {
   margin: 0;
   padding: 0;
   background-color: transparent;
   color: #ffffff;
+  font-family: var(--font-montserrat), sans-serif;
   overflow-x: hidden;
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
 
-/* Hide scrollbar globally across Chrome, Safari, Edge, and Opera */
-::-webkit-scrollbar {
-  display: none;
-  width: 0px;
-  background: transparent;
+/* Headings and Subheadings: Good Times */
+h1, h2, h3, h4, h5, h6,
+.font-display,
+.heading-bold,
+.subheading,
+.sub-heading {
+  font-family: var(--font-good-times);
+  letter-spacing: 0.04em;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Body text, paragraphs, lists, articles, and descriptions: Montserrat */
+p,
+.body-text,
+.body-content,
+article p,
+blockquote p,
+li,
+input,
+textarea,
+select {
+  font-family: var(--font-montserrat), sans-serif;
 }
 
-::selection {
-  background: #ffffff;
-  color: #000000;
+p {
+  letter-spacing: normal;
 }
 
-/* Metallic Pill Button */
+/* Sharp Architectural Aesthetic - Zero Border Radius Globally */
+*, *::before, *::after,
+button, a, input, textarea, select, figure, img, div, section, nav, header, footer {
+  border-radius: 0 !important;
+}
+
+/* Metallic Architectural Button */
 .btn-metallic {
   font-family: var(--font-good-times);
   font-size: 10px;
@@ -71,7 +85,7 @@ a {
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(0, 0, 0, 0.4);
   position: relative;
   overflow: hidden;
-  border-radius: 9999px !important;
+  border-radius: 0px !important;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   display: inline-flex;

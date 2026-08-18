@@ -1,16 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   compress: true,
   poweredByHeader: false,
+  serverExternalPackages: ['ffmpeg-static', 'ffprobe-static', 'fluent-ffmpeg', 'sharp'],
   images: {
     unoptimized: false,
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
-  },
-  experimental: {
-    serverComponentsExternalPackages: ['ffmpeg-static', 'ffprobe-static', 'fluent-ffmpeg', 'sharp'],
   },
   headers: async () => {
     return [

@@ -5,6 +5,8 @@ import './elegant-carousel.css';
 
 export interface SlideData {
   title: string;
+  fPrefix?: string;
+  suffix?: string;
   subtitle: string;
   description: string;
   accent: string;
@@ -14,6 +16,8 @@ export interface SlideData {
 const defaultSlides: SlideData[] = [
   {
     title: 'FUNCTIONAL',
+    fPrefix: 'F',
+    suffix: 'UNCTIONAL',
     subtitle: 'Purposeful & Ergonomic Architecture',
     description:
       'We believe every design should serve a purpose. Our spaces are planned to be efficient, comfortable, and intuitive while maintaining a strong aesthetic identity.',
@@ -22,6 +26,8 @@ const defaultSlides: SlideData[] = [
   },
   {
     title: 'FUTURISTIC',
+    fPrefix: 'F',
+    suffix: 'UTURISTIC',
     subtitle: 'Modern Materials & Smart Spatial Systems',
     description:
       'Design should look forward. We integrate modern materials, sustainable systems, and smart spatial planning so that spaces remain relevant for decades.',
@@ -30,6 +36,8 @@ const defaultSlides: SlideData[] = [
   },
   {
     title: 'FRIENDLY',
+    fPrefix: 'F',
+    suffix: 'RIENDLY',
     subtitle: 'Warmth, Natural Light & Collaboration',
     description:
       'Architecture is for people. We focus on warmth, light, and natural connectivity — creating environments where people feel welcome and at ease.',
@@ -38,52 +46,90 @@ const defaultSlides: SlideData[] = [
   },
   {
     title: 'FLEXIBLE',
+    fPrefix: 'F',
+    suffix: 'LEXIBLE',
     subtitle: 'Adaptable Living & Timeless Spatial Balance',
     description:
       'Spaces evolve as lifestyles change. Our layouts are adaptable, allowing rooms to shift between work, entertaining, and quiet contemplation with ease.',
     accent: '#D4A955',
     imageUrl: '/assets/images/b25.jpg',
   },
+  {
+    title: 'F.QUAD',
+    fPrefix: 'F',
+    suffix: '.QUAD',
+    subtitle: 'Four Faces · One Unified Practice',
+    description:
+      'The culmination of our philosophy. Functionality, Futuristic vision, Friendly collaboration, and Flexibility converge into purposeful, enduring spaces.',
+    accent: '#E6C687',
+    imageUrl: '/assets/images/b22.jpg',
+  },
 ];
 
-interface ElegantCarouselProps {
+export interface ElegantCarouselProps {
   slides?: SlideData[];
+  controlledIndex?: number;
+  controlledProgress?: number;
+  onNavigate?: (index: number) => void;
   className?: string;
 }
 
 export default function ElegantCarousel({
   slides = defaultSlides,
+  controlledIndex,
+  controlledProgress,
+  onNavigate,
   className = '',
 }: ElegantCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [internalIndex, setInternalIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  const [progress, setProgress] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [internalProgress, setInternalProgress] = useState(0);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  const SLIDE_DURATION = 6000;
-  const TRANSITION_DURATION = 600;
+  const isControlled = controlledIndex !== undefined;
+  const currentIndex = isControlled ? controlledIndex : internalIndex;
+  const progress = controlledProgress !== undefined ? controlledProgress : internalProgress;
+
+  const TRANSITION_DURATION = 500;
 
   const goToSlide = useCallback(
     (index: number, dir?: 'next' | 'prev') => {
-      if (isTransitioning || index === currentIndex) return;
+      if (index === currentIndex) return;
       setDirection(dir || (index > currentIndex ? 'next' : 'prev'));
       setIsTransitioning(true);
-      setProgress(0);
+
+      if (onNavigate) {
+        onNavigate(index);
+      }
 
       setTimeout(() => {
-        setCurrentIndex(index);
+        if (!isControlled) {
+          setInternalIndex(index);
+          setInternalProgress(0);
+        }
         setTimeout(() => {
           setIsTransitioning(false);
         }, 50);
       }, TRANSITION_DURATION / 2);
     },
-    [isTransitioning, currentIndex]
+    [isTransitioning, currentIndex, onNavigate, isControlled]
   );
+
+  // Sync internal index when controlled index changes
+  useEffect(() => {
+    if (isControlled && controlledIndex !== internalIndex) {
+      setIsTransitioning(true);
+      const timer = setTimeout(() => {
+        setInternalIndex(controlledIndex);
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 50);
+      }, TRANSITION_DURATION / 2);
+      return () => clearTimeout(timer);
+    }
+  }, [controlledIndex, isControlled, internalIndex]);
 
   const goNext = useCallback(() => {
     const nextIndex = (currentIndex + 1) % slides.length;
@@ -94,26 +140,6 @@ export default function ElegantCarousel({
     const prevIndex = (currentIndex - 1 + slides.length) % slides.length;
     goToSlide(prevIndex, 'prev');
   }, [currentIndex, goToSlide, slides.length]);
-
-  useEffect(() => {
-    if (isPaused) return;
-
-    progressRef.current = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) return 100;
-        return prev + 100 / (SLIDE_DURATION / 50);
-      });
-    }, 50);
-
-    intervalRef.current = setInterval(() => {
-      goNext();
-    }, SLIDE_DURATION);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (progressRef.current) clearInterval(progressRef.current);
-    };
-  }, [currentIndex, isPaused, goNext]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
@@ -136,8 +162,6 @@ export default function ElegantCarousel({
   return (
     <div
       className={`carousel-wrapper ${className}`}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -160,19 +184,33 @@ export default function ElegantCarousel({
                 isTransitioning ? 'transitioning' : 'visible'
               }`}
             >
-              <span className="carousel-num-line" style={{ background: currentSlide.accent }} />
+              <span
+                className="carousel-num-line"
+                style={{ background: currentSlide.accent }}
+              />
               <span className="carousel-num-text">
                 {String(currentIndex + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
               </span>
             </div>
 
-            {/* Title */}
-            <h2
-              className={`carousel-title ${
-                isTransitioning ? 'transitioning' : 'visible'
-              }`}
-            >
-              {currentSlide.title}
+            {/* Headline: Static Prominent 'F' Anchor + Animated Suffix Letters */}
+            <h2 className="carousel-title-container" aria-label={currentSlide.title}>
+              <span className="carousel-f-anchor">
+                {currentSlide.fPrefix || 'F'}
+              </span>
+              <span className="carousel-suffix-wrapper">
+                <span
+                  className={`carousel-suffix-text ${
+                    isTransitioning ? 'transitioning' : 'visible'
+                  }`}
+                >
+                  {currentSlide.suffix !== undefined
+                    ? currentSlide.suffix
+                    : currentSlide.title.startsWith('F')
+                    ? currentSlide.title.slice(1)
+                    : currentSlide.title}
+                </span>
+              </span>
             </h2>
 
             {/* Subtitle */}
@@ -266,33 +304,39 @@ export default function ElegantCarousel({
 
       {/* Progress Indicators */}
       <div className="carousel-progress-bar">
-        {slides.map((slide, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`carousel-progress-item ${
-              index === currentIndex ? 'active' : ''
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          >
-            <div className="carousel-progress-track">
-              <div
-                className="carousel-progress-fill"
-                style={{
-                  width:
-                    index === currentIndex
-                      ? `${progress}%`
-                      : index < currentIndex
-                      ? '100%'
-                      : '0%',
-                  backgroundColor:
-                    index === currentIndex ? currentSlide.accent : undefined,
-                }}
-              />
-            </div>
-            <span className="carousel-progress-label">{slide.title}</span>
-          </button>
-        ))}
+        {slides.map((slide, index) => {
+          let fillWidth = 0;
+          if (index < currentIndex) {
+            fillWidth = 100;
+          } else if (index === currentIndex) {
+            fillWidth = progress;
+          } else {
+            fillWidth = 0;
+          }
+
+          return (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`carousel-progress-item ${
+                index === currentIndex ? 'active' : ''
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            >
+              <div className="carousel-progress-track">
+                <div
+                  className="carousel-progress-fill"
+                  style={{
+                    width: `${fillWidth}%`,
+                    backgroundColor:
+                      index === currentIndex ? currentSlide.accent : undefined,
+                  }}
+                />
+              </div>
+              <span className="carousel-progress-label">{slide.title}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

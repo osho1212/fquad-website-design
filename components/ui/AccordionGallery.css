@@ -3,7 +3,7 @@
   --ag-overlay: #000000;
   --ag-text: #ffffff;
   --ag-gap: 12px;
-  --ag-radius: 12px;
+  --ag-radius: 0px;
   --ag-media-size: 380px;
 
   display: flex;
@@ -109,7 +109,7 @@
   flex: 0 0 auto;
   width: 3px;
   height: 28px;
-  border-radius: 3px;
+  border-radius: 0px;
   background: var(--ag-accent);
   opacity: 0;
   box-shadow: 0 0 14px rgba(195, 154, 95, 0.6);
@@ -117,8 +117,8 @@
 
 .ag-panel__text {
   color: var(--ag-text);
-  font-family: inherit;
-  font-weight: 600;
+  font-family: var(--font-good-times);
+  font-weight: 700;
   font-size: clamp(1rem, 1.3vw, 1.35rem);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -131,12 +131,13 @@
 
 .ag-panel__category {
   display: block;
+  font-family: var(--font-good-times);
   font-size: 0.7rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.65);
   margin-bottom: 2px;
-  font-weight: 400;
+  font-weight: 300;
 }
 
 @media (max-width: 768px) {

@@ -56,7 +56,7 @@ export default function StudioPage() {
 
       {/* Studio Image & Metrics */}
       <section className="px-6 sm:px-14 py-16">
-        <figure className="m-0 overflow-hidden h-[50vh] sm:h-[65vh] rounded-xl bg-zinc-900 border border-white/10">
+        <figure className="m-0 overflow-hidden h-[50vh] sm:h-[65vh] rounded-none bg-zinc-900 border border-white/10">
           <img
             src="/assets/images/a1.jpg"
             alt="Private residence, Hyderabad — F.QUAD"
@@ -155,7 +155,7 @@ export default function StudioPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">
           <article>
-            <div className="aspect-[4/5] rounded-xl bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
+            <div className="aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
               <span className="text-[10px] tracking-[0.2em] text-white/40 uppercase leading-relaxed">
                 FOUNDER PORTRAIT
                 <br />
@@ -174,7 +174,7 @@ export default function StudioPage() {
           </article>
 
           <article className="md:mt-12">
-            <div className="aspect-[4/5] rounded-xl bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
+            <div className="aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
               <span className="text-[10px] tracking-[0.2em] text-white/40 uppercase leading-relaxed">
                 FOUNDER PORTRAIT
                 <br />
@@ -240,7 +240,7 @@ export default function StudioPage() {
           <div className="flex flex-wrap gap-4 mt-12">
             <Link
               href="/#work"
-              className="text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white rounded-full transition-colors uppercase font-medium inline-flex items-center"
+              className="text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase font-medium inline-flex items-center"
             >
               VIEW OUR WORK
             </Link>

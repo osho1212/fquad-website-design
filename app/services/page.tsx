@@ -112,7 +112,7 @@ export default function ServicesPage() {
           </p>
         </div>
 
-        <figure className="m-0 overflow-hidden h-[45vh] lg:h-[55vh] rounded-xl bg-zinc-900 border border-white/10">
+        <figure className="m-0 overflow-hidden h-[45vh] lg:h-[55vh] rounded-none bg-zinc-900 border border-white/10">
           <img
             src="/assets/images/b49.jpg"
             alt="Interior detail, Barkatpura Residence"
@@ -152,7 +152,7 @@ export default function ServicesPage() {
 
               <div>
                 {svc.image ? (
-                  <figure className="m-0 overflow-hidden aspect-[16/10] rounded-lg bg-zinc-900 border border-white/10 group">
+                  <figure className="m-0 overflow-hidden aspect-[16/10] rounded-none bg-zinc-900 border border-white/10 group">
                     <img
                       src={svc.image}
                       alt={svc.alt || svc.title}
@@ -160,7 +160,7 @@ export default function ServicesPage() {
                     />
                   </figure>
                 ) : (
-                  <div className="aspect-[16/10] rounded-lg bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
+                  <div className="aspect-[16/10] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
                     <span className="text-[10px] tracking-[0.2em] text-white/45 leading-relaxed uppercase">
                       {svc.placeholder}
                     </span>
@@ -279,7 +279,7 @@ export default function ServicesPage() {
               href="https://wa.me/919876543210"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] tracking-[0.18em] px-6 py-4 border border-white/35 hover:border-white text-white rounded-full transition-colors uppercase font-medium"
+              className="text-[10px] tracking-[0.18em] px-6 py-4 border border-white/35 hover:border-white text-white rounded-none transition-colors uppercase font-medium"
             >
               WHATSAPP
             </a>
