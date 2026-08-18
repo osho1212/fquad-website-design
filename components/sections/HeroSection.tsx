@@ -28,9 +28,9 @@ export function HeroSection() {
 
     const render = () => {
       const frameIdx = Math.min(frameCount - 1, Math.max(0, Math.round(seq.frame)));
-      const img = images[frameIdx];
+      const img = images[frameIdx] || images[0];
       if (img && img.complete && img.naturalWidth) {
-        if (canvas.width !== img.naturalWidth) {
+        if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
           canvas.width = img.naturalWidth;
           canvas.height = img.naturalHeight;
         }
@@ -41,7 +41,7 @@ export function HeroSection() {
     for (let i = 1; i <= frameCount; i++) {
       const img = new Image();
       img.onload = () => {
-        if (Math.round(seq.frame) === i - 1) {
+        if (i === 1 || Math.round(seq.frame) === i - 1) {
           render();
         }
       };
@@ -49,7 +49,10 @@ export function HeroSection() {
       images.push(img);
     }
 
-    render();
+    // Try initial draw immediately in case first image is cached
+    if (images[0] && images[0].complete) {
+      render();
+    }
 
     // GSAP ScrollTrigger:
     // 0.0 -> 0.45: frame scrubs 0 -> 150 (construction animation completes)
@@ -108,7 +111,7 @@ export function HeroSection() {
 
   return (
     <section id="top" ref={containerRef} className="relative h-[420vh] bg-black">
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-black flex flex-col justify-center items-center">
+      <div className="sticky top-0 h-screen w-full overflow-hidden bg-black bg-[url('/assets/hero-sequence/ezgif-frame-001.jpg')] bg-cover bg-center flex flex-col justify-center items-center">
         {/* Layer 0: 151-Frame Construction Canvas (Full Screen Background) */}
         <canvas
           ref={canvasRef}
