@@ -46,7 +46,7 @@ const {
   }
 
   const existing = await prisma.project.findMany({ select: { slug: true } });
-  const slug = uniqueSlug(title, new Set(existing.map((p) => p.slug)));
+  const slug = uniqueSlug(title, new Set(existing.map((p: any) => p.slug)));
 
   const maxOrder = await prisma.project.aggregate({ _max: { order: true } });
   const order = (maxOrder._max.order ?? -1) + 1;
