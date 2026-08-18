@@ -22,7 +22,7 @@ export function HeroSection() {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
-    const frameCount = 151;
+    const frameCount = 150;
     const images: HTMLImageElement[] = [];
     const seq = { frame: 0 };
 
