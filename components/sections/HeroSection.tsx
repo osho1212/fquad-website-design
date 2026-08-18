@@ -155,6 +155,22 @@ export function HeroSection() {
           </div>
         </div>
 
+        {/* Layer 1.5: White Illumination Overlay behind Stencil to make F.QUAD Pop */}
+        <div
+          style={{
+            opacity: surroundingDarkness * 0.45,
+            display: surroundingDarkness <= 0.01 ? "none" : "block",
+          }}
+          className="absolute inset-0 z-15 pointer-events-none transition-opacity duration-75 ease-out bg-white"
+        />
+        <div
+          style={{
+            opacity: surroundingDarkness * 0.8,
+            display: surroundingDarkness <= 0.01 ? "none" : "block",
+          }}
+          className="absolute inset-0 z-15 pointer-events-none transition-opacity duration-75 ease-out bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0.4)_45%,transparent_75%)]"
+        />
+
         {/* Layer 2: Pitch-Black Stencil Mask Layer (Full Screen Cover on ALL Screen Sizes) */}
         <div
           style={{
