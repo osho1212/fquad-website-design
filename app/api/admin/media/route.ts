@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         duration: result.duration,
         path: mainVariant?.path || '',
         variants: {
-          create: result.variants.map((v) => ({
+          create: result.variants.map((v: any) => ({
             label: v.label,
             path: v.path,
             width: v.width,

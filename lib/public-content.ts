@@ -18,7 +18,7 @@ export async function getPageContent(page: string): Promise<Record<string, any>>
       where: { id: { in: Array.from(mediaIds) } },
       include: { variants: true },
     });
-    const byId = new Map(mediaItems.map((m) => [m.id, m]));
+    const byId = new Map(mediaItems.map((m: any) => [m.id, m]));
 
     for (const section of Object.values(result)) {
       if (section?.mediaId && byId.has(section.mediaId)) {

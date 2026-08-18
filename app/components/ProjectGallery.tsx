@@ -18,7 +18,7 @@ export default function ProjectGallery({ gallery }: { gallery: GalleryItem[] }) 
   }
 
   const items = gallery
-    .map((g) => ({ url: urlFor(g.media), areaLabel: g.areaLabel || undefined }))
+    .map((g: any) => ({ url: urlFor(g.media), areaLabel: g.areaLabel || undefined }))
     .filter((g): g is { url: string; areaLabel: string | undefined } => !!g.url);
 
   useEffect(() => {

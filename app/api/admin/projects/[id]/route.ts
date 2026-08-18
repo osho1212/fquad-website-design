@@ -58,7 +58,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       where: { id: { not: id } },
       select: { slug: true },
     });
-    slug = uniqueSlug(title, new Set(others.map((p) => p.slug)));
+    slug = uniqueSlug(title, new Set(others.map((p: any) => p.slug)));
   }
 
   // Replace the gallery wholesale if provided — simplest correct way to
