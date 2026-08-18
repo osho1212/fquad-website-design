@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const existing = await prisma.category.findMany({ select: { slug: true } });
-  const slug = uniqueSlug(name, new Set(existing.map((c) => c.slug)));
+  const slug = uniqueSlug(name, new Set(existing.map((c: any) => c.slug)));
 
   const maxOrder = await prisma.category.aggregate({ _max: { order: true } });
   const order = (maxOrder._max.order ?? -1) + 1;
