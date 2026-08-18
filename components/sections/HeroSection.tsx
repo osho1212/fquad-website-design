@@ -177,7 +177,7 @@ export function HeroSection() {
                 {/* Black centered cutout: punches transparent hole showing finished building canvas inside */}
                 <text
                   x="960"
-                  y="495"
+                  y="480"
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="black"
@@ -195,22 +195,22 @@ export function HeroSection() {
                   dominantBaseline="central"
                   fill="black"
                   fontFamily="Good Times, sans-serif"
-                  fontWeight="400"
-                  fontSize="15"
-                  letterSpacing="0.32em"
+                  fontWeight="500"
+                  fontSize="24"
+                  letterSpacing="0.18em"
                 >
                   ARCHITECTURE &amp; INTERIOR DESIGN STUDIO
                 </text>
                 <text
                   x="960"
-                  y="622"
+                  y="635"
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="black"
                   fontFamily="Good Times, sans-serif"
-                  fontWeight="400"
-                  fontSize="12.5"
-                  letterSpacing="0.28em"
+                  fontWeight="500"
+                  fontSize="18"
+                  letterSpacing="0.22em"
                 >
                   BY AMIT &amp; ASHMI
                 </text>
