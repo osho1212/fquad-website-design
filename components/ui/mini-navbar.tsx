@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 interface NavLink {
   label: string;
@@ -14,9 +15,20 @@ const defaultLinks: NavLink[] = [
   { label: "WORK", href: "/#work" },
   { label: "SERVICES", href: "/services" },
   { label: "STUDIO", href: "/studio" },
-  { label: "JOURNAL", href: "/#awards" },
-  { label: "CONTACT", href: "/#contact" },
+  { label: "PROJECTS", href: "/past-projects" },
+  { label: "CONTACT", href: "/contact" },
 ];
+
+/**
+ * A link is active when the current path matches its route (including nested
+ * routes such as /past-projects/[slug]). Hash links only count on the homepage.
+ */
+function isLinkActive(link: NavLink, pathname: string): boolean {
+  if (link.href.startsWith("/#")) {
+    return pathname === "/" && link.label === "WORK";
+  }
+  return pathname === link.href || pathname.startsWith(`${link.href}/`);
+}
 
 const AnimatedNavLink = ({
   href,
@@ -44,7 +56,13 @@ const AnimatedNavLink = ({
         <span className="h-7 leading-7 flex items-center justify-center whitespace-nowrap">
           {children}
         </span>
-        <span className="h-7 leading-7 flex items-center justify-center whitespace-nowrap text-white font-bold">
+        {/* Hover duplicate. On the active pill the background is the fg colour,
+            so this must invert too — otherwise the label disappears on hover. */}
+        <span
+          className={`h-7 leading-7 flex items-center justify-center whitespace-nowrap font-bold ${
+            isActive ? "text-black" : "text-white"
+          }`}
+        >
           {children}
         </span>
       </div>
@@ -104,13 +122,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
           <AnimatedNavLink
             key={link.label}
             href={link.href}
-            isActive={
-              link.href === "/services"
-                ? pathname === "/services"
-                : link.href === "/studio"
-                ? pathname === "/studio"
-                : pathname === "/" && link.label === "WORK"
-            }
+            isActive={isLinkActive(link, pathname)}
           >
             {link.label}
           </AnimatedNavLink>
@@ -119,6 +131,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
 
       {/* Right Action & Mobile Toggle */}
       <div className="pointer-events-auto flex items-center gap-3">
+        <ThemeToggle />
         <button
           type="button"
           onClick={() => openModal()}
@@ -181,9 +194,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
             href={link.href}
             onClick={() => setIsOpen(false)}
             className={`w-full py-2.5 text-center text-[10px] tracking-[0.2em] rounded-none transition-colors ${
-              (link.href === "/services" && pathname === "/services") ||
-              (link.href === "/studio" && pathname === "/studio") ||
-              (link.href.startsWith("/#") && pathname === "/" && link.label === "WORK")
+              isLinkActive(link, pathname)
                 ? "bg-white text-black font-bold"
                 : "text-white/70 hover:text-white"
             }`}

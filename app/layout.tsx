@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { BackgroundVideo } from "@/components/ui/background-video";
+import { themeInitScript } from "@/components/ui/ThemeToggle";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -23,7 +24,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${montserrat.variable}`}>
+    <html lang="en" className={montserrat.variable} suppressHydrationWarning>
+      <head>
+        {/* Sets data-theme before first paint to avoid a flash of the wrong theme. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="bg-black text-white antialiased min-h-screen selection:bg-white selection:text-black relative font-sans">
         <StartProjectProvider>
           {/* Global Ambient Background Video */}

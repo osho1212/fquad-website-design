@@ -4,57 +4,7 @@ import React from "react";
 import { Navbar } from "@/components/ui/mini-navbar";
 import Link from "next/link";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
-
-const servicesDetailed = [
-  {
-    num: "01",
-    title: "Architecture",
-    desc: "Residential, commercial, and hospitality spaces designed around climate and context.",
-    image: "/assets/images/a1.jpg",
-    alt: "Residence facade in daylight",
-    hasLink: true,
-  },
-  {
-    num: "02",
-    title: "Interior Design",
-    desc: "Material, light, and layout brought together with quiet precision.",
-    image: "/assets/images/b21.jpg",
-    alt: "Living room with folding screens",
-    hasLink: true,
-  },
-  {
-    num: "03",
-    title: "Farmhouse",
-    desc: "Bespoke weekend homes, luxury estates, and rural retreats designed in harmony with the natural landscape.",
-    image: "/assets/images/a3.jpg",
-    alt: "Farmhouse deck and estate outdoor living at dusk",
-    hasLink: false,
-  },
-  {
-    num: "04",
-    title: "Commercial Fit-out",
-    desc: "Workplace and retail interiors built for how people actually use them.",
-    image: null,
-    placeholder: "COMMERCIAL PROJECT PHOTOGRAPHY TO BE SUPPLIED",
-    hasLink: false,
-  },
-  {
-    num: "05",
-    title: "Hospitality Design",
-    desc: "Restaurants, cafes, and hotels designed for atmosphere and flow.",
-    image: null,
-    placeholder: "HOSPITALITY PROJECT PHOTOGRAPHY TO BE SUPPLIED",
-    hasLink: false,
-  },
-  {
-    num: "06",
-    title: "Space Planning",
-    desc: "Layouts that resolve function first, so the design can follow.",
-    image: "/assets/images/b22.jpg",
-    alt: "Interior detail, Barkatpura Residence",
-    hasLink: false,
-  },
-];
+import { services } from "@/lib/services";
 
 const stages = [
   {
@@ -126,9 +76,9 @@ export default function ServicesPage() {
       {/* Detailed Services Breakdown */}
       <section className="px-6 sm:px-14 py-16">
         <div className="divide-y divide-white/15">
-          {servicesDetailed.map((svc) => (
+          {services.map((svc) => (
             <article
-              key={svc.num}
+              key={svc.slug}
               className="grid grid-cols-1 lg:grid-cols-[70px_1fr_1.2fr] gap-8 lg:gap-12 py-14 items-start"
             >
               <div className="text-[11px] tracking-[0.2em] text-[#a9a9a9] font-medium">
@@ -142,33 +92,27 @@ export default function ServicesPage() {
                 <p className="mt-5 text-sm sm:text-base leading-relaxed text-white/65 max-w-[38ch]">
                   {svc.desc}
                 </p>
-                {svc.hasLink && (
-                  <Link
-                    href="/#work"
-                    className="inline-flex items-center gap-2.5 mt-7 text-[10.5px] tracking-[0.16em] uppercase text-white/90 hover:text-white border-b border-white/40 hover:border-white pb-1 transition-colors"
-                  >
-                    VIEW {svc.title.toUpperCase()} WORK →
-                  </Link>
-                )}
+                <Link
+                  href={`/services/${svc.slug}`}
+                  className="inline-flex items-center gap-2.5 mt-7 text-[10.5px] tracking-[0.16em] uppercase text-white/90 hover:text-white border-b border-white/40 hover:border-white pb-1 transition-colors"
+                >
+                  EXPLORE {svc.title.toUpperCase()} →
+                </Link>
               </div>
 
-              <div>
-                {svc.image ? (
-                  <figure className="m-0 overflow-hidden aspect-[16/10] rounded-none bg-zinc-900 border border-white/10 group">
-                    <img
-                      src={svc.image}
-                      alt={svc.alt || svc.title}
-                      className="w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
-                    />
-                  </figure>
-                ) : (
-                  <div className="aspect-[16/10] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
-                    <span className="text-[10px] tracking-[0.2em] text-white/45 leading-relaxed uppercase">
-                      {svc.placeholder}
-                    </span>
-                  </div>
-                )}
-              </div>
+              <Link
+                href={`/services/${svc.slug}`}
+                className="block group"
+                aria-label={svc.title}
+              >
+                <figure className="m-0 overflow-hidden aspect-[16/10] rounded-none bg-zinc-900 border border-white/10">
+                  <img
+                    src={svc.image}
+                    alt={svc.alt}
+                    className="w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
+                  />
+                </figure>
+              </Link>
             </article>
           ))}
         </div>

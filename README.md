@@ -268,7 +268,7 @@ Full-bleed strip, `border-top`/`border-bottom` `1px solid rgba(236,233,226,.14)`
 
 Inner track: `display:flex; width:max-content`, `animation: marquee 34s linear infinite` where the keyframes run `translateX(0)` → `translateX(-50%)`. The content list is duplicated exactly (second copy `aria-hidden="true"`) so the loop is seamless. Items `gap:48px`, separated by a `#c39a5f` `◇` glyph. Archivo 500 uppercase 26px.
 
-Items: IIID · Hafele Design Awards · ELDORK India Architecture Awards · Surfaces Reporter · Times Design Icons South
+Items: IIID · ELDORK India Architecture Awards · Surfaces Reporter · Times Design Icons South
 
 ### 11. Testimonial
 

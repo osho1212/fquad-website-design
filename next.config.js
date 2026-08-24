@@ -12,9 +12,13 @@ const nextConfig = {
     minimumCacheTTL: 60,
   },
   headers: async () => {
+    // Scoped to static media only. A blanket '/:path*' rule also matched HTML
+    // documents and /_next/static chunks — which meant visitors could be served
+    // an hour-old page and its stale JS after a deploy. Next already applies
+    // immutable caching to its own hashed assets, so it needs no help here.
     return [
       {
-        source: '/:path*',
+        source: '/assets/:path*',
         headers: [
           {
             key: 'Cache-Control',

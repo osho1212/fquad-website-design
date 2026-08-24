@@ -19,6 +19,83 @@
   flex-direction: column;
 }
 
+/* ── Fixed-width scrolling track (visibleCount / loop) ─────────────── */
+.ag-shell {
+  position: relative;
+  width: 100%;
+}
+
+.accordion-gallery--scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+  /* Horizontal panning stays with the track; vertical scrolls the page. */
+  touch-action: pan-x pan-y;
+}
+
+.accordion-gallery--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.accordion-gallery--scroll .ag-panel {
+  flex: 0 0 auto;
+}
+
+.ag-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.3s ease,
+    background 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.ag-shell:hover .ag-nav,
+.ag-nav:focus-visible {
+  opacity: 1;
+}
+
+.ag-nav:hover {
+  background: var(--ag-accent, #c39a5f);
+  border-color: var(--ag-accent, #c39a5f);
+  color: #000;
+}
+
+.ag-nav svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ag-nav--prev {
+  left: 12px;
+}
+
+.ag-nav--next {
+  right: 12px;
+}
+
+@media (max-width: 768px) {
+  .ag-nav {
+    display: none;
+  }
+}
+
 .ag-panel {
   position: relative;
   flex: 1 1 0;
@@ -44,11 +121,21 @@
   border-color: rgba(195, 154, 95, 0.4);
 }
 
-.ag-panel:focus-visible {
+.ag-panel:focus-visible,
+.ag-panel:has(.ag-panel__link:focus-visible) {
   border-color: var(--ag-accent);
   box-shadow:
     0 0 0 2px var(--ag-accent),
     0 14px 40px -18px rgba(0, 0, 0, 0.85);
+}
+
+/* Transparent hit area covering the panel, so the whole tile is a real link. */
+.ag-panel__link {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  outline: none;
 }
 
 .ag-panel__frame {
@@ -158,6 +245,17 @@
   .accordion-gallery .ag-panel__media {
     width: 100%;
     height: var(--ag-media-size);
+  }
+  /* Stack instead of scrolling; override the inline widths GSAP applies. */
+  .accordion-gallery--scroll {
+    overflow-x: hidden;
+  }
+  .accordion-gallery--scroll .ag-panel {
+    width: auto !important;
+    flex: 0 0 auto;
+  }
+  .ag-shell {
+    height: auto !important;
   }
 }
 

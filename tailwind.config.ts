@@ -10,6 +10,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // `white` and `black` are re-pointed at theme variables so the existing
+        // ~370 bg-black / text-white / border-white utilities theme themselves.
+        // In this codebase they mean "foreground" and "background", not literal
+        // colours. Text OPACITY tiers (text-white/40 etc.) cannot be made
+        // WCAG-compliant on a light background by alpha alone, so globals.css
+        // remaps each tier to a solid, contrast-checked colour under
+        // [data-theme="light"].
+        white: "rgb(var(--fq-fg) / <alpha-value>)",
+        black: "rgb(var(--fq-bg) / <alpha-value>)",
         background: "var(--background)",
         foreground: "var(--foreground)",
         ink: "#0b0b0a",

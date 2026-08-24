@@ -17,7 +17,7 @@ const STATS = [
   { number: 22, suffix: '+', label: 'Design Awards' },
 ];
 
-const AWARDS = ['IIID', 'Hafele Design Awards', 'ELDORK India Architecture Awards', 'Surfaces Reporter', 'Times Design Icons South'];
+const AWARDS = ['IIID', 'ELDORK India Architecture Awards', 'Surfaces Reporter', 'Times Design Icons South'];
 
 export default async function AboutPage() {
   const settings = await getSiteSettings();

@@ -325,7 +325,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.5); /* 0.45 measured 4.47:1 — just under AA */
   font-weight: 500;
   transition: color 0.3s ease;
   white-space: nowrap;
@@ -375,4 +375,105 @@
   .carousel-suffix-text {
     font-size: clamp(1.4rem, 6vw, 2.2rem);
   }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LIGHT THEME
+   The panel is a dark plate with hardcoded white text, so the background and
+   the type have to flip together — lightening one alone would erase the
+   other. Contrast ratios are measured against the #ededed panel, not the
+   page, and all clear WCAG AA (4.5:1).
+
+   The per-slide accent arrives as an inline style from FourFsSection, so
+   those few rules need !important to win.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-theme='light'] .carousel-wrapper {
+  /* Composites to ~#e5e5e5 on the white page — reads as light grey rather
+     than blending into the background the way #ededed/0.92 did. */
+  background: rgba(228, 228, 228, 0.95);
+  border-color: rgba(17, 17, 17, 0.16);
+}
+
+[data-theme='light'] .carousel-f-anchor,
+[data-theme='light'] .carousel-suffix-text,
+[data-theme='light'] .carousel-title-container {
+  color: #111111; /* 16.1:1 */
+  /* The title carries a heavy dark glow (0 4px 30px rgba(0,0,0,.85)) so white
+     type reads over a dark photo. Dark type on a light panel needs no lift —
+     there the same glow just smears grey behind the letters. */
+  text-shadow: none;
+}
+
+[data-theme='light'] .carousel-description {
+  color: #454545; /* 8.2:1 */
+}
+
+[data-theme='light'] .carousel-num-text {
+  color: #575757; /* 6.2:1 */
+}
+
+[data-theme='light'] .carousel-progress-label {
+  color: #5f5f5f; /* 5.5:1 */
+}
+
+[data-theme='light'] .carousel-progress-item.active .carousel-progress-label,
+[data-theme='light'] .carousel-progress-item:hover .carousel-progress-label {
+  color: #111111;
+}
+
+/* Slide accents are pale golds — unreadable on light grey — so subtitles and
+   rules take a darkened brass instead. */
+[data-theme='light'] .carousel-subtitle {
+  color: #7a5c2e !important; /* 5.3:1 */
+}
+[data-theme='light'] .carousel-num-line,
+[data-theme='light'] .carousel-progress-fill {
+  background: #7a5c2e !important;
+}
+[data-theme='light'] .carousel-frame-corner {
+  border-color: #7a5c2e !important;
+}
+
+[data-theme='light'] .carousel-arrow-btn {
+  background: rgba(17, 17, 17, 0.06);
+  border-color: rgba(17, 17, 17, 0.28);
+  color: #333333; /* 10.8:1 */
+}
+[data-theme='light'] .carousel-arrow-btn:hover {
+  background: rgba(17, 17, 17, 0.12);
+  border-color: #7a5c2e;
+  color: #7a5c2e;
+}
+
+[data-theme='light'] .carousel-progress-track {
+  background: rgba(17, 17, 17, 0.16);
+}
+
+/* The image WELL is .carousel-image-frame (the photo's own box). The
+   container around it is just a positioning wrapper and is taller than the
+   frame, so it must stay unpainted — filling it draws grey bands above and
+   below the photo. Only the frame gets a light fallback tone, and it is
+   visible only before the photo loads. */
+[data-theme='light'] .carousel-image-frame {
+  background: #e0e0e0;
+}
+
+/* Shadows.
+   The dark theme uses near-opaque black (0.9 / 0.75) because it needs to
+   register against a black page. On white that same shadow reads as a grey
+   smudge rather than a lift. Light mode uses layered, low-opacity shadows —
+   a tight contact shadow plus a wide, heavily-feathered ambient one — which
+   is what gives a soft edge instead of a hard band. */
+[data-theme='light'] .carousel-wrapper {
+  box-shadow:
+    0 1px 2px rgba(17, 17, 17, 0.04),
+    0 8px 20px -8px rgba(17, 17, 17, 0.07),
+    0 24px 56px -20px rgba(17, 17, 17, 0.1);
+}
+
+[data-theme='light'] .carousel-image-frame {
+  box-shadow:
+    0 1px 2px rgba(17, 17, 17, 0.05),
+    0 10px 24px -10px rgba(17, 17, 17, 0.1),
+    0 22px 48px -22px rgba(17, 17, 17, 0.14);
 }

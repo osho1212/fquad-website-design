@@ -9,6 +9,11 @@ export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  // Frames 1–35 are blueprint line-art, which the light theme inverts. From
+  // frame 36 the sequence becomes the finished render, which must show its
+  // original colours — and the overlay text flips back to white to stay
+  // legible against it. Dark theme is unaffected.
+  const [onOriginalFrames, setOnOriginalFrames] = useState(false);
   const { openModal } = useStartProjectModal();
 
   useEffect(() => {
@@ -26,8 +31,21 @@ export function HeroSection() {
     const images: HTMLImageElement[] = [];
     const seq = { frame: 0 };
 
+    // Frame numbers are 1-based in the filenames; index 34 === frame 035.
+    const ORIGINAL_FROM_INDEX = 35;
+    let wasOriginal = false;
+
     const render = () => {
       const frameIdx = Math.min(frameCount - 1, Math.max(0, Math.round(seq.frame)));
+
+      // Only re-render React when the boundary is actually crossed — render()
+      // runs on every scroll tick.
+      const isOriginal = frameIdx >= ORIGINAL_FROM_INDEX;
+      if (isOriginal !== wasOriginal) {
+        wasOriginal = isOriginal;
+        setOnOriginalFrames(isOriginal);
+      }
+
       const img = images[frameIdx] || images[0];
       if (img && img.complete && img.naturalWidth) {
         if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
@@ -111,11 +129,17 @@ export function HeroSection() {
 
   return (
     <section id="top" ref={containerRef} className="relative h-[420vh] bg-black">
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-black bg-[url('/assets/hero-sequence/ezgif-frame-001.jpg')] bg-cover bg-center flex flex-col justify-center items-center">
+      <div
+        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-black bg-[url('/assets/hero-sequence/ezgif-frame-001.jpg')] bg-cover bg-center flex flex-col justify-center items-center${
+          onOriginalFrames ? " fq-hero-stage--original" : ""
+        }`}
+      >
         {/* Layer 0: 114-Frame Construction Canvas (Full Screen Background) */}
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full object-cover block z-0"
+          className={`fq-hero-canvas absolute inset-0 w-full h-full object-cover block z-0${
+            onOriginalFrames ? " fq-hero-canvas--original" : ""
+          }`}
         />
 
         {/* Layer 1: Initial Full-Screen Hero View (SPACE IS OUR MEDIUM - +10% Font Size + Stays for 60% of Scroll) */}
@@ -125,7 +149,9 @@ export function HeroSection() {
             transform: `translateY(${initialTextTranslate}px)`,
             display: initialTextOpacity <= 0.01 ? "none" : "flex",
           }}
-          className={`absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center transition-all duration-75 ease-out ${initialTextOpacity > 0.3 ? "pointer-events-auto" : "pointer-events-none"
+          className={`fq-hero-text${
+            onOriginalFrames ? " fq-hero-text--on-dark" : ""
+          } absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center transition-all duration-75 ease-out ${initialTextOpacity > 0.3 ? "pointer-events-auto" : "pointer-events-none"
             }`}
         >
           <h1 className="m-0 font-bold text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight text-white uppercase drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">

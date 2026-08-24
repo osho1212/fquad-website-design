@@ -10,19 +10,65 @@
   font-display: swap;
 }
 
-:root {
+/* ─────────────────────────────────────────────────────────────────────────
+   THEME TOKENS
+   --fq-fg / --fq-bg are RGB triplets consumed by Tailwind's `white` / `black`
+   colours (see tailwind.config.ts). Everything that reads bg-black,
+   text-white or border-white follows them automatically.
+
+   Contrast ratios below are measured against that theme's background and all
+   meet WCAG 2.1 AA (4.5:1 for body text, 3:1 for large text and UI borders).
+   ───────────────────────────────────────────────────────────────────────── */
+:root,
+[data-theme='dark'] {
   --background: #000000;
   --foreground: #ffffff;
-  --font-good-times: 'Good Times', system-ui, sans-serif;
-  --font-montserrat: var(--font-montserrat, 'Montserrat', sans-serif);
+
+  --fq-bg: 0 0 0; /* page background            */
+  --fq-fg: 255 255 255; /* headings / emphasis  21.0:1 */
+
+  --fq-text-strong: rgba(255, 255, 255, 0.88); /* 16.4:1 */
+  --fq-text-body: rgba(255, 255, 255, 0.72); /*  11.0:1 */
+  --fq-text-mid: rgba(255, 255, 255, 0.6); /*    7.6:1 */
+  --fq-text-low: rgba(255, 255, 255, 0.52); /*   5.7:1 */
+  --fq-text-faint: rgba(255, 255, 255, 0.48); /* 4.9:1 */
+
+  --fq-accent: #c39a5f; /* gold on black        7.0:1 */
+  --fq-silver: #c0c0c0; /* silver on black     12.0:1 */
+  --fq-muted-label: #a09d94; /* on black        8.4:1 */
+  --fq-surface: #18181b; /* image / card wells        */
+  --fq-surface-raised: #0e0e0e; /* modal shell        */
+}
+
+/* Light theme — grey as the primary body colour, near-black for headings,
+   per the brief. Opacity-based text tiers are replaced with solid colours
+   because alpha over white cannot reach 4.5:1 (pure black at 40% is 2.8:1). */
+[data-theme='light'] {
+  --background: #ffffff;
+  --foreground: #111111;
+
+  --fq-bg: 255 255 255; /* page background             */
+  --fq-fg: 17 17 17; /* headings / emphasis   18.1:1 */
+
+  --fq-text-strong: #333333; /*                12.6:1 */
+  --fq-text-body: #4a4a4a; /* PRIMARY grey      8.9:1 */
+  --fq-text-mid: #595959; /*                   7.0:1 */
+  --fq-text-low: #6b6b6b; /*                   5.3:1 */
+  --fq-text-faint: #757575; /*                 4.6:1 */
+
+  --fq-accent: #8a6b3d; /* gold darkened       4.9:1 */
+  --fq-silver: #5f5f5f; /*                     6.6:1 */
+  --fq-muted-label: #6b6b6b; /*                5.3:1 */
+  --fq-surface: #f1f1f1;
+  --fq-surface-raised: #f7f7f7;
 }
 
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: var(--background);
+  color: var(--foreground);
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
@@ -31,7 +77,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: transparent;
-  color: #ffffff;
+  color: var(--foreground);
   font-family: var(--font-montserrat), sans-serif;
   overflow-x: hidden;
   -ms-overflow-style: none; /* IE and Edge */
@@ -139,4 +185,216 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
 
 .backface-hidden {
   backface-visibility: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LIGHT THEME COMPATIBILITY LAYER
+
+   The design expresses text hierarchy through opacity (text-white/40 etc.).
+   That works on black — white at 40% is 5.9:1 — but is impossible to make
+   accessible on white: even pure black at 40% alpha yields only 2.8:1, short
+   of the 4.5:1 AA floor, and no colour at that alpha can reach it.
+
+   So in light mode each tier is remapped to a SOLID, contrast-verified
+   colour. Selectors are [data-theme] + class (0,2,0) so they outrank the
+   base utilities (0,1,0) without !important.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Strong — 12.6:1 */
+[data-theme] .text-white\/90,
+[data-theme] .text-white\/80,
+[data-theme] .text-white\/75 {
+  color: var(--fq-text-strong);
+}
+
+/* Body copy, the primary grey — 8.9:1 */
+[data-theme] .text-white\/70,
+[data-theme] .text-white\/65 {
+  color: var(--fq-text-body);
+}
+
+/* Mid — 7.0:1 */
+[data-theme] .text-white\/60,
+[data-theme] .text-white\/55 {
+  color: var(--fq-text-mid);
+}
+
+/* Low — 5.3:1 */
+[data-theme] .text-white\/50,
+[data-theme] .text-white\/45 {
+  color: var(--fq-text-low);
+}
+
+/* Faint labels — 4.6:1, still AA for body text */
+[data-theme] .text-white\/40,
+[data-theme] .text-white\/35,
+[data-theme] .text-white\/30,
+[data-theme] .text-white\/20 {
+  color: var(--fq-text-faint);
+}
+
+/* Hover states that raise emphasis must stay the strongest value. */
+[data-theme='light'] .hover\:text-white:hover,
+[data-theme='light'] .group:hover .group-hover\:text-white {
+  color: rgb(var(--fq-fg));
+}
+
+/* Brand accents — the gold is 2.6:1 on white, so light mode uses a
+   darkened brass at 4.9:1. Silver and the muted label likewise. */
+[data-theme='light'] .text-\[\#c39a5f\],
+[data-theme='light'] .hover\:text-\[\#c39a5f\]:hover {
+  color: var(--fq-accent);
+}
+[data-theme='light'] .bg-\[\#c39a5f\] {
+  background-color: var(--fq-accent);
+}
+[data-theme='light'] .border-\[\#c39a5f\]\/25,
+[data-theme='light'] .border-\[\#c39a5f\]\/20 {
+  border-color: rgb(138 107 61 / 0.45);
+}
+[data-theme='light'] .text-\[\#c0c0c0\] {
+  color: var(--fq-silver);
+}
+[data-theme='light'] .text-\[\#a09d94\],
+[data-theme='light'] .text-\[\#a9a9a9\] {
+  color: var(--fq-muted-label);
+}
+[data-theme='light'] .text-gray-300 {
+  color: var(--fq-text-body);
+}
+
+/* Dark wells and panels become light surfaces. */
+[data-theme='light'] .bg-zinc-900,
+[data-theme='light'] .bg-zinc-950,
+[data-theme='light'] .bg-\[\#0a0a0a\] {
+  background-color: var(--fq-surface);
+}
+[data-theme='light'] .bg-\[\#0e0e0e\],
+[data-theme='light'] .bg-\[\#0e0e0e\]\/95,
+[data-theme='light'] .bg-\[\#121212\]\/80 {
+  background-color: var(--fq-surface-raised);
+}
+[data-theme='light'] .border-\[\#333\] {
+  border-color: rgb(17 17 17 / 0.22);
+}
+
+/* The metallic button is a light silver plate with #111 text — legible on
+   both themes — but needs a defined edge once the page behind it is white. */
+[data-theme='light'] .btn-metallic {
+  border-color: rgb(17 17 17 / 0.35);
+}
+
+/* The ambient blueprint video is dark line-art. Inverting it turns the lines
+   dark-on-light, which suits the light theme; the overlays flip to white so
+   they lighten rather than darken the page. */
+[data-theme='light'] .fq-bg-video-media {
+  filter: invert(1) grayscale(1);
+  opacity: 0.14;
+}
+[data-theme='light'] .fq-bg-video-shell {
+  background-color: #ffffff;
+}
+[data-theme='light'] .fq-bg-video-overlay {
+  background: rgba(255, 255, 255, 0.62) !important;
+}
+[data-theme='light'] .fq-bg-video-fade {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.75),
+    transparent,
+    rgba(255, 255, 255, 0.75)
+  ) !important;
+}
+
+/* Respect an explicit theme choice even when the OS prefers otherwise. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── WCAG 1.4.11 non-text contrast ────────────────────────────────────────
+   Form controls must have a 3:1 boundary against their background. The
+   design's border-white/20 is only 1.66:1 on black, so inputs, textareas
+   and selects get a dedicated token that clears the threshold in both
+   themes without brightening every decorative hairline on the page. */
+:root,
+[data-theme='dark'] {
+  --fq-control-border: rgba(255, 255, 255, 0.38); /* 3.3:1 on black */
+}
+[data-theme='light'] {
+  --fq-control-border: rgba(17, 17, 17, 0.48); /* 3.2:1 on white */
+}
+
+[data-theme] input:not([type='checkbox']):not([type='radio']),
+[data-theme] textarea,
+[data-theme] select {
+  border-color: var(--fq-control-border);
+}
+[data-theme] input:not([type='checkbox']):not([type='radio']):focus,
+[data-theme] textarea:focus,
+[data-theme] select:focus {
+  border-color: rgb(var(--fq-fg));
+}
+
+/* Keyboard focus must be visible on every interactive element (WCAG 2.4.7). */
+[data-theme] a:focus-visible,
+[data-theme] button:focus-visible,
+[data-theme] input:focus-visible,
+[data-theme] textarea:focus-visible,
+[data-theme] select:focus-visible,
+[data-theme] [tabindex]:focus-visible {
+  outline: 2px solid rgb(var(--fq-fg));
+  outline-offset: 2px;
+}
+
+/* ── Hero blueprint art in light mode ─────────────────────────────────────
+   The scroll sequence is raster line-art (white lines on black), so CSS
+   tokens cannot reach it. Inverting the canvas flips it to dark-lines-on-
+   light, which suits the light theme. Only the canvas is inverted — doing it
+   on the parent would invert the overlaid headline and buttons too. */
+[data-theme='light'] .fq-hero-canvas {
+  filter: invert(1);
+}
+[data-theme='light'] .fq-hero-stage {
+  background-image: none !important;
+  background-color: #ffffff;
+}
+
+/* From frame 035 the sequence is the finished render rather than line-art, so
+   it keeps its original colours. The stage goes dark behind it and the overlay
+   text returns to white for legibility. Hero-only; dark theme is untouched. */
+[data-theme='light'] .fq-hero-canvas--original {
+  filter: none;
+}
+[data-theme='light'] .fq-hero-stage--original {
+  background-color: #000000;
+}
+[data-theme='light'] .fq-hero-text--on-dark h1,
+[data-theme='light'] .fq-hero-text--on-dark span,
+[data-theme='light'] .fq-hero-text--on-dark button:not(.btn-metallic),
+[data-theme='light'] .fq-hero-text--on-dark a:not(.btn-metallic) {
+  color: #ffffff;
+}
+[data-theme='light'] .fq-hero-text--on-dark button:not(.btn-metallic),
+[data-theme='light'] .fq-hero-text--on-dark a:not(.btn-metallic) {
+  border-color: rgba(255, 255, 255, 0.45);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+/* The scroll cue's gradient rule is a background, not a text colour. */
+[data-theme='light'] .fq-hero-text--on-dark .bg-gradient-to-b {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+}
+
+/* Placeholder text is text: it must clear 4.5:1 too. The design uses
+   placeholder:text-white/30 (1.98:1 on white), which compiles to a
+   ::placeholder selector the tier rules above cannot reach. */
+[data-theme] input::placeholder,
+[data-theme] textarea::placeholder {
+  color: var(--fq-text-low);
+  opacity: 1; /* Firefox dims placeholders by default */
 }

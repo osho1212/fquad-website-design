@@ -3,9 +3,8 @@
 import { Navbar } from "@/components/ui/mini-navbar";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { StatsSection } from "@/components/sections/StatsSection";
-import { SignatureProject } from "@/components/sections/SignatureProject";
 import { StudioSection } from "@/components/sections/StudioSection";
-import { RecentWorks } from "@/components/sections/RecentWorks";
+import { FeaturedProjects } from "@/components/sections/FeaturedProjects";
 import { FourFsSection } from "@/components/sections/FourFsSection";
 import { ServicesSection } from "@/components/sections/ServicesSection";
 import { ProcessSection } from "@/components/sections/ProcessSection";
@@ -25,14 +24,11 @@ export default function Home() {
       {/* Animated Stats Section */}
       <StatsSection />
 
-      {/* Signature Project 3D Frame */}
-      <SignatureProject />
-
       {/* The Studio with Autoplay Video Background & Vignette */}
       <StudioSection />
 
-      {/* Recent Works Gallery with 3D Tilt */}
-      <RecentWorks />
+      {/* Full-bleed Featured Projects showcase (carries the #work anchor) */}
+      <FeaturedProjects />
 
       {/* 3D Rotating Quad Cube (Four F's) */}
       <FourFsSection />

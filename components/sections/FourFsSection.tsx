@@ -9,8 +9,6 @@ const fourFsSlides: SlideData[] = [
     fPrefix: "F",
     suffix: "UNCTIONAL",
     subtitle: "Purposeful & Ergonomic Architecture",
-    description:
-      "We believe every design should serve a purpose. Our spaces are planned to be efficient, comfortable, and intuitive while maintaining a strong aesthetic identity.",
     accent: "#C39A5F",
     imageUrl: "/assets/images/b21.jpg",
   },
@@ -19,8 +17,6 @@ const fourFsSlides: SlideData[] = [
     fPrefix: "F",
     suffix: "UTURISTIC",
     subtitle: "Modern Materials & Smart Spatial Systems",
-    description:
-      "Design should look forward. We integrate modern materials, sustainable systems, and smart spatial planning so that spaces remain relevant for decades.",
     accent: "#8BA7B8",
     imageUrl: "/assets/images/a1.jpg",
   },
@@ -29,8 +25,6 @@ const fourFsSlides: SlideData[] = [
     fPrefix: "F",
     suffix: "RIENDLY",
     subtitle: "Warmth, Natural Light & Collaboration",
-    description:
-      "Architecture is for people. We focus on warmth, light, and natural connectivity — creating environments where people feel welcome and at ease.",
     accent: "#A3B899",
     imageUrl: "/assets/images/a3.jpg",
   },
@@ -39,8 +33,6 @@ const fourFsSlides: SlideData[] = [
     fPrefix: "F",
     suffix: "LEXIBLE",
     subtitle: "Adaptable Living & Timeless Spatial Balance",
-    description:
-      "Spaces evolve as lifestyles change. Our layouts are adaptable, allowing rooms to shift between work, entertaining, and quiet contemplation with ease.",
     accent: "#D4A955",
     imageUrl: "/assets/images/b25.jpg",
   },
@@ -49,19 +41,30 @@ const fourFsSlides: SlideData[] = [
     fPrefix: "F",
     suffix: ".QUAD",
     subtitle: "Four Faces · One Unified Practice",
-    description:
-      "The culmination of our philosophy. Functionality, Futuristic vision, Friendly collaboration, and Flexibility converge into purposeful, timeless architectural design.",
     accent: "#E6C687",
     imageUrl: "/assets/images/b22.jpg",
   },
 ];
 
+/** How long each face holds before advancing on its own. */
+const AUTOPLAY_DELAY_MS = 2500;
+/** Quiet period after a manual scroll before autoplay takes over again. */
+const RESUME_AFTER_INPUT_MS = 1200;
+
 export function FourFsSection() {
   const containerRef = useRef<HTMLElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [slideProgress, setSlideProgress] = useState(0);
+  // Autoplay only runs while the section is pinned and filling the viewport.
+  const [isPinned, setIsPinned] = useState(false);
+  const activeIndexRef = useRef(0);
+  const lastInputRef = useRef(0);
 
   const numSlides = fourFsSlides.length;
+
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -69,6 +72,7 @@ export function FourFsSection() {
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
+      setIsPinned(rect.top <= 0 && rect.bottom >= vh);
       const totalScrollable = rect.height - vh;
       if (totalScrollable <= 0) return;
 
@@ -110,6 +114,40 @@ export function FourFsSection() {
     },
     [numSlides]
   );
+
+  // Manual scrolling wins: note when the visitor drives so autoplay can wait.
+  // Only real input counts — a smooth programmatic scroll fires `scroll`, never
+  // `wheel`/`touchmove`/`keydown`, so autoplay never mistakes itself for input.
+  useEffect(() => {
+    const mark = () => {
+      lastInputRef.current = Date.now();
+    };
+    const opts = { passive: true } as const;
+    window.addEventListener("wheel", mark, opts);
+    window.addEventListener("touchmove", mark, opts);
+    window.addEventListener("keydown", mark);
+    return () => {
+      window.removeEventListener("wheel", mark);
+      window.removeEventListener("touchmove", mark);
+      window.removeEventListener("keydown", mark);
+    };
+  }, []);
+
+  // Advance to the next face on a timer while the section is pinned. Stops on
+  // the last face rather than looping, so the visitor is free to scroll onward.
+  useEffect(() => {
+    if (!isPinned) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    const id = window.setInterval(() => {
+      if (Date.now() - lastInputRef.current < RESUME_AFTER_INPUT_MS) return;
+      const next = activeIndexRef.current + 1;
+      if (next >= numSlides) return;
+      handleNavigate(next);
+    }, AUTOPLAY_DELAY_MS);
+
+    return () => window.clearInterval(id);
+  }, [isPinned, numSlides, handleNavigate]);
 
   return (
     <section

@@ -5,7 +5,6 @@ import React from "react";
 export function AwardsSection() {
   const awards = [
     "IIID",
-    "Hafele Design Awards",
     "ELDORK India Architecture Awards",
     "Surfaces Reporter",
     "Times Design Icons South",

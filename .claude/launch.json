@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "fquad-dev",
-      "url": "http://localhost:38472"
+      "url": "http://localhost:3002"
     }
   ]
 }

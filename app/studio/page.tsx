@@ -7,7 +7,6 @@ import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 
 const recognitions = [
   "IIID",
-  "Hafele Design Awards",
   "ELDORK India Architecture Awards",
   "Surfaces Reporter",
   "Times Design Icons South",
@@ -157,7 +156,7 @@ export default function StudioPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">
           <article>
-            <div className="aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
+            <div className="w-4/5 aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
               <span className="text-[10px] tracking-[0.2em] text-white/40 uppercase leading-relaxed">
                 FOUNDER PORTRAIT
                 <br />
@@ -176,7 +175,7 @@ export default function StudioPage() {
           </article>
 
           <article className="md:mt-12">
-            <div className="aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
+            <div className="w-4/5 aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
               <span className="text-[10px] tracking-[0.2em] text-white/40 uppercase leading-relaxed">
                 FOUNDER PORTRAIT
                 <br />

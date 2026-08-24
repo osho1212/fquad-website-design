@@ -8,7 +8,8 @@ export interface SlideData {
   fPrefix?: string;
   suffix?: string;
   subtitle: string;
-  description: string;
+  /** Optional body copy; omitted entirely when not supplied. */
+  description?: string;
   accent: string;
   imageUrl: string;
 }
@@ -223,14 +224,16 @@ export default function ElegantCarousel({
               {currentSlide.subtitle}
             </p>
 
-            {/* Description */}
-            <p
-              className={`carousel-description ${
-                isTransitioning ? 'transitioning' : 'visible'
-              }`}
-            >
-              {currentSlide.description}
-            </p>
+            {/* Description — rendered only when the slide supplies one. */}
+            {currentSlide.description && (
+              <p
+                className={`carousel-description ${
+                  isTransitioning ? 'transitioning' : 'visible'
+                }`}
+              >
+                {currentSlide.description}
+              </p>
+            )}
 
             {/* Navigation Arrows */}
             <div className="carousel-nav-arrows">
