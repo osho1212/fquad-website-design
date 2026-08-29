@@ -24,8 +24,8 @@ const config: Config = {
         ink: "#0b0b0a",
         bone: "#ece9e2",
         "bone-e4": "#e4e0d8",
-        brass: "#c39a5f",
-        "brass-deep": "#8a6b3d",
+        // Neutral accent, themed via --fq-accent in globals.css.
+        accent: "var(--fq-accent)",
       },
       fontFamily: {
         sans: ["var(--font-montserrat)", "system-ui", "sans-serif"],

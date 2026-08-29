@@ -14,7 +14,7 @@ interface Enquiry {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  NEW: '#8B6F47',
+  NEW: '#4A4A4A',
   CONTACTED: '#5B7FA3',
   CLOSED: '#9C9890',
 };
@@ -70,7 +70,7 @@ export default function EnquiriesPage() {
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>Enquiries</h1>
       <p style={{ color: '#7A7870', fontSize: 15, marginBottom: 24, lineHeight: 1.7 }}>
         Every contact form submission lands here, even if the notification email fails.
-        {newCount > 0 && <strong style={{ color: '#8B6F47' }}> {newCount} new.</strong>}
+        {newCount > 0 && <strong style={{ color: '#4A4A4A' }}> {newCount} new.</strong>}
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
@@ -140,7 +140,7 @@ export default function EnquiriesPage() {
                     href={`https://wa.me/${enquiry.phone.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ fontSize: 14, color: '#8B6F47', fontWeight: 600 }}
+                    style={{ fontSize: 14, color: '#4A4A4A', fontWeight: 600 }}
                   >
                     Prefers WhatsApp →
                   </a>

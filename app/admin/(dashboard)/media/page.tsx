@@ -28,7 +28,6 @@ interface MediaItem {
 interface Folder {
   id: string;
   name: string;
-  projectId: string | null;
   createdAt: string;
 }
 
@@ -72,6 +71,11 @@ export default function MediaLibraryPage() {
     loadFolders();
   }, []);
 
+  function handleSelectFolder(id: string | null) {
+    setSelectedFolder(id);
+    setUploadFolder(id || '');
+  }
+
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -80,12 +84,14 @@ export default function MediaLibraryPage() {
     setError('');
     setUploadProgress({ current: 0, total: files.length });
 
+    const targetFolder = uploadFolder || selectedFolder || '';
+
     for (let i = 0; i < files.length; i++) {
       setUploadProgress({ current: i + 1, total: files.length });
 
       const formData = new FormData();
       formData.append('file', files[i]);
-      if (uploadFolder) formData.append('folderId', uploadFolder);
+      if (targetFolder) formData.append('folderId', targetFolder);
 
       try {
         const res = await fetch('/api/admin/media', { method: 'POST', body: formData });
@@ -115,6 +121,8 @@ export default function MediaLibraryPage() {
     if (res.ok) {
       const data = await res.json();
       setFolders((prev) => [...prev, data.folder]);
+      setSelectedFolder(data.folder.id);
+      setUploadFolder(data.folder.id);
     } else {
       alert('Failed to create folder.');
     }
@@ -125,9 +133,32 @@ export default function MediaLibraryPage() {
     const res = await fetch(`/api/admin/media-folders/${id}`, { method: 'DELETE' });
     if (res.ok) {
       setFolders((prev) => prev.filter((f) => f.id !== id));
-      if (selectedFolder === id) setSelectedFolder(null);
+      if (selectedFolder === id) {
+        setSelectedFolder(null);
+        setUploadFolder('');
+      }
     } else {
       alert('Delete failed.');
+    }
+  }
+
+  async function handleMoveMedia(mediaId: string, folderId: string) {
+    try {
+      const res = await fetch(`/api/admin/media/${mediaId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderId: folderId || null }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMedia((prev) =>
+          prev.map((m) => (m.id === mediaId ? { ...m, folderId: data.media.folderId } : m))
+        );
+      } else {
+        alert('Failed to move media.');
+      }
+    } catch {
+      alert('Failed to move media.');
     }
   }
 
@@ -149,7 +180,7 @@ export default function MediaLibraryPage() {
     <div style={{ display: 'flex', gap: 24 }}>
       <aside style={{ width: 200, flexShrink: 0 }}>
         <div
-          onClick={() => setSelectedFolder(null)}
+          onClick={() => handleSelectFolder(null)}
           style={{
             padding: '8px 12px', cursor: 'pointer', fontSize: 13, borderRadius: 2, marginBottom: 4,
             fontWeight: selectedFolder === null ? 700 : 400,
@@ -161,7 +192,7 @@ export default function MediaLibraryPage() {
         {folders.map((f) => (
           <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <div
-              onClick={() => setSelectedFolder(f.id)}
+              onClick={() => handleSelectFolder(f.id)}
               style={{
                 flex: 1, padding: '8px 12px', cursor: 'pointer', fontSize: 13, borderRadius: 2, marginBottom: 4,
                 wordBreak: 'break-word',
@@ -310,6 +341,31 @@ export default function MediaLibraryPage() {
                     {item.width && item.height ? `${item.width}×${item.height}` : ''}
                     {item.duration ? ` · ${item.duration}s` : ''}
                   </div>
+
+                  {folders.length > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      <select
+                        value={item.folderId || ''}
+                        onChange={(e) => handleMoveMedia(item.id, e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '4px 6px',
+                          border: '1px solid #DEDBD4',
+                          borderRadius: 2,
+                          fontSize: 11,
+                          fontFamily: 'inherit',
+                          color: '#444',
+                          background: '#FAFAFA',
+                        }}
+                      >
+                        <option value="">📁 No folder (All Media)</option>
+                        {folders.map((f) => (
+                          <option key={f.id} value={f.id}>📁 {f.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => handleDelete(item.id)}
                     style={{

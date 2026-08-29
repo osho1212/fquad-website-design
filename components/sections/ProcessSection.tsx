@@ -1,48 +1,35 @@
 "use client";
 
 import React from "react";
+import { withDefaults } from "@/lib/cms/schema";
 
-const processSteps = [
-  {
-    num: "01",
-    title: "BRIEF",
-    desc: "We listen first. Understanding your vision, site, and lifestyle before a single line is drawn.",
-  },
-  {
-    num: "02",
-    title: "CONCEPT",
-    desc: "Ideas take shape through sketches, models, and material exploration.",
-  },
-  {
-    num: "03",
-    title: "DEVELOPMENT",
-    desc: "Concepts are refined into detailed designs and construction documents.",
-  },
-  {
-    num: "04",
-    title: "DELIVERY",
-    desc: "We oversee execution to ensure the built result matches the design intent.",
-  },
-];
+interface Step {
+  num: string;
+  title: string;
+  desc: string;
+}
 
-export function ProcessSection() {
+export function ProcessSection({ content }: { content?: Record<string, any> }) {
+  const c = withDefaults("home", "process", content);
+  const steps: Step[] = c.steps ?? [];
+
   return (
     <section className="px-6 sm:px-11 pb-28 bg-transparent">
       <div className="flex justify-between items-baseline border-t border-white/15 pt-6 mb-16">
         <div className="text-[10px] tracking-[0.24em] text-white/45 uppercase">
-          HOW WE WORK
+          {c.eyebrow}
         </div>
         <div className="text-[10px] tracking-[0.18em] text-white/45 uppercase">
-          OUR PROCESS
+          {c.label}
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0">
-        {processSteps.map((step, idx) => (
+        {steps.map((step, idx) => (
           <div
-            key={step.num}
+            key={idx}
             className={`lg:px-7 first:lg:pl-0 last:lg:pr-0 ${
-              idx < 3 ? "lg:border-r lg:border-white/15" : ""
+              idx < steps.length - 1 ? "lg:border-r lg:border-white/15" : ""
             }`}
           >
             <div className="font-light text-3xl sm:text-4xl tracking-tighter text-white/30">

@@ -282,7 +282,7 @@ Items: IIID · ELDORK India Architecture Awards · Surfaces Reporter · Times De
 - Footer: `1.4fr 1fr 1fr 1fr` grid, `gap:36px`, `border-top: 1px solid rgba(236,233,226,.14)`, `padding-top:48px`.
   - Col 1: wordmark, "Architecture & Interior Design Studio, Hyderabad" (13.5px, `rgba(236,233,226,.5)`, `max-width:26ch`), INSTAGRAM / WHATSAPP links.
   - Col 2 STUDIO: About · Our Team · Awards & Recognition · Journal
-  - Col 3 PROJECTS: All Projects · Upcoming · Residential · Commercial
+  - Col 3 PROJECTS: All Projects · Residential · Commercial
   - Col 4 CONTACT: admin@fquad.com · Hyderabad, Telangana, India
   - Column headers Mono 9.5px `.22em` `rgba(236,233,226,.4)`, `margin-bottom:18px`; links 13.5px, `gap:10px`.
 - Legal row: `border-top: 1px solid rgba(236,233,226,.1)`, `margin-top:56px`, `padding-top:20px`. "© 2026 F.QUAD STUDIO. ALL RIGHTS RESERVED." left; PRIVACY / SITEMAP right. Mono 9.5px `.16em` `rgba(236,233,226,.4)`.

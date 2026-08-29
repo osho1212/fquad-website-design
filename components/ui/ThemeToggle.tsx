@@ -11,7 +11,7 @@ export const THEME_STORAGE_KEY = "fq-theme";
  * <html> before anything renders — otherwise a light-theme visitor sees a
  * black flash on every navigation.
  */
-export const themeInitScript = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
+export const themeInitScript = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t!=='light'&&t!=='dark'){t='light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
   // Start undefined so the button renders inert until we know the real theme.
@@ -19,7 +19,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 
   useEffect(() => {
     const current =
-      (document.documentElement.getAttribute("data-theme") as Theme) || "dark";
+      (document.documentElement.getAttribute("data-theme") as Theme) || "light";
     setTheme(current);
   }, []);
 

@@ -1,0 +1,272 @@
+// lib/cms/pages/services.ts
+// The /services index, plus the service catalogue that also feeds the
+// homepage "What We Do" grid and every /services/[slug] detail page.
+
+import type { PageDef } from '../types';
+
+export const servicesPage: PageDef = {
+  key: 'services',
+  label: 'Services',
+  group: 'Pages',
+  path: '/services',
+  icon: '◨',
+  description: 'The services index, the four stages, and the catalogue behind every service page.',
+  sections: [
+    {
+      key: 'hero',
+      label: 'Hero',
+      fields: [
+        { key: 'eyebrow', label: 'Eyebrow', type: 'text', half: true },
+        { key: 'title', label: 'Headline', type: 'textarea', help: 'Line breaks are preserved.' },
+        { key: 'intro', label: 'Intro paragraph', type: 'textarea' },
+        { key: 'image', label: 'Hero image', type: 'image' },
+        { key: 'imageAlt', label: 'Hero image alt text', type: 'text' },
+      ],
+      defaults: {
+        eyebrow: 'WHAT WE DO',
+        title: 'Every space,\nconsidered.',
+        intro: 'From concept to completion, we design spaces that balance beauty with the way people live and work.',
+        image: '/assets/images/b49.jpg',
+        imageAlt: 'Interior detail, Barkatpura Residence',
+      },
+    },
+    {
+      key: 'catalog',
+      label: 'Service Catalogue',
+      description: 'The single source for the homepage grid, this page’s breakdown, and each service detail page.',
+      fields: [
+        {
+          key: 'items',
+          label: 'Services',
+          type: 'list',
+          itemLabel: 'Service',
+          itemTitleKey: 'title',
+          min: 1,
+          fields: [
+            { key: 'slug', label: 'URL slug', type: 'text', half: true, help: 'Becomes /services/<slug>. Changing it breaks existing links.' },
+            { key: 'num', label: 'Number', type: 'text', half: true, placeholder: '01' },
+            { key: 'title', label: 'Title', type: 'text', half: true },
+            { key: 'image', label: 'Image', type: 'image' },
+            { key: 'alt', label: 'Image alt text', type: 'text' },
+            { key: 'desc', label: 'Card summary', type: 'textarea', help: 'One line, used on the homepage card and the index row.' },
+            { key: 'intro', label: 'Detail page opener', type: 'textarea' },
+            { key: 'body', label: 'Detail paragraphs', type: 'paragraphs', help: 'Separate paragraphs with a blank line.' },
+            { key: 'offerings', label: 'What it covers', type: 'lines', help: 'One item per line.' },
+          ],
+        },
+      ],
+      defaults: {
+        items: [
+          {
+            slug: 'architecture',
+            num: '01',
+            title: 'Architecture',
+            desc: 'Residential, commercial, and hospitality spaces designed around climate and context.',
+            intro: 'We design buildings that answer to their site before anything else — orientation, light, airflow, and the way people will actually move through them.',
+            body: [
+              'Every project begins with the ground it sits on. Sun path, prevailing wind, neighbouring structures, and local climate shape the massing long before elevations are drawn. The result is architecture that performs in its context rather than fighting it.',
+              'We work across residential, commercial, and hospitality briefs, coordinating with structural and services consultants from the earliest stages so that design intent survives all the way to construction.',
+            ],
+            offerings: [
+              'Site and feasibility studies',
+              'Concept design and massing',
+              'Elevation and facade development',
+              'Working drawings and approvals',
+              'Consultant and contractor coordination',
+              'On-site supervision through handover',
+            ],
+            image: '/assets/images/a1.jpg',
+            alt: 'Residence facade in daylight',
+          },
+          {
+            slug: 'interior-design',
+            num: '02',
+            title: 'Interior Design',
+            desc: 'Material, light, and layout brought together with quiet precision.',
+            intro: 'Interiors are where a building meets daily life. We resolve layout, light, and material into spaces that feel considered without announcing themselves.',
+            body: [
+              'Planning comes first — how rooms connect, where light falls through the day, how storage disappears into the architecture. Only once the plan works do finishes and detailing follow.',
+              'We develop bespoke joinery, lighting schemes, and material palettes in-house, then detail them to a level our contractors can build from without guesswork.',
+            ],
+            offerings: [
+              'Spatial planning and layouts',
+              'Material and finish palettes',
+              'Bespoke joinery and furniture detailing',
+              'Lighting design and specification',
+              'Services and false-ceiling coordination',
+              'Execution drawings and site supervision',
+            ],
+            image: '/assets/images/b21.jpg',
+            alt: 'Living room with folding screens',
+          },
+          {
+            slug: 'interior-styling',
+            num: '03',
+            title: 'Interior Styling',
+            desc: 'The final layer — furniture, art, and objects that make a space feel lived in.',
+            intro: 'Styling is the last layer, and the one people feel first. Furniture, textiles, art, and objects are selected and placed so a finished space reads as personal rather than staged.',
+            body: [
+              'We curate loose furniture, rugs, lighting, artwork, and accessories against the palette already established in the interiors — sourcing across makers and galleries, and commissioning pieces where nothing existing fits.',
+              'Styling can follow one of our own interior projects or stand alone, refreshing a completed space without construction.',
+            ],
+            offerings: [
+              'Loose furniture selection and sourcing',
+              'Art curation and commissioning',
+              'Soft furnishings, rugs, and textiles',
+              'Decorative lighting and accessories',
+              'Vignette and shelf styling',
+              'Installation and final placement',
+            ],
+            image: '/assets/images/b22.jpg',
+            alt: 'Styled interior with layered furnishings and artwork',
+          },
+          {
+            slug: 'farmhouse',
+            num: '04',
+            title: 'Farmhouse',
+            desc: 'Bespoke weekend homes, luxury estates, and rural retreats designed in harmony with the natural landscape.',
+            intro: 'Weekend homes ask a different question than city projects: how much of the landscape can the building give back to you?',
+            body: [
+              'We plan farmhouses and estates around the land they occupy — existing trees, contours, water, and views set the footprint. Indoor and outdoor rooms are treated as one continuous sequence, with deep verandas, courtyards, and thresholds that stay usable through the year.',
+              'These projects typically combine architecture, interiors, and landscape coordination under a single scope, so the house and its grounds resolve together.',
+            ],
+            offerings: [
+              'Land assessment and siting',
+              'Farmhouse and estate architecture',
+              'Indoor–outdoor and veranda planning',
+              'Pool, courtyard, and landscape coordination',
+              'Interiors and material palettes',
+              'Turnkey delivery and handover',
+            ],
+            image: '/assets/images/a3.jpg',
+            alt: 'Farmhouse deck and estate outdoor living at dusk',
+          },
+        ],
+      },
+    },
+    {
+      key: 'index_rows',
+      label: 'Index Rows',
+      description: 'The link label under each service on this page.',
+      fields: [
+        { key: 'ctaTemplate', label: 'Row link label', type: 'text', help: 'Use {title} to insert the service name.' },
+      ],
+      defaults: { ctaTemplate: 'EXPLORE {title} →' },
+    },
+    {
+      key: 'stages',
+      label: 'How We Work',
+      description: 'The four-stage breakdown on the dark band.',
+      fields: [
+        { key: 'eyebrow', label: 'Eyebrow', type: 'text', half: true },
+        { key: 'title', label: 'Heading', type: 'text', half: true },
+        {
+          key: 'items',
+          label: 'Stages',
+          type: 'list',
+          itemLabel: 'Stage',
+          itemTitleKey: 'title',
+          max: 6,
+          fields: [
+            { key: 'num', label: 'Number', type: 'text', half: true },
+            { key: 'title', label: 'Title', type: 'text', half: true },
+            { key: 'desc', label: 'Description', type: 'textarea' },
+          ],
+        },
+      ],
+      defaults: {
+        eyebrow: 'HOW WE WORK',
+        title: 'Four stages, one team throughout.',
+        items: [
+          { num: '01', title: 'Brief', desc: "We start with site visits and long conversations — understanding how you live, work, and want to feel in the space. Nothing gets drawn until we've listened. This stage sets the brief everything else is measured against." },
+          { num: '02', title: 'Concept', desc: 'Sketches, massing studies, and material references bring the early direction into focus. We present options, not a single fixed answer. This is where the character of the project gets decided.' },
+          { num: '03', title: 'Development', desc: 'Concept becomes detailed drawings, specifications, and approvals. We coordinate with contractors and consultants so nothing gets lost between design and site. Budgets and timelines get locked in here.' },
+          { num: '04', title: 'Delivery', desc: "On-site supervision through construction, fit-out, and styling, right up to handover. We stay involved until the space is exactly what was promised. Then we don't disappear — we're on call after you move in." },
+        ],
+      },
+    },
+    {
+      key: 'metrics',
+      label: 'Experience Metrics',
+      fields: [
+        {
+          key: 'items',
+          label: 'Metrics',
+          type: 'list',
+          itemLabel: 'Metric',
+          itemTitleKey: 'label',
+          max: 4,
+          fields: [
+            { key: 'value', label: 'Value', type: 'text', half: true },
+            { key: 'label', label: 'Label', type: 'text', half: true },
+            { key: 'note', label: 'Note', type: 'textarea', help: 'Optional supporting line under the metric.' },
+          ],
+        },
+      ],
+      defaults: {
+        items: [
+          { value: '20+', label: 'EXPERIENCE', note: '' },
+          { value: '500+', label: 'PORTFOLIO', note: '' },
+          { value: '1:1', label: 'APPROACH', note: 'Every project is bespoke — no templates, no repeated floor plans.' },
+        ],
+      },
+    },
+    {
+      key: 'project_types',
+      label: 'Spaces We Design',
+      fields: [
+        { key: 'eyebrow', label: 'Eyebrow', type: 'text', half: true },
+        { key: 'title', label: 'Heading', type: 'text', half: true },
+        { key: 'items', label: 'Types', type: 'lines', help: 'One per line — rendered slash-separated.' },
+      ],
+      defaults: {
+        eyebrow: 'PROJECT TYPES',
+        title: 'Spaces we design.',
+        items: ['Residence', 'Villa', 'Apartment', 'Office', 'Restaurant', 'Hotel', 'Retail', 'Farmhouse'],
+      },
+    },
+    {
+      key: 'cta',
+      label: 'Closing Banner',
+      fields: [
+        { key: 'title', label: 'Heading', type: 'textarea', help: 'Line breaks are preserved.' },
+        { key: 'body', label: 'Supporting line', type: 'textarea' },
+        { key: 'whatsappLabel', label: 'WhatsApp button', type: 'text', half: true },
+        { key: 'ctaLabel', label: 'Primary button', type: 'text', half: true },
+      ],
+      defaults: {
+        title: "Have a vision?\nLet's build it.",
+        body: "Tell us about your project and we'll get back to you within a day.",
+        whatsappLabel: 'WHATSAPP',
+        ctaLabel: 'ENQUIRE / START A PROJECT →',
+      },
+    },
+    {
+      key: 'detail',
+      label: 'Service Detail Pages',
+      description: 'Shared labels reused on every /services/<slug> page.',
+      fields: [
+        { key: 'backLabel', label: 'Back link', type: 'text', half: true },
+        { key: 'eyebrowSuffix', label: 'Hero eyebrow suffix', type: 'text', half: true, help: 'Rendered after the service number, e.g. "01 · What We Do".' },
+        { key: 'approachHeading', label: 'Approach heading', type: 'text', half: true },
+        { key: 'includedHeading', label: 'Offerings heading', type: 'text', half: true },
+        { key: 'siblingsHeading', label: 'Other services heading', type: 'text', half: true },
+        { key: 'currentLabel', label: 'Current service label', type: 'text', half: true },
+        { key: 'ctaTemplate', label: 'Closing heading', type: 'text', help: 'Use {title} for the service name in lower case.' },
+        { key: 'nextTemplate', label: 'Next-service button', type: 'text', half: true, help: 'Use {title} for the next service name.' },
+        { key: 'ctaLabel', label: 'Primary button', type: 'text', half: true },
+      ],
+      defaults: {
+        backLabel: '← All Services',
+        eyebrowSuffix: 'What We Do',
+        approachHeading: 'The Approach',
+        includedHeading: "What's Included",
+        siblingsHeading: 'Services',
+        currentLabel: 'Currently viewing',
+        ctaTemplate: 'Planning a {title} project?',
+        nextTemplate: 'Next: {title}',
+        ctaLabel: 'START A PROJECT →',
+      },
+    },
+  ],
+};

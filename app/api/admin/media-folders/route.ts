@@ -14,14 +14,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { name, projectId } = body;
+  const { name } = body;
 
   if (!name || typeof name !== 'string' || !name.trim()) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 });
   }
 
   const folder = await prisma.mediaFolder.create({
-    data: { name: name.trim(), projectId: projectId || null },
+    data: { name: name.trim() },
   });
 
   return NextResponse.json({ folder }, { status: 201 });

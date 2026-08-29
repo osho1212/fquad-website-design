@@ -3,17 +3,30 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { BackgroundVideo } from "@/components/ui/background-video";
 import { themeInitScript } from "@/components/ui/ThemeToggle";
+import { getSiteSettings, mediaUrl } from "@/lib/public-content";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
 });
 
-export const metadata: Metadata = {
-  title: "F.QUAD — Architecture & Interior Design Studio",
-  description:
-    "F.QUAD Studio — architecture and interior design practice based in Hyderabad. Functional, Futuristic, Friendly, Flexible.",
-};
+const DEFAULT_TITLE = "F.QUAD — Architecture & Interior Design Studio";
+const DEFAULT_DESCRIPTION =
+  "F.QUAD Studio — architecture and interior design practice based in Hyderabad. Functional, Futuristic, Friendly, Flexible.";
+
+// A per-page `metadata` export (contact, services, etc.) overrides title and
+// description; this is only the site-wide fallback, sourced from Settings so
+// editors don't need a code change to update it.
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings().catch(() => null);
+  const ogImageUrl = settings?.ogImage ? mediaUrl(settings.ogImage, "full") : null;
+
+  return {
+    title: settings?.metaTitle || DEFAULT_TITLE,
+    description: settings?.metaDescription || DEFAULT_DESCRIPTION,
+    ...(ogImageUrl ? { openGraph: { images: [ogImageUrl] } } : {}),
+  };
+}
 
 import { StartProjectProvider } from "@/components/ui/StartProjectModalContext";
 import { StartProjectModal } from "@/components/ui/StartProjectModal";

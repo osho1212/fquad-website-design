@@ -4,8 +4,10 @@ import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
+import { withDefaults } from "@/lib/cms/schema";
 
-export function HeroSection() {
+export function HeroSection({ content }: { content?: Record<string, any> }) {
+  const c = withDefaults("home", "hero", content);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -155,27 +157,27 @@ export function HeroSection() {
             }`}
         >
           <h1 className="m-0 font-bold text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight text-white uppercase drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">
-            SPACE IS OUR MEDIUM
+            {c.headline}
           </h1>
 
           <div className="flex items-center gap-3.5 mt-5 sm:mt-6">
             <a
-              href="#work"
+              href={c.primaryCtaHref}
               className="btn-metallic text-[11px] sm:text-xs py-2 px-6 tracking-[0.2em] uppercase font-semibold"
             >
-              EXPLORE WORK ↓
+              {c.primaryCtaLabel}
             </a>
             <button
               type="button"
               onClick={() => openModal()}
               className="text-[9.5px] tracking-[0.2em] px-4 py-2 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase bg-black/50 backdrop-blur-md cursor-pointer"
             >
-              START A PROJECT
+              {c.secondaryCtaLabel}
             </button>
           </div>
 
           <div className="flex flex-col items-center gap-2 text-white/50 text-[9.5px] tracking-[0.24em] uppercase mt-7 pointer-events-none">
-            <span>SCROLL TO EXPLORE</span>
+            <span>{c.scrollHint}</span>
             <div className="w-[1px] h-5 bg-gradient-to-b from-white/60 to-transparent animate-bounce" />
           </div>
         </div>
@@ -227,7 +229,7 @@ export function HeroSection() {
                   fontSize="150"
                   letterSpacing="0.08em"
                 >
-                  F.QUAD
+                  {c.stencilTitle}
                 </text>
                 <text
                   x="960"
@@ -240,7 +242,7 @@ export function HeroSection() {
                   fontSize="24"
                   letterSpacing="0.18em"
                 >
-                  ARCHITECTURE &amp; INTERIOR DESIGN STUDIO
+                  {c.stencilSubtitle}
                 </text>
                 <text
                   x="960"
@@ -253,13 +255,18 @@ export function HeroSection() {
                   fontSize="18"
                   letterSpacing="0.22em"
                 >
-                  BY AMIT &amp; ASHMI
+                  {c.stencilByline}
                 </text>
               </mask>
             </defs>
 
-            {/* Oversized Solid Black Stage */}
+            {/* Oversized Solid Black Stage — reveals the finished-building
+                video through the punched-out text. Dark theme only; in
+                light theme .fq-hero-stencil-fill becomes an opaque white
+                rect with no mask (see globals.css), so nothing peeks
+                through and the plain-text version below shows instead. */}
             <rect
+              className="fq-hero-stencil-fill"
               x="-2000"
               y="-2000"
               width="6000"
@@ -269,11 +276,60 @@ export function HeroSection() {
             />
           </svg>
 
+          {/* Light-theme counterpart: the same three lines as plain dark
+              text, no video reveal. Hidden by default; shown only under
+              [data-theme='light'] in globals.css. */}
+          <svg
+            viewBox="0 0 1920 1080"
+            preserveAspectRatio="xMidYMid slice"
+            className="fq-hero-stencil-light w-full h-full absolute inset-0 block"
+          >
+            <text
+              x="960"
+              y="480"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#111111"
+              fontFamily="Good Times, sans-serif"
+              fontWeight="bold"
+              fontSize="150"
+              letterSpacing="0.08em"
+            >
+              {c.stencilTitle}
+            </text>
+            <text
+              x="960"
+              y="585"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#111111"
+              fontFamily="Good Times, sans-serif"
+              fontWeight="500"
+              fontSize="24"
+              letterSpacing="0.18em"
+            >
+              {c.stencilSubtitle}
+            </text>
+            <text
+              x="960"
+              y="635"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="#111111"
+              fontFamily="Good Times, sans-serif"
+              fontWeight="500"
+              fontSize="18"
+              letterSpacing="0.22em"
+            >
+              {c.stencilByline}
+            </text>
+          </svg>
+
           {/* Subtle Golden Blueprint Arcs & Architectural Grid on the Dark Stage */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
-            <div className="w-[75vw] max-w-4xl aspect-square border border-[#c39a5f]/25 rounded-full animate-pulse" />
-            <div className="w-[50vw] max-w-2xl aspect-square border border-[#c39a5f]/20 rounded-full" />
-            <div className="w-[30vw] max-w-md aspect-square border border-dashed border-[#c39a5f]/25 rounded-full" />
+            <div className="w-[75vw] max-w-4xl aspect-square border border-white/25 rounded-full animate-pulse" />
+            <div className="w-[50vw] max-w-2xl aspect-square border border-white/20 rounded-full" />
+            <div className="w-[30vw] max-w-md aspect-square border border-dashed border-white/25 rounded-full" />
           </div>
         </div>
 
@@ -285,8 +341,8 @@ export function HeroSection() {
           }}
           className="absolute bottom-10 z-30 pointer-events-none flex flex-col items-center gap-2 text-white/60 text-[10px] tracking-[0.24em] uppercase transition-opacity duration-150"
         >
-          <span className="text-[#c39a5f] font-medium">DISCOVER THE PRACTICE</span>
-          <div className="w-[1px] h-6 bg-gradient-to-b from-[#c39a5f] to-transparent animate-bounce" />
+          <span className="text-accent font-medium">{c.discoverLabel}</span>
+          <div className="w-[1px] h-6 bg-gradient-to-b from-white to-transparent animate-bounce" />
         </div>
       </div>
     </section>

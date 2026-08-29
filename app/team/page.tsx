@@ -1,15 +1,26 @@
 import Link from 'next/link';
+import { SiteNav } from '@/components/ui/SiteNav';
+import { SiteFooter } from '@/components/ui/SiteFooter';
 import { getTeamMembers, getSiteSettings, mediaUrl } from '@/lib/public-content';
+import { getPage } from '@/lib/cms/content';
 
 export const revalidate = 0;
 
 export default async function TeamPage() {
   const members = await getTeamMembers();
   const settings = await getSiteSettings();
+  const [teamContent, globalContent] = await Promise.all([getPage('team'), getPage('global')]);
+  const hero = teamContent.hero;
+  const nav = globalContent.page_nav;
+  const footer = globalContent.page_footer;
+  const footerSettings = {
+    email: settings?.email ?? null,
+    phone: settings?.phone ?? null,
+    address: settings?.address ?? null,
+    instagramUrl: settings?.instagramUrl ?? null,
+    whatsapp: settings?.whatsapp ?? null,
+  };
 
-  const whatsappNumber = settings?.whatsapp?.replace(/[^0-9]/g, '') || '919876543210';
-  const instagramUrl = settings?.instagramUrl || '#';
-  const email_ = settings?.email || 'admin@fquad.com';
 
   const founders = members.filter((m) => m.featured);
   const rest = members.filter((m) => !m.featured);
@@ -19,56 +30,17 @@ export default async function TeamPage() {
       <style dangerouslySetInnerHTML={{ __html: TEAM_STYLES }} />
 
       <div className="page-fade">
-      <nav className="nav nav-solid" id="site-nav">
-        <Link href="/" className="nav-logo" style={{display:'flex',alignItems:'center'}}><img src="/assets/images/fquad-white-logo.svg" alt="F.QUAD" className="site-logo" style={{height:48,width:'auto',display:'block'}} /></Link>
-        <ul className="nav-links">
-          <li><Link href="/">HOME</Link></li>
-          <li><Link href="/about">ABOUT</Link></li>
-          <li className="nav-item">
-            <Link href="/projects">PROJECTS</Link>
-            <div className="nav-dropdown">
-              <Link href="/projects">All Projects</Link>
-              <Link href="/upcoming">Upcoming</Link>
-            </div>
-          </li>
-          <li className="nav-item">
-            <Link href="/team" className="active">STUDIO</Link>
-            <div className="nav-dropdown">
-              <Link href="/team" className="active">Our Team</Link>
-              <Link href="/awards">Awards</Link>
-            </div>
-          </li>
-          <li><Link href="/blog">JOURNAL</Link></li>
-          <li><Link href="/testimonials">TESTIMONIALS</Link></li>
-          <li><Link href="/contact">CONTACT</Link></li>
-        </ul>
-        <button className="hamburger nav-toggle" data-toggle-nav aria-label="Toggle menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round"/></svg>
-        </button>
-        <button className="btn-enquire">ENQUIRE</button>
-      </nav>
-
-      <div className="mobile-menu" id="mobile-menu">
-        <Link href="/">HOME</Link>
-        <Link href="/about">ABOUT</Link>
-        <Link href="/projects">PROJECTS</Link>
-        <Link href="/upcoming">UPCOMING</Link>
-        <Link href="/team">TEAM</Link>
-        <Link href="/awards">AWARDS</Link>
-        <Link href="/blog">JOURNAL</Link>
-        <Link href="/testimonials">TESTIMONIALS</Link>
-        <Link href="/contact">CONTACT</Link>
-      </div>
+      <SiteNav content={nav} active="/team" />
 
       <section className="team-hero">
         <div className="team-hero-content reveal">
-          <div className="eyebrow">THE PEOPLE</div>
-          <h1>Designed by human hands</h1>
+          <div className="eyebrow">{hero.eyebrow}</div>
+          <h1>{hero.title}</h1>
         </div>
       </section>
 
       {members.length === 0 ? (
-        <div className="empty-state">Meet the team — coming soon</div>
+        <div className="empty-state">{hero.emptyState}</div>
       ) : (
         <>
           {founders.length > 0 && (
@@ -89,6 +61,16 @@ export default async function TeamPage() {
                       <div className="founder-name">{member.name}</div>
                       <div className="founder-role">{member.role}</div>
                       {member.bio && <p className="founder-bio">{member.bio}</p>}
+                      {member.linkedIn && (
+                        <a
+                          href={member.linkedIn}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="member-link"
+                        >
+                          LinkedIn ↗
+                        </a>
+                      )}
                     </div>
                   );
                 })}
@@ -114,6 +96,16 @@ export default async function TeamPage() {
                       <div className="team-name">{member.name}</div>
                       <div className="team-role">{member.role}</div>
                       {member.bio && <p className="team-bio">{member.bio}</p>}
+                      {member.linkedIn && (
+                        <a
+                          href={member.linkedIn}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="member-link"
+                        >
+                          LinkedIn ↗
+                        </a>
+                      )}
                     </div>
                   );
                 })}
@@ -123,49 +115,7 @@ export default async function TeamPage() {
         </>
       )}
 
-      <footer>
-        <div className="footer-grid">
-          <div>
-            <img src="/assets/images/fquad-white-logo.svg" alt="F.QUAD" style={{height:40,width:'auto',display:'block',filter:'invert(1) brightness(2)',marginBottom:12}} />
-            <p className="footer-tagline">Architecture &amp; Interior Design Studio, Hyderabad</p>
-            <div className="footer-social">
-              <a href={instagramUrl} target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
-              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">WHATSAPP</a>
-            </div>
-          </div>
-          <div>
-            <div className="footer-nav-heading">STUDIO</div>
-            <ul className="footer-nav-links">
-              <li><Link href="/about">About</Link></li>
-              <li><Link href="/team">Our Team</Link></li>
-              <li><Link href="/awards">Awards &amp; Recognition</Link></li>
-              <li><Link href="/blog">Journal</Link></li>
-            </ul>
-          </div>
-          <div>
-            <div className="footer-nav-heading">PROJECTS</div>
-            <ul className="footer-nav-links">
-              <li><Link href="/projects">All Projects</Link></li>
-              <li><Link href="/upcoming">Upcoming</Link></li>
-              <li><Link href="/projects?category=residential">Residential</Link></li>
-              <li><Link href="/projects?category=commercial">Commercial</Link></li>
-            </ul>
-          </div>
-          <div>
-            <div className="footer-nav-heading">CONTACT</div>
-            <p style={{ fontSize: 13, color: '#6B6560' }}>{email_}</p>
-            <p style={{ fontSize: 13, color: '#6B6560' }}>{settings?.phone || ''}</p>
-            <p style={{ fontSize: 13, color: '#6B6560' }}>{settings?.address || 'Hyderabad, Telangana, India'}</p>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; 2026 F.QUAD Studio. All rights reserved.</p>
-          <div className="footer-bottom-links">
-            <a href="#">PRIVACY</a>
-            <a href="#">SITEMAP</a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter content={footer} settings={footerSettings} />
       </div>
 
       <script dangerouslySetInnerHTML={{ __html: TEAM_SCRIPT }} />
@@ -293,6 +243,8 @@ const TEAM_STYLES = `
   .team-name { font-size: 18px; font-weight: 500; color: var(--black); margin-top: 24px; }
   .team-role { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-light); margin-top: 6px; }
   .team-bio { font-size: 14px; color: var(--grey-dark); line-height: 1.7; margin-top: 12px; }
+  .member-link { display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey-light); margin-top: 12px; text-decoration: none; transition: color 0.2s ease; }
+  .member-link:hover { color: var(--black); }
 
   .image-placeholder { width: 100%; height: 100%; background: #E2DDD8; }
 

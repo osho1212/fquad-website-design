@@ -3,12 +3,12 @@ import Link from "next/link";
 import { Navbar } from "@/components/ui/mini-navbar";
 import { ProjectCarousel } from "@/components/ui/ProjectCarousel";
 import RevealOnScroll from "@/app/components/RevealOnScroll";
-import { pastProjects, type ProjectCategory } from "@/lib/past-projects";
+import { getPastProjects, type ProjectCategory } from "@/lib/past-projects";
+import { getPage } from "@/lib/cms/content";
+import { fill } from "@/lib/cms/schema";
+import { getSiteSettings } from "@/lib/public-content";
 
-const groups: { id: ProjectCategory; label: string }[] = [
-  { id: "residential", label: "Residential" },
-  { id: "commercial", label: "Commercial" },
-];
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Past Projects — F.QUAD Studio",
@@ -16,23 +16,39 @@ export const metadata: Metadata = {
     "Selected work from F.QUAD Studio — residences, showrooms, salons and hospitality interiors shaped by function, craft and considered detail.",
 };
 
-export default function PastProjectsPage() {
+export default async function PastProjectsPage() {
+  const [content, global, pastProjects, settings] = await Promise.all([
+    getPage("past_projects"),
+    getPage("global"),
+    getPastProjects(),
+    getSiteSettings().catch(() => null),
+  ]);
+
+  const hero = content.hero;
+  const groupSettings = content.groups;
+  const detail = content.detail;
+  const cta = content.cta;
+  const groups: { id: ProjectCategory; label: string }[] = groupSettings.items ?? [];
+
+  const email = settings?.email || "admin@fquad.com";
+  const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
+
   return (
     <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      <Navbar />
+      <Navbar content={global.nav} />
 
       {/* ── Page header ─────────────────────────────────────────── */}
       <section className="pt-40 sm:pt-48 pb-16 px-6 sm:px-14 border-b border-white/15">
         <div className="text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-8 uppercase font-medium">
-          SELECTED WORK · {String(pastProjects.length).padStart(2, "0")}{" "}
-          PROJECTS
+          {fill(hero.eyebrow, {
+            count: String(pastProjects.length).padStart(2, "0"),
+          })}
         </div>
         <h1 className="m-0 font-normal uppercase text-4xl sm:text-6xl md:text-7xl leading-[0.96] tracking-tight text-white">
-          Past Projects
+          {hero.title}
         </h1>
         <p className="mt-8 max-w-[58ch] text-base sm:text-lg leading-relaxed text-white/65">
-          A record of spaces we have planned, detailed and delivered — each one
-          shaped by its brief, its site, and the people who use it.
+          {hero.intro}
         </p>
       </section>
 
@@ -50,7 +66,9 @@ export default function PastProjectsPage() {
               </h2>
               <span className="text-[10px] tracking-[0.2em] uppercase text-[#a09d94] whitespace-nowrap">
                 {String(grouped.length).padStart(2, "0")}{" "}
-                {grouped.length === 1 ? "Project" : "Projects"}
+                {grouped.length === 1
+                  ? groupSettings.countSingular
+                  : groupSettings.countPlural}
               </span>
             </div>
 
@@ -69,7 +87,7 @@ export default function PastProjectsPage() {
 
                     {project.altName && (
                       <div className="mt-2 text-sm text-white/40 italic font-sans">
-                        also known as {project.altName}
+                        {detail.altNamePrefix} {project.altName}
                       </div>
                     )}
 
@@ -97,7 +115,7 @@ export default function PastProjectsPage() {
                       href={`/past-projects/${project.slug}`}
                       className="inline-flex items-center mt-9 text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white hover:bg-white hover:text-black text-white transition-all duration-300 uppercase font-medium"
                     >
-                      Explore Project
+                      {groupSettings.exploreLabel}
                     </Link>
                   </div>
 
@@ -119,33 +137,34 @@ export default function PastProjectsPage() {
       <section className="px-6 sm:px-14 py-28 bg-black border-t border-white/15">
         <div className="pb-16 border-b border-white/15">
           <p className="font-display m-0 font-normal uppercase text-3xl sm:text-5xl md:text-6xl leading-tight max-w-[24ch] text-white">
-            Looking to elevate the aesthetic of your space?
+            {cta.heading}
           </p>
           <p className="mt-8 text-base sm:text-lg leading-relaxed text-white/65 max-w-[56ch]">
-            Have a question for us? Let&apos;s talk. For all project enquiries,
-            write to us with a note about your space and what you have in mind.
+            {cta.body}
           </p>
 
           <div className="flex flex-wrap gap-4 mt-12">
             <Link
-              href="/contact"
+              href={cta.contactHref}
               className="text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
             >
-              Contact Us
+              {cta.contactLabel}
             </Link>
-            <a
-              href="mailto:admin@fquad.com?subject=NEW%20PROJECT"
-              className="btn-metallic text-xs uppercase font-medium"
+            {/* Opened by the global data-start-project listener. */}
+            <button
+              type="button"
+              data-start-project="true"
+              className="btn-metallic text-xs uppercase font-medium cursor-pointer"
             >
-              START A PROJECT →
-            </a>
+              {cta.ctaLabel}
+            </button>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between gap-4 pt-10 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-          <span>© 2026 F.QUAD STUDIO · HYDERABAD, TELANGANA, INDIA</span>
-          <a href="mailto:admin@fquad.com" className="hover:text-white">
-            ADMIN@FQUAD.COM
+          <span>© {new Date().getFullYear()} F.QUAD STUDIO · {address.toUpperCase()}</span>
+          <a href={`mailto:${email}`} className="hover:text-white">
+            {email.toUpperCase()}
           </a>
         </div>
       </section>

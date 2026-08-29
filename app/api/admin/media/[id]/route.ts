@@ -2,6 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { deleteMediaFiles } from '@/lib/media';
 
+// The media library is never static: this route lists live uploads and runs
+// image/video processing. Marking it dynamic also keeps `next build` from
+// trying to evaluate it, which times out loading sharp and the ffmpeg binaries.
+export const dynamic = 'force-dynamic';
+
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const { id } = params;
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  const { folderId, alt } = body;
+
+  try {
+    const updated = await prisma.media.update({
+      where: { id },
+      data: {
+        ...(folderId !== undefined ? { folderId: folderId || null } : {}),
+        ...(alt !== undefined ? { alt } : {}),
+      },
+      include: { variants: true },
+    });
+    return NextResponse.json({ media: updated });
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to update media' }, { status: 500 });
+  }
+}
+
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
 

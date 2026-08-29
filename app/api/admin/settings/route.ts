@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   const settings = await prisma.siteSettings.findUnique({
     where: { id: 'default' },
-    include: { logoDark: { include: { variants: true } }, logoLight: { include: { variants: true } }, ogImage: { include: { variants: true } } },
+    include: { ogImage: { include: { variants: true } } },
   });
   return NextResponse.json({ settings });
 }
@@ -18,15 +18,13 @@ export async function PATCH(req: NextRequest) {
   }
 
   const {
-    siteName, email, phone, whatsapp, address, instagramUrl,
-    mapLat, mapLng, metaTitle, metaDescription,
-    logoDarkId, logoLightId, ogImageId,
+    email, phone, whatsapp, address, instagramUrl,
+    mapLat, mapLng, metaTitle, metaDescription, ogImageId,
   } = body;
 
   const settings = await prisma.siteSettings.upsert({
     where: { id: 'default' },
     update: {
-      ...(siteName !== undefined && { siteName }),
       ...(email !== undefined && { email: email || null }),
       ...(phone !== undefined && { phone: phone || null }),
       ...(whatsapp !== undefined && { whatsapp: whatsapp || null }),
@@ -36,19 +34,16 @@ export async function PATCH(req: NextRequest) {
       ...(mapLng !== undefined && { mapLng: mapLng !== null ? Number(mapLng) : null }),
       ...(metaTitle !== undefined && { metaTitle: metaTitle || null }),
       ...(metaDescription !== undefined && { metaDescription: metaDescription || null }),
-      ...(logoDarkId !== undefined && { logoDarkId: logoDarkId || null }),
-      ...(logoLightId !== undefined && { logoLightId: logoLightId || null }),
       ...(ogImageId !== undefined && { ogImageId: ogImageId || null }),
     },
     create: {
       id: 'default',
-      siteName: siteName || 'F.QUAD',
       email, phone, whatsapp, address, instagramUrl,
       mapLat: mapLat !== null && mapLat !== undefined ? Number(mapLat) : null,
       mapLng: mapLng !== null && mapLng !== undefined ? Number(mapLng) : null,
-      metaTitle, metaDescription, logoDarkId, logoLightId, ogImageId,
+      metaTitle, metaDescription, ogImageId,
     },
-    include: { logoDark: { include: { variants: true } }, logoLight: { include: { variants: true } }, ogImage: { include: { variants: true } } },
+    include: { ogImage: { include: { variants: true } } },
   });
 
   return NextResponse.json({ settings });

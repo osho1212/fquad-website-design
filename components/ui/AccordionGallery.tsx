@@ -48,7 +48,7 @@ const LOOP_SETS = 3;
 export default function AccordionGallery({
   items = [],
   defaultIndex = 1,
-  accentColor = "#c39a5f",
+  accentColor = "var(--fq-accent)",
   overlayColor = "#000000",
   textColor = "#ffffff",
   height = 480,

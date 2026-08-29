@@ -1,24 +1,19 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { withDefaults } from "@/lib/cms/schema";
 
 interface StatItem {
-  target: number;
+  value: number;
   suffix: string;
   label: string;
-  isSpecial?: boolean;
 }
-
-const statsData: StatItem[] = [
-  { target: 20, suffix: "+", label: "YEARS" },
-  { target: 500, suffix: "+", label: "PROJECTS", isSpecial: true },
-  { target: 22, suffix: "+", label: "AWARDS" },
-];
 
 function StatCard({ item }: { item: StatItem }) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const hasAnimated = useRef(false);
+  const target = Number(item.value) || 0;
 
   useEffect(() => {
     const el = ref.current;
@@ -33,7 +28,7 @@ function StatCard({ item }: { item: StatItem }) {
           const step = (t: number) => {
             const p = Math.min(1, (t - t0) / dur);
             const e = 1 - Math.pow(1 - p, 3);
-            setCount(Math.round(item.target * e));
+            setCount(Math.round(target * e));
             if (p < 1) requestAnimationFrame(step);
           };
           requestAnimationFrame(step);
@@ -44,7 +39,7 @@ function StatCard({ item }: { item: StatItem }) {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [item.target]);
+  }, [target]);
 
   return (
     <div ref={ref} className="py-14 first:pl-0 pl-6 sm:pl-9 first:border-l-0 border-l border-white/15">
@@ -59,11 +54,16 @@ function StatCard({ item }: { item: StatItem }) {
   );
 }
 
-export function StatsSection() {
+export function StatsSection({ content }: { content?: Record<string, any> }) {
+  const c = withDefaults("home", "stats", content);
+  const items: StatItem[] = c.items ?? [];
+
+  if (items.length === 0) return null;
+
   return (
     <section className="px-6 sm:px-11 bg-black">
       <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-white/15">
-        {statsData.map((item, idx) => (
+        {items.map((item, idx) => (
           <StatCard key={idx} item={item} />
         ))}
       </div>

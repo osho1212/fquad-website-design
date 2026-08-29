@@ -22,7 +22,7 @@ const defaultSlides: SlideData[] = [
     subtitle: 'Purposeful & Ergonomic Architecture',
     description:
       'We believe every design should serve a purpose. Our spaces are planned to be efficient, comfortable, and intuitive while maintaining a strong aesthetic identity.',
-    accent: '#C39A5F',
+    accent: '#B5B5B5',
     imageUrl: '/assets/images/b21.jpg',
   },
   {
@@ -52,7 +52,7 @@ const defaultSlides: SlideData[] = [
     subtitle: 'Adaptable Living & Timeless Spatial Balance',
     description:
       'Spaces evolve as lifestyles change. Our layouts are adaptable, allowing rooms to shift between work, entertaining, and quiet contemplation with ease.',
-    accent: '#D4A955',
+    accent: '#C4C4C4',
     imageUrl: '/assets/images/b25.jpg',
   },
   {
@@ -62,7 +62,7 @@ const defaultSlides: SlideData[] = [
     subtitle: 'Four Faces · One Unified Practice',
     description:
       'The culmination of our philosophy. Functionality, Futuristic vision, Friendly collaboration, and Flexibility converge into purposeful, enduring spaces.',
-    accent: '#E6C687',
+    accent: '#D8D8D8',
     imageUrl: '/assets/images/b22.jpg',
   },
 ];

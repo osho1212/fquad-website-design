@@ -37,16 +37,10 @@ model Media {
   createdAt DateTime       @default(now())
 
   // back-relations from places that reference media
-  projectCovers ProjectMedia[] @relation("ProjectGalleryMedia")
-  coveredBy     Project[]      @relation("ProjectCover")
-  logoDarkFor   SiteSettings[] @relation("LogoDark")
-  logoLightFor  SiteSettings[] @relation("LogoLight")
   ogImageFor    SiteSettings[] @relation("OgImage")
   testimonials  Testimonial[]
   teamMembers   TeamMember[]
   blogPosts     BlogPost[]
-  heroSlides    HeroSlide[]
-  projectTestimonials ProjectTestimonial[]
   folderId      String?
   folder        MediaFolder?   @relation("FolderMedia", fields: [folderId], references: [id])
 }
@@ -54,7 +48,6 @@ model Media {
 model MediaFolder {
   id        String   @id @default(cuid())
   name      String
-  projectId String?
   media     Media[]  @relation("FolderMedia")
   createdAt DateTime @default(now())
 }
@@ -72,72 +65,15 @@ model MediaVariant {
   @@unique([mediaId, label])
 }
 
-// ============ PROJECTS ============
-
-model Category {
-  id       String    @id @default(cuid())
-  name     String    @unique // "Residential", "Commercial", "Hospitality", "Landscape"
-  slug     String    @unique
-  order    Int       @default(0)
-  projects Project[]
-}
-
-model MainCategory {
-  id       String    @id @default(cuid())
-  name     String
-  slug     String    @unique
-  order    Int       @default(0)
-  projects Project[]
-}
-
-model Project {
-  id            String         @id @default(cuid())
-  title         String
-  slug          String         @unique
-  category      Category       @relation(fields: [categoryId], references: [id])
-  categoryId    String
-  mainCategoryId   String?
-  mainCategory     MainCategory? @relation(fields: [mainCategoryId], references: [id])
-  subCategory      String?
-  shortDescription String?
-  clientName       String?
-  clientAddress    String?
-  hasInteriors     Boolean @default(false)
-  hasArchitecture  Boolean @default(false)
-  linkedProjectId  String?
-  location      String?
-  mapLat        Float?
-  mapLng        Float?
-  showLocation  Boolean        @default(false)
-  year          Int?
-  description   String?
-  coverMediaId  String?
-  coverMedia    Media?         @relation("ProjectCover", fields: [coverMediaId], references: [id])
-  gallery       ProjectMedia[]
-  testimonials  ProjectTestimonial[]
-  featured      Boolean        @default(false)
-  published     Boolean        @default(true)
-  status        String         @default("PUBLISHED")
-  order         Int            @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-}
-model ProjectMedia {
-  id        String  @id @default(cuid())
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  mediaId   String
-  media     Media   @relation("ProjectGalleryMedia", fields: [mediaId], references: [id])
-  order     Int     @default(0)
-  areaLabel String?
-}
-
 // ============ PAGE CONTENT ============
-// One row per editable block. `data` shapes are documented in lib/content-types.ts
+// One row per edited CMS section. A section with no row renders the defaults
+// declared in lib/cms/pages/*, so this table holds edits only — never the
+// shipped copy. Valid page and section keys, and the shape of `data`, are
+// defined by that same registry.
 
 model PageContent {
-  page      String // "home" | "projects" | "about" | "services" | "contact"
-  section   String // "hero" | "stats" | "portfolio_intro" | "services" | "process" | "testimonial" | "cta" | "banner"
+  page      String // matches a PageDef.key   in lib/cms/pages/*
+  section   String // matches a SectionDef.key of that page
   data      String // JSON string (SQLite has no native JSON type)
   updatedAt DateTime @updatedAt
 
@@ -148,11 +84,6 @@ model PageContent {
 
 model SiteSettings {
   id              String  @id @default("default")
-  siteName        String  @default("F.QUAD")
-  logoDarkId      String?
-  logoDark        Media?  @relation("LogoDark", fields: [logoDarkId], references: [id])
-  logoLightId     String?
-  logoLight       Media?  @relation("LogoLight", fields: [logoLightId], references: [id])
   email           String?
   phone           String?
   whatsapp        String?
@@ -177,7 +108,7 @@ model Enquiry {
   createdAt DateTime @default(now())
 }
 
-// ============ TESTIMONIALS / AWARDS / TEAM / BLOG ============
+// ============ TESTIMONIALS / AWARDS / TEAM / JOURNAL ============
 
 model Testimonial {
   id          String   @id @default(cuid())
@@ -189,18 +120,6 @@ model Testimonial {
   featured    Boolean  @default(false)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
-}
-
-model ProjectTestimonial {
-  id              String   @id @default(cuid())
-  projectId       String
-  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  clientName      String
-  clientAddress   String?
-  testimonialText String
-  mediaId         String?
-  media           Media?   @relation(fields: [mediaId], references: [id])
-  createdAt       DateTime @default(now())
 }
 
 model Award {
@@ -222,15 +141,6 @@ model TeamMember {
   media     Media?   @relation(fields: [mediaId], references: [id])
   featured  Boolean  @default(false)
   order     Int      @default(0)
-  createdAt DateTime @default(now())
-}
-
-model HeroSlide {
-  id        String   @id @default(cuid())
-  mediaId   String
-  media     Media    @relation(fields: [mediaId], references: [id])
-  order     Int      @default(0)
-  active    Boolean  @default(true)
   createdAt DateTime @default(now())
 }
 

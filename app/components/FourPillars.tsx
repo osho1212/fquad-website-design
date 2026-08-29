@@ -2,30 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-const pillars = [
-  {
-    num: '01',
-    title: 'FUNCTIONAL',
-    desc: 'We believe every design should serve a purpose. Our spaces are planned to be efficient, comfortable, and intuitive while maintaining a strong aesthetic identity.',
-  },
-  {
-    num: '02',
-    title: 'FUTURISTIC',
-    desc: 'We design with longevity in mind, creating spaces that adapt to changing lifestyles, technologies, and future needs.',
-  },
-  {
-    num: '03',
-    title: 'FRIENDLY',
-    desc: 'Collaboration is central to our process. We value open communication, transparency, and lasting relationships with every client.',
-  },
-  {
-    num: '04',
-    title: 'FLEXIBLE',
-    desc: 'Every project is unique. Our ability to adapt, experiment, and respond to different styles and requirements allows us to deliver truly personalized design solutions.',
-  },
-];
+export interface Pillar {
+  num: string;
+  title: string;
+  desc: string;
+}
 
-export default function FourPillars() {
+export default function FourPillars({ pillars = [] }: { pillars?: Pillar[] }) {
   const [flipped, setFlipped] = useState<number[]>([]);
   const [aligned, setAligned] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,10 +32,13 @@ export default function FourPillars() {
     );
   };
 
+  // Cards fan out from the centre before snapping into a row. Spacing is
+  // derived from the count so the effect survives adding or removing a pillar.
   const getInitialTranslate = (i: number) => {
     if (aligned) return 'translateX(0)';
-    const offsets = ['-130%', '-43%', '43%', '130%'];
-    return `translateX(${offsets[i]})`;
+    const spread = 87;
+    const offset = (i - (pillars.length - 1) / 2) * spread;
+    return `translateX(${offset}%)`;
   };
 
   return (

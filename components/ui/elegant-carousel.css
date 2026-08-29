@@ -72,7 +72,7 @@
 .carousel-num-line {
   width: 32px;
   height: 2px;
-  background: #c39a5f;
+  background: var(--fq-accent);
   transition: background 0.5s ease;
 }
 
@@ -200,8 +200,8 @@
 
 .carousel-arrow-btn:hover {
   background: rgba(255, 255, 255, 0.15);
-  border-color: #c39a5f;
-  color: #c39a5f;
+  border-color: var(--fq-accent);
+  color: var(--fq-accent);
   transform: scale(1.05);
 }
 
@@ -388,9 +388,9 @@
    those few rules need !important to win.
    ───────────────────────────────────────────────────────────────────────── */
 [data-theme='light'] .carousel-wrapper {
-  /* Composites to ~#e5e5e5 on the white page — reads as light grey rather
-     than blending into the background the way #ededed/0.92 did. */
-  background: rgba(228, 228, 228, 0.95);
+  /* A darker, more assertive grey card than the previous ~#e5e5e5 — reads
+     as a distinct panel against the white page rather than barely-there. */
+  background: rgba(180, 180, 180, 0.95);
   border-color: rgba(17, 17, 17, 0.16);
 }
 
@@ -409,11 +409,11 @@
 }
 
 [data-theme='light'] .carousel-num-text {
-  color: #575757; /* 6.2:1 */
+  color: #464646; /* 4.75:1 on the darker card background */
 }
 
 [data-theme='light'] .carousel-progress-label {
-  color: #5f5f5f; /* 5.5:1 */
+  color: #474747; /* 4.67:1 on the darker card background */
 }
 
 [data-theme='light'] .carousel-progress-item.active .carousel-progress-label,
@@ -421,17 +421,19 @@
   color: #111111;
 }
 
-/* Slide accents are pale golds — unreadable on light grey — so subtitles and
-   rules take a darkened brass instead. */
+/* Slide accents are pale neutrals — unreadable on light grey — so the
+   subtitle takes a fixed dark grey instead. This is a literal value, not
+   --fq-accent, because that token is shared site-wide and darkening it here
+   would darken it everywhere else too. */
 [data-theme='light'] .carousel-subtitle {
-  color: #7a5c2e !important; /* 5.3:1 */
+  color: #1a1a1a !important; /* 9.7:1 on the darker card background */
 }
 [data-theme='light'] .carousel-num-line,
 [data-theme='light'] .carousel-progress-fill {
-  background: #7a5c2e !important;
+  background: var(--fq-accent) !important;
 }
 [data-theme='light'] .carousel-frame-corner {
-  border-color: #7a5c2e !important;
+  border-color: var(--fq-accent) !important;
 }
 
 [data-theme='light'] .carousel-arrow-btn {
@@ -441,8 +443,8 @@
 }
 [data-theme='light'] .carousel-arrow-btn:hover {
   background: rgba(17, 17, 17, 0.12);
-  border-color: #7a5c2e;
-  color: #7a5c2e;
+  border-color: var(--fq-accent);
+  color: var(--fq-accent);
 }
 
 [data-theme='light'] .carousel-progress-track {

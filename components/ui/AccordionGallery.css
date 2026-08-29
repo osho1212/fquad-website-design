@@ -1,5 +1,5 @@
 .accordion-gallery {
-  --ag-accent: #c39a5f;
+  --ag-accent: var(--fq-accent);
   --ag-overlay: #000000;
   --ag-text: #ffffff;
   --ag-gap: 12px;
@@ -72,8 +72,8 @@
 }
 
 .ag-nav:hover {
-  background: var(--ag-accent, #c39a5f);
-  border-color: var(--ag-accent, #c39a5f);
+  background: var(--ag-accent, #c0c0c0);
+  border-color: var(--ag-accent, #c0c0c0);
   color: #000;
 }
 

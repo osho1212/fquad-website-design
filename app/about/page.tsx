@@ -1,6 +1,9 @@
 import Link from 'next/link';
+import { SiteNav } from '@/components/ui/SiteNav';
+import { SiteFooter } from '@/components/ui/SiteFooter';
 import dynamic from 'next/dynamic';
 import { getSiteSettings } from '@/lib/public-content';
+import { getPage } from '@/lib/cms/content';
 import CountUp from '../components/CountUp';
 
 // ssr:false is not permitted for next/dynamic inside a Server Component — this page
@@ -11,91 +14,81 @@ const RevealOnScroll = dynamic(() => import('@/app/components/RevealOnScroll'));
 
 export const revalidate = 60;
 
-const STATS = [
-  { number: 20, suffix: '+', label: 'Years of Experience' },
-  { number: 500, suffix: '+', label: 'Projects Completed' },
-  { number: 22, suffix: '+', label: 'Design Awards' },
-];
+interface Stat {
+  number: number;
+  suffix: string;
+  label: string;
+}
 
-const AWARDS = ['IIID', 'ELDORK India Architecture Awards', 'Surfaces Reporter', 'Times Design Icons South'];
+interface Founder {
+  name: string;
+  role: string;
+  portrait: string;
+  bio: string;
+}
 
 export default async function AboutPage() {
-  const settings = await getSiteSettings();
-  const whatsappNumber = settings?.whatsapp?.replace(/[^0-9]/g, '') || '919876543210';
-  const instagramUrl = settings?.instagramUrl || '#';
-  const email_ = settings?.email || 'admin@fquad.com';
+  const [settings, content, globalContent] = await Promise.all([
+    getSiteSettings(),
+    getPage('about'),
+    getPage('global'),
+  ]);
+
+  const nav = globalContent.page_nav;
+  const footer = globalContent.page_footer;
+  const footerSettings = {
+    email: settings?.email ?? null,
+    phone: settings?.phone ?? null,
+    address: settings?.address ?? null,
+    instagramUrl: settings?.instagramUrl ?? null,
+    whatsapp: settings?.whatsapp ?? null,
+  };
+
+  const hero = content.hero;
+  const intro = content.intro;
+  const statsSection = content.stats;
+  const story = content.story;
+  const pillars = content.pillars;
+  const founders = content.founders;
+  const recognition = content.recognition;
+  const closing = content.closing;
+
+  const stats: Stat[] = statsSection.items ?? [];
+  const awards: string[] = recognition.items ?? [];
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: ABOUT_STYLES }} />
 
       <div className="page-fade">
-      <nav className="nav nav-solid" id="site-nav">
-        <Link href="/" className="nav-logo" style={{display:'flex',alignItems:'center'}}><img src="/assets/images/fquad-white-logo.svg" alt="F.QUAD" className="site-logo" style={{height:48,width:'auto',display:'block'}} /></Link>
-        <ul className="nav-links">
-          <li><Link href="/">HOME</Link></li>
-          <li><Link href="/about" className="active">ABOUT</Link></li>
-          <li className="nav-item">
-            <Link href="/projects">PROJECTS</Link>
-            <div className="nav-dropdown">
-              <Link href="/projects">All Projects</Link>
-              <Link href="/upcoming">Upcoming</Link>
-            </div>
-          </li>
-          <li className="nav-item">
-            <Link href="/team">STUDIO</Link>
-            <div className="nav-dropdown">
-              <Link href="/team">Our Team</Link>
-              <Link href="/awards">Awards</Link>
-            </div>
-          </li>
-          <li><Link href="/blog">JOURNAL</Link></li>
-          <li><Link href="/testimonials">TESTIMONIALS</Link></li>
-          <li><Link href="/contact">CONTACT</Link></li>
-        </ul>
-        <button className="hamburger nav-toggle" data-toggle-nav aria-label="Toggle menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round"/></svg>
-        </button>
-        <button className="btn-enquire">ENQUIRE</button>
-      </nav>
-
-      <div className="mobile-menu" id="mobile-menu">
-        <Link href="/">HOME</Link>
-        <Link href="/about">ABOUT</Link>
-        <Link href="/projects">PROJECTS</Link>
-        <Link href="/upcoming">UPCOMING</Link>
-        <Link href="/team">TEAM</Link>
-        <Link href="/awards">AWARDS</Link>
-        <Link href="/blog">JOURNAL</Link>
-        <Link href="/testimonials">TESTIMONIALS</Link>
-        <Link href="/contact">CONTACT</Link>
-      </div>
+      <SiteNav content={nav} active="/about" />
 
       <section className="about-hero">
         <div className="about-hero-texture" />
         <div className="about-hero-content reveal">
-          <div className="about-hero-eyebrow">FOUNDED 2005 · HYDERABAD · AWARD-WINNING STUDIO</div>
+          <div className="about-hero-eyebrow">{hero.eyebrow}</div>
           <h1>
-            <span style={{ display: 'block', color: '#FAFAF8' }}>Designing Spaces That Work Today</span>
-            <span style={{ display: 'block', color: '#9C9488' }}>and Evolve for Tomorrow.</span>
+            <span style={{ display: 'block', color: '#FAFAF8' }}>{hero.titleLine1}</span>
+            <span style={{ display: 'block', color: '#9C9488' }}>{hero.titleLine2}</span>
           </h1>
-          <p className="about-hero-subtitle">F.Quad Studio is an award-winning architecture and interior design practice built on the principles of Functionality, Futuristic thinking, Friendly collaboration, and Flexibility.</p>
+          <p className="about-hero-subtitle">{hero.subtitle}</p>
         </div>
       </section>
 
       <RevealOnScroll delay={0}>
         <section className="about-intro">
-          <div className="about-intro-lead reveal">Founded in 2005, F.Quad Studio is an award-winning architecture and interior design practice based in Hyderabad.</div>
+          <div className="about-intro-lead reveal">{intro.lead}</div>
           <div className="about-intro-copy reveal">
-            <p>Over the past two decades, we have delivered more than 500 residential, commercial, hospitality, retail, and institutional projects, combining thoughtful design with practical solutions and a client-first approach.</p>
-            <p>Built on the principles of Functionality, Futuristic thinking, Friendly collaboration, and Flexibility, we create spaces that are purposeful, timeless, and tailored to the people who use them.</p>
+            {(intro.body as string[]).map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
           </div>
         </section>
       </RevealOnScroll>
 
       <RevealOnScroll delay={0.1}>
         <div className="about-stats reveal">
-          {STATS.map((s, i) => (
+          {stats.map((s, i) => (
             <div className="about-stat" key={i}>
               <div className="about-stat-num"><CountUp end={s.number} suffix={s.suffix} /></div>
               <div className="about-stat-label">{s.label}</div>
@@ -104,57 +97,61 @@ export default async function AboutPage() {
         </div>
       </RevealOnScroll>
 
-      <div className="about-services-line">
-        Residential&nbsp;&nbsp;•&nbsp;&nbsp;Commercial&nbsp;&nbsp;•&nbsp;&nbsp;Retail&nbsp;&nbsp;•&nbsp;&nbsp;Hospitality&nbsp;&nbsp;•&nbsp;&nbsp;Institutional
-      </div>
+      <div className="about-services-line">{statsSection.sectorLine}</div>
 
       <RevealOnScroll delay={0.2}>
         <section className="about-story">
-          <div className="about-story-eyebrow reveal">OUR STORY</div>
-          <h2 className="about-story-title reveal">F.Quad Studio began with a simple belief—</h2>
-          <p className="about-story-p reveal">that great design should be functional, meaningful, and built around people. Founded by Amit Shah and Ashmi Shah in 2005, the practice has grown into one of Hyderabad&apos;s leading architecture and interior design studios.</p>
-          <p className="about-story-p reveal">Our work is shaped by curiosity, collaboration, and a willingness to explore diverse design languages while staying true to functionality. Every project is approached with fresh thinking, ensuring each space reflects its purpose, context, and the aspirations of its users.</p>
+          <div className="about-story-eyebrow reveal">{story.eyebrow}</div>
+          <h2 className="about-story-title reveal">{story.title}</h2>
+          {(story.body as string[]).map((para, i) => (
+            <p className="about-story-p reveal" key={i}>{para}</p>
+          ))}
         </section>
       </RevealOnScroll>
 
       <section className="about-pillars">
-        <div className="about-pillars-eyebrow">WHAT&apos;S BEHIND THE NAME</div>
-        <h2 className="about-pillars-title">THE FOUR F&apos;s</h2>
-        <FourPillars />
+        <div className="about-pillars-eyebrow">{pillars.eyebrow}</div>
+        <h2 className="about-pillars-title">{pillars.title}</h2>
+        <FourPillars pillars={pillars.items} />
       </section>
 
       <RevealOnScroll delay={0.3}>
         <section className="about-founders">
-          <div className="about-founders-eyebrow reveal">MEET THE FOUNDERS</div>
+          <div className="about-founders-eyebrow reveal">{founders.eyebrow}</div>
           <div className="about-founders-grid stagger">
-            <div className="about-founder-card reveal">
-              <div className="about-founder-photo" />
-              <div className="about-founder-name">Amit Shah</div>
-              <div className="about-founder-role">Principal Architect</div>
-              <div className="about-founder-divider" />
-              <p className="about-founder-bio">20+ years of architectural experience with expertise across residential, commercial, and institutional projects. Amit believes in creating spaces that balance innovation with functionality and is a regular speaker at leading architecture and design forums. His passion for design is complemented by his love for art, travel, and adventure.</p>
-            </div>
-            <div className="about-founder-card reveal">
-              <div className="about-founder-photo" />
-              <div className="about-founder-name">Ashmi Shah</div>
-              <div className="about-founder-role">Principal Interior Designer</div>
-              <div className="about-founder-divider" />
-              <p className="about-founder-bio">An accomplished interior designer with over two decades of experience, Ashmi focuses on creating client-centric interiors that seamlessly blend aesthetics with functionality. Beyond design, she actively champions accessibility, sustainability, and climate-conscious practices through her leadership initiatives.</p>
-            </div>
+            {(founders.people as Founder[]).map((person, i) => (
+              <div className="about-founder-card reveal" key={i}>
+                {person.portrait ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className="about-founder-photo"
+                    src={person.portrait}
+                    alt={person.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                ) : (
+                  <div className="about-founder-photo" />
+                )}
+                <div className="about-founder-name">{person.name}</div>
+                <div className="about-founder-role">{person.role}</div>
+                <div className="about-founder-divider" />
+                <p className="about-founder-bio">{person.bio}</p>
+              </div>
+            ))}
           </div>
         </section>
       </RevealOnScroll>
 
       <RevealOnScroll delay={0.4}>
         <section className="about-recognition">
-          <div className="about-recognition-eyebrow reveal">RECOGNITION</div>
+          <div className="about-recognition-eyebrow reveal">{recognition.eyebrow}</div>
           <h2 className="about-recognition-title reveal">
-            <span style={{ display: 'block' }}>Work That Speaks</span>
-            <span style={{ display: 'block' }}>For Itself.</span>
+            <span style={{ display: 'block' }}>{recognition.titleLine1}</span>
+            <span style={{ display: 'block' }}>{recognition.titleLine2}</span>
           </h2>
-          <p className="about-recognition-intro reveal">Over the years, our work has been recognised by some of the industry&apos;s most respected institutions.</p>
+          <p className="about-recognition-intro reveal">{recognition.intro}</p>
           <div className="about-awards-list stagger">
-            {AWARDS.map((a, i) => (
+            {awards.map((a, i) => (
               <div className="about-award-row reveal" key={i}>
                 <span className="about-award-dash">—</span>
                 <span className="about-award-name">{a}</span>
@@ -166,58 +163,16 @@ export default async function AboutPage() {
 
       <RevealOnScroll delay={0.5}>
         <section className="about-closing">
-          <p className="about-closing-main reveal">At F.Quad Studio, every project is an opportunity to create spaces that inspire, perform, and endure.</p>
-          <p className="about-closing-sub reveal">Whether designing a home, workplace, retail environment, or public space, our focus remains the same—to deliver thoughtful design that reflects our clients&apos; vision and stands the test of time.</p>
+          <p className="about-closing-main reveal">{closing.statement}</p>
+          <p className="about-closing-sub reveal">{closing.body}</p>
           <div className="about-closing-buttons reveal">
-            <Link href="/projects" className="about-btn-outline">VIEW OUR WORK</Link>
-            <Link href="#start-project" data-start-project="true" className="about-btn-solid">START A PROJECT</Link>
+            <Link href={closing.primaryHref} className="about-btn-outline">{closing.primaryLabel}</Link>
+            <Link href="#start-project" data-start-project="true" className="about-btn-solid">{closing.secondaryLabel}</Link>
           </div>
         </section>
       </RevealOnScroll>
 
-      <footer style={{ background: '#1E1E1E', color: '#FAFAF8', padding: 'var(--gap-xxl) var(--margin-desktop)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--gap-xxl)', marginBottom: 'var(--gap-xxl)' }}>
-          <div>
-            <img src="/assets/images/fquad-white-logo.svg" alt="F.QUAD" style={{height:40,width:'auto',display:'block',filter:'invert(1) brightness(2)',marginBottom:12}} />
-            <p style={{ fontSize: 13, color: '#6B6560', marginTop: 'var(--gap-md)' }}>Architecture &amp; Interior Design Studio, Hyderabad</p>
-            <div className="footer-social">
-              <a href={instagramUrl} target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
-              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">WHATSAPP</a>
-            </div>
-          </div>
-          <div>
-            <div className="footer-nav-heading">STUDIO</div>
-            <ul className="footer-nav-links">
-              <li><Link href="/about">About</Link></li>
-              <li><Link href="/team">Our Team</Link></li>
-              <li><Link href="/awards">Awards &amp; Recognition</Link></li>
-              <li><Link href="/blog">Journal</Link></li>
-            </ul>
-          </div>
-          <div>
-            <div className="footer-nav-heading">PROJECTS</div>
-            <ul className="footer-nav-links">
-              <li><Link href="/projects">All Projects</Link></li>
-              <li><Link href="/upcoming">Upcoming</Link></li>
-              <li><Link href="/projects?category=residential">Residential</Link></li>
-              <li><Link href="/projects?category=commercial">Commercial</Link></li>
-            </ul>
-          </div>
-          <div>
-            <div className="footer-nav-heading">CONTACT</div>
-            <p style={{ fontSize: 13, color: '#6B6560' }}>{email_}</p>
-            <p style={{ fontSize: 13, color: '#6B6560' }}>{settings?.phone || ''}</p>
-            <p style={{ fontSize: 13, color: '#6B6560' }}>{settings?.address || 'Hyderabad, Telangana, India'}</p>
-          </div>
-        </div>
-        <div style={{ borderTop: '0.5px solid #2C2C2C', paddingTop: 'var(--gap-lg)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--gap-lg)', fontSize: 11, color: '#6B6560', letterSpacing: '0.08em' }}>
-          <p>&copy; 2026 F.QUAD Studio. All rights reserved.</p>
-          <div style={{ display: 'flex', gap: 'var(--gap-xxl)' }}>
-            <a href="#">PRIVACY</a>
-            <a href="#">SITEMAP</a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter content={footer} settings={footerSettings} />
       </div>
 
       <script dangerouslySetInnerHTML={{ __html: ABOUT_SCRIPT }} />

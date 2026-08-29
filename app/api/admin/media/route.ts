@@ -6,6 +6,11 @@ import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { processImage, processVideo, deleteMediaFiles } from '@/lib/media';
 
+// The media library is never static: this route lists live uploads and runs
+// image/video processing. Marking it dynamic also keeps `next build` from
+// trying to evaluate it, which times out loading sharp and the ffmpeg binaries.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const media = await prisma.media.findMany({
     include: { variants: true },

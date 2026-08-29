@@ -5,7 +5,6 @@ import MediaPicker, { thumbFor, type MediaItem } from '../components/MediaPicker
 import LocationPicker from '../components/LocationPicker';
 
 interface Settings {
-  siteName: string;
   email: string;
   phone: string;
   whatsapp: string;
@@ -15,16 +14,11 @@ interface Settings {
   mapLng: number | null;
   metaTitle: string;
   metaDescription: string;
-  logoDarkId: string | null;
-  logoLightId: string | null;
   ogImageId: string | null;
-  logoDark: MediaItem | null;
-  logoLight: MediaItem | null;
   ogImage: MediaItem | null;
 }
 
 const empty: Settings = {
-  siteName: 'F.QUAD',
   email: '',
   phone: '',
   whatsapp: '',
@@ -34,11 +28,7 @@ const empty: Settings = {
   mapLng: null,
   metaTitle: '',
   metaDescription: '',
-  logoDarkId: null,
-  logoLightId: null,
   ogImageId: null,
-  logoDark: null,
-  logoLight: null,
   ogImage: null,
 };
 
@@ -47,7 +37,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [pickerFor, setPickerFor] = useState<'logoDark' | 'logoLight' | 'ogImage' | null>(null);
+  const [pickerFor, setPickerFor] = useState<'ogImage' | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -55,7 +45,6 @@ export default function SettingsPage() {
       .then((data) => {
         if (data.settings) {
           setSettings({
-            siteName: data.settings.siteName || 'F.QUAD',
             email: data.settings.email || '',
             phone: data.settings.phone || '',
             whatsapp: data.settings.whatsapp || '',
@@ -65,11 +54,7 @@ export default function SettingsPage() {
             mapLng: data.settings.mapLng,
             metaTitle: data.settings.metaTitle || '',
             metaDescription: data.settings.metaDescription || '',
-            logoDarkId: data.settings.logoDarkId,
-            logoLightId: data.settings.logoLightId,
             ogImageId: data.settings.ogImageId,
-            logoDark: data.settings.logoDark,
-            logoLight: data.settings.logoLight,
             ogImage: data.settings.ogImage,
           });
         }
@@ -83,13 +68,7 @@ export default function SettingsPage() {
   }
 
   function handleMediaSelected(item: MediaItem) {
-    if (pickerFor === 'logoDark') {
-      update('logoDarkId', item.id);
-      update('logoDark', item);
-    } else if (pickerFor === 'logoLight') {
-      update('logoLightId', item.id);
-      update('logoLight', item);
-    } else if (pickerFor === 'ogImage') {
+    if (pickerFor === 'ogImage') {
       update('ogImageId', item.id);
       update('ogImage', item);
     }
@@ -104,7 +83,6 @@ export default function SettingsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          siteName: settings.siteName,
           email: settings.email || null,
           phone: settings.phone || null,
           whatsapp: settings.whatsapp || null,
@@ -114,8 +92,6 @@ export default function SettingsPage() {
           mapLng: settings.mapLng,
           metaTitle: settings.metaTitle || null,
           metaDescription: settings.metaDescription || null,
-          logoDarkId: settings.logoDarkId,
-          logoLightId: settings.logoLightId,
           ogImageId: settings.ogImageId,
         }),
       });
@@ -134,8 +110,8 @@ export default function SettingsPage() {
     <div style={{ maxWidth: 720 }}>
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>Settings</h1>
       <p style={{ color: '#7A7870', fontSize: 15, marginBottom: 32, lineHeight: 1.7 }}>
-        Site-wide contact info, social links, branding, and SEO defaults — used across
-        every page.
+        Site-wide contact info, social links, and SEO defaults — used across
+        every page. Logos live in Website Content → Navigation &amp; Footer.
       </p>
 
       <SectionBlock title="Contact Info">
@@ -166,18 +142,6 @@ export default function SettingsPage() {
             if (address) update('address', address);
           }}
         />
-      </SectionBlock>
-
-      <SectionBlock title="Branding">
-        <Field label="SITE NAME">
-          <input style={inputStyle} value={settings.siteName} onChange={(e) => update('siteName', e.target.value)} />
-        </Field>
-        <Field label="LOGO — DARK (for light backgrounds)">
-          <MediaSlot item={settings.logoDark} onChoose={() => setPickerFor('logoDark')} />
-        </Field>
-        <Field label="LOGO — LIGHT (for dark/transparent backgrounds)">
-          <MediaSlot item={settings.logoLight} onChoose={() => setPickerFor('logoLight')} />
-        </Field>
       </SectionBlock>
 
       <SectionBlock title="SEO Defaults">

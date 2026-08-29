@@ -5,27 +5,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { withDefaults } from "@/lib/cms/schema";
 
 interface NavLink {
   label: string;
   href: string;
 }
 
-const defaultLinks: NavLink[] = [
-  { label: "WORK", href: "/#work" },
-  { label: "SERVICES", href: "/services" },
-  { label: "STUDIO", href: "/studio" },
-  { label: "PROJECTS", href: "/past-projects" },
-  { label: "CONTACT", href: "/contact" },
-];
-
 /**
  * A link is active when the current path matches its route (including nested
  * routes such as /past-projects/[slug]). Hash links only count on the homepage.
  */
 function isLinkActive(link: NavLink, pathname: string): boolean {
-  if (link.href.startsWith("/#")) {
-    return pathname === "/" && link.label === "WORK";
+  if (link.href.startsWith("/#") || link.href.startsWith("#")) {
+    return pathname === "/";
   }
   return pathname === link.href || pathname.startsWith(`${link.href}/`);
 }
@@ -70,7 +63,16 @@ const AnimatedNavLink = ({
   );
 };
 
-export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
+export function Navbar({
+  content,
+  links,
+}: {
+  content?: Record<string, any>;
+  /** Overrides the CMS links — used where a page needs its own menu. */
+  links?: NavLink[];
+}) {
+  const c = withDefaults("global", "nav", content);
+  const navLinks: NavLink[] = links ?? c.links ?? [];
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -107,8 +109,8 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
         aria-label="F.QUAD Home"
       >
         <img
-          src="/assets/images/fquad-icon.svg"
-          alt="F.QUAD Logo"
+          src={c.logo}
+          alt={c.logoAlt}
           className="w-7 h-7 sm:w-8 sm:h-8 object-contain block group-hover:scale-105 transition-transform drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
         />
       </Link>
@@ -118,7 +120,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
         className="pointer-events-auto hidden md:inline-flex items-center gap-1 px-1.5 py-1 bg-[#121212]/80 backdrop-blur-2xl border border-white/20 rounded-none shadow-[0_6px_30px_rgba(0,0,0,0.5)] absolute left-1/2 -translate-x-1/2 font-display"
         style={{ fontFamily: "var(--font-good-times)" }}
       >
-        {links.map((link) => (
+        {navLinks.map((link) => (
           <AnimatedNavLink
             key={link.label}
             href={link.href}
@@ -138,7 +140,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
           className="btn-metallic hidden sm:inline-flex text-[9.5px] py-2 px-5 tracking-[0.18em] rounded-none font-display cursor-pointer"
           style={{ fontFamily: "var(--font-good-times)" }}
         >
-          START A PROJECT
+          {c.ctaLabel}
         </button>
 
         {/* Mobile Hamburger Button */}
@@ -188,7 +190,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
         }`}
         style={{ fontFamily: "var(--font-good-times)" }}
       >
-        {links.map((link) => (
+        {navLinks.map((link) => (
           <Link
             key={link.label}
             href={link.href}
@@ -210,7 +212,7 @@ export function Navbar({ links = defaultLinks }: { links?: NavLink[] }) {
           }}
           className="btn-metallic w-full text-center mt-2 text-[10px] py-2.5 rounded-none cursor-pointer"
         >
-          START A PROJECT
+          {c.ctaLabel}
         </button>
       </div>
     </header>

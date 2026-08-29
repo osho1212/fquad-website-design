@@ -2,22 +2,42 @@
 
 import React from "react";
 import AccordionGallery from "../ui/AccordionGallery";
-import { pastProjects } from "@/lib/past-projects";
+import { withDefaults } from "@/lib/cms/schema";
+
+export interface FeaturedProject {
+  slug: string;
+  name: string;
+  type: string;
+  images: string[];
+}
 
 /**
  * Featured projects as a single full-page accordion. Hovering a panel expands
  * it; clicking opens that project's detail page. Carries the `#work` anchor
  * that the navbar, hero, footer, studio and services pages all link to.
  */
-const items = pastProjects.map((project) => ({
-  image: project.images[0],
-  label: project.name,
-  category: project.type,
-  link: `/past-projects/${project.slug}`,
-  alt: `${project.name} — ${project.type}`,
-}));
+export function FeaturedProjects({
+  content,
+  projects = [],
+}: {
+  content?: Record<string, any>;
+  projects?: FeaturedProject[];
+}) {
+  const c = withDefaults("home", "featured_projects", content);
 
-export function FeaturedProjects() {
+  // Only projects with at least one image can fill an accordion panel.
+  const items = projects
+    .filter((project) => project.images.length > 0)
+    .map((project) => ({
+      image: project.images[0],
+      label: project.name,
+      category: project.type,
+      link: `/past-projects/${project.slug}`,
+      alt: `${project.name} — ${project.type}`,
+    }));
+
+  if (items.length === 0) return null;
+
   return (
     <section
       id="work"
@@ -26,16 +46,16 @@ export function FeaturedProjects() {
       {/* Section header */}
       <div className="flex justify-between items-baseline border-t border-white/15 pt-6 mb-6 w-full shrink-0">
         <div className="flex items-center gap-3">
-          <span className="w-1.5 h-1.5 rounded-none bg-[#c39a5f]" />
+          <span className="w-1.5 h-1.5 rounded-none bg-accent" />
           <span className="text-[10px] tracking-[0.24em] text-white/60 uppercase font-medium">
-            FEATURED PROJECTS · RECENT WORKS
+            {c.eyebrow}
           </span>
         </div>
         <a
-          href="/past-projects"
-          className="text-[10px] tracking-[0.2em] text-[#c39a5f] hover:text-white transition-colors uppercase font-medium"
+          href={c.linkHref}
+          className="text-[10px] tracking-[0.2em] text-accent hover:text-white transition-colors uppercase font-medium"
         >
-          EXPLORE PORTFOLIO →
+          {c.linkLabel}
         </a>
       </div>
 
@@ -50,7 +70,7 @@ export function FeaturedProjects() {
           loop
           gap={14}
           radius={0}
-          accentColor="#c39a5f"
+          accentColor="var(--fq-accent)"
           overlayColor="#000000"
           textColor="#ffffff"
           duration={0.65}
@@ -65,10 +85,8 @@ export function FeaturedProjects() {
 
       {/* Bottom subtext */}
       <div className="w-full mt-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-[9.5px] tracking-[0.2em] text-white/40 uppercase shrink-0">
-        <span>
-          INTERACTIVE ARCHITECTURAL SHOWCASE · HOVER TO EXPAND · SCROLL FOR MORE
-        </span>
-        <span>HYDERABAD · 2005 — PRESENT</span>
+        <span>{c.footnoteLeft}</span>
+        <span>{c.footnoteRight}</span>
       </div>
     </section>
   );

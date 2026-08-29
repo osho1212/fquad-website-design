@@ -1,57 +1,45 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ElegantCarousel, { SlideData } from "../ui/elegant-carousel";
+import { withDefaults } from "@/lib/cms/schema";
 
-const fourFsSlides: SlideData[] = [
-  {
-    title: "FUNCTIONAL",
-    fPrefix: "F",
-    suffix: "UNCTIONAL",
-    subtitle: "Purposeful & Ergonomic Architecture",
-    accent: "#C39A5F",
-    imageUrl: "/assets/images/b21.jpg",
-  },
-  {
-    title: "FUTURISTIC",
-    fPrefix: "F",
-    suffix: "UTURISTIC",
-    subtitle: "Modern Materials & Smart Spatial Systems",
-    accent: "#8BA7B8",
-    imageUrl: "/assets/images/a1.jpg",
-  },
-  {
-    title: "FRIENDLY",
-    fPrefix: "F",
-    suffix: "RIENDLY",
-    subtitle: "Warmth, Natural Light & Collaboration",
-    accent: "#A3B899",
-    imageUrl: "/assets/images/a3.jpg",
-  },
-  {
-    title: "FLEXIBLE",
-    fPrefix: "F",
-    suffix: "LEXIBLE",
-    subtitle: "Adaptable Living & Timeless Spatial Balance",
-    accent: "#D4A955",
-    imageUrl: "/assets/images/b25.jpg",
-  },
-  {
-    title: "F.QUAD",
-    fPrefix: "F",
-    suffix: ".QUAD",
-    subtitle: "Four Faces · One Unified Practice",
-    accent: "#E6C687",
-    imageUrl: "/assets/images/b22.jpg",
-  },
-];
+interface FaceContent {
+  title: string;
+  subtitle: string;
+  accent: string;
+  image: string;
+}
+
+/**
+ * The carousel styles the leading letter of each face separately, so the
+ * stored title is split into its first character and the remainder here
+ * rather than being edited as two fields in the CMS.
+ */
+function toSlide(face: FaceContent): SlideData {
+  const title = face.title ?? "";
+  return {
+    title,
+    fPrefix: title.slice(0, 1),
+    suffix: title.slice(1),
+    subtitle: face.subtitle,
+    accent: face.accent,
+    imageUrl: face.image,
+  };
+}
 
 /** How long each face holds before advancing on its own. */
 const AUTOPLAY_DELAY_MS = 2500;
 /** Quiet period after a manual scroll before autoplay takes over again. */
 const RESUME_AFTER_INPUT_MS = 1200;
 
-export function FourFsSection() {
+export function FourFsSection({ content }: { content?: Record<string, any> }) {
+  const c = withDefaults("home", "four_fs", content);
+  const slides = useMemo(
+    () => ((c.slides ?? []) as FaceContent[]).map(toSlide),
+    [c.slides]
+  );
+
   const containerRef = useRef<HTMLElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [slideProgress, setSlideProgress] = useState(0);
@@ -60,7 +48,7 @@ export function FourFsSection() {
   const activeIndexRef = useRef(0);
   const lastInputRef = useRef(0);
 
-  const numSlides = fourFsSlides.length;
+  const numSlides = slides.length;
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -149,6 +137,10 @@ export function FourFsSection() {
     return () => window.clearInterval(id);
   }, [isPinned, numSlides, handleNavigate]);
 
+  // Every face was removed in the CMS — drop the pinned section entirely
+  // rather than pin an empty 480vh viewport.
+  if (slides.length === 0) return null;
+
   return (
     <section
       id="philosophy"
@@ -160,13 +152,13 @@ export function FourFsSection() {
         {/* Section Top Header Pill Bar */}
         <div className="w-full flex justify-between items-center mb-3 px-1">
           <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-none bg-[#c39a5f] animate-pulse" />
+            <span className="w-2 h-2 rounded-none bg-accent animate-pulse" />
             <span className="text-[10px] tracking-[0.24em] text-white/70 uppercase font-medium">
-              FOUR FACES · ONE PRACTICE
+              {c.eyebrow}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] text-[#c39a5f] uppercase font-medium">
-            <span>SCROLL TO EXPLORE PHILOSOPHY</span>
+          <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] text-accent uppercase font-medium">
+            <span>{c.hint}</span>
             <span className="text-white/40">↓</span>
           </div>
         </div>
@@ -174,7 +166,7 @@ export function FourFsSection() {
         {/* Full-Screen Elegant Carousel */}
         <div className="w-full flex-1 flex flex-col justify-center min-h-0">
           <ElegantCarousel
-            slides={fourFsSlides}
+            slides={slides}
             controlledIndex={activeIndex}
             controlledProgress={slideProgress}
             onNavigate={handleNavigate}

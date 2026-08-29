@@ -10,6 +10,15 @@
   font-display: swap;
 }
 
+/* --font-good-times is referenced all over the site (this file's h1-h6 rule,
+   tailwind.config.ts's `font-display`, mini-navbar.tsx, elegant-carousel.css)
+   but was never actually defined — so every one of those rules fell back
+   silently to the inherited Montserrat body font instead of Good Times.
+   Defining it here fixes all of them at once. */
+:root {
+  --font-good-times: 'Good Times', sans-serif;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    THEME TOKENS
    --fq-fg / --fq-bg are RGB triplets consumed by Tailwind's `white` / `black`
@@ -33,7 +42,7 @@
   --fq-text-low: rgba(255, 255, 255, 0.52); /*   5.7:1 */
   --fq-text-faint: rgba(255, 255, 255, 0.48); /* 4.9:1 */
 
-  --fq-accent: #c39a5f; /* gold on black        7.0:1 */
+  --fq-accent: #c0c0c0; /* neutral accent      12.0:1 */
   --fq-silver: #c0c0c0; /* silver on black     12.0:1 */
   --fq-muted-label: #a09d94; /* on black        8.4:1 */
   --fq-surface: #18181b; /* image / card wells        */
@@ -56,7 +65,7 @@
   --fq-text-low: #6b6b6b; /*                   5.3:1 */
   --fq-text-faint: #757575; /*                 4.6:1 */
 
-  --fq-accent: #8a6b3d; /* gold darkened       4.9:1 */
+  --fq-accent: #5f5f5f; /* neutral accent       6.6:1 */
   --fq-silver: #5f5f5f; /*                     6.6:1 */
   --fq-muted-label: #6b6b6b; /*                5.3:1 */
   --fq-surface: #f1f1f1;
@@ -239,19 +248,8 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
   color: rgb(var(--fq-fg));
 }
 
-/* Brand accents — the gold is 2.6:1 on white, so light mode uses a
-   darkened brass at 4.9:1. Silver and the muted label likewise. */
-[data-theme='light'] .text-\[\#c39a5f\],
-[data-theme='light'] .hover\:text-\[\#c39a5f\]:hover {
-  color: var(--fq-accent);
-}
-[data-theme='light'] .bg-\[\#c39a5f\] {
-  background-color: var(--fq-accent);
-}
-[data-theme='light'] .border-\[\#c39a5f\]\/25,
-[data-theme='light'] .border-\[\#c39a5f\]\/20 {
-  border-color: rgb(138 107 61 / 0.45);
-}
+/* Brand accent is a neutral silver; `text-accent` / `bg-accent` read
+   --fq-accent directly, so both themes follow the token with no remap. */
 [data-theme='light'] .text-\[\#c0c0c0\] {
   color: var(--fq-silver);
 }
@@ -368,7 +366,23 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
   filter: none;
 }
 [data-theme='light'] .fq-hero-stage--original {
-  background-color: #000000;
+  background-color: #ffffff;
+}
+
+/* The F.QUAD stencil reveal (surrounding area punched with text-shaped holes
+   showing the finished-building video underneath) is a dark-theme effect.
+   Light theme flips it: the reveal rect becomes an opaque white fill with no
+   mask — hiding the video entirely — and the plain-text layer beneath takes
+   over, showing "F.QUAD" and the two subtitle lines as solid dark text. */
+[data-theme='light'] .fq-hero-stencil-fill {
+  fill: #ffffff;
+  mask: none;
+}
+.fq-hero-stencil-light {
+  display: none;
+}
+[data-theme='light'] .fq-hero-stencil-light {
+  display: block;
 }
 [data-theme='light'] .fq-hero-text--on-dark h1,
 [data-theme='light'] .fq-hero-text--on-dark span,
@@ -397,4 +411,23 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
 [data-theme] textarea::placeholder {
   color: var(--fq-text-low);
   opacity: 1; /* Firefox dims placeholders by default */
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ADMIN
+   The admin is a fixed light interface and must not inherit the public
+   site's theme tokens — `body` paints its text white for the dark theme,
+   which left every admin heading invisible against the cream background.
+   ───────────────────────────────────────────────────────────────────────── */
+.admin-root {
+  color: #0d0d0d;
+}
+
+.admin-root h1,
+.admin-root h2,
+.admin-root h3,
+.admin-root h4,
+.admin-root h5,
+.admin-root h6 {
+  color: inherit;
 }

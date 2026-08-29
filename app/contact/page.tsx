@@ -4,6 +4,7 @@ import { Navbar } from "@/components/ui/mini-navbar";
 import { StartProjectForm } from "@/components/ui/StartProjectForm";
 import { SocialLinks } from "@/components/ui/SocialLinks";
 import { getSiteSettings } from "@/lib/public-content";
+import { getPage } from "@/lib/cms/content";
 
 export const revalidate = 60;
 
@@ -21,7 +22,16 @@ const FALLBACK = {
 };
 
 export default async function ContactPage() {
-  const settings = await getSiteSettings().catch(() => null);
+  const [settings, content, global] = await Promise.all([
+    getSiteSettings().catch(() => null),
+    getPage("contact"),
+    getPage("global"),
+  ]);
+
+  const hero = content.hero;
+  const info = content.details;
+  const form = content.form;
+  const map = content.map;
 
   const email = settings?.email || FALLBACK.email;
   const phone = settings?.phone || "";
@@ -41,32 +51,31 @@ export default async function ContactPage() {
   )}&z=14&output=embed`;
 
   const details: { label: string; value: string; href?: string }[] = [
-    { label: "Studio", value: address },
-    { label: "Email", value: email, href: `mailto:${email}` },
-    ...(phone ? [{ label: "Phone", value: phone, href: `tel:${phone}` }] : []),
+    { label: info.studioLabel, value: address },
+    { label: info.emailLabel, value: email, href: `mailto:${email}` },
+    ...(phone ? [{ label: info.phoneLabel, value: phone, href: `tel:${phone}` }] : []),
     {
-      label: "WhatsApp",
+      label: info.whatsappLabel,
       value: whatsapp,
       href: `https://wa.me/${waDigits}`,
     },
-    { label: "Instagram", value: "@fquadstudio", href: instagram },
+    { label: info.instagramLabel, value: info.instagramHandle, href: instagram },
   ];
 
   return (
     <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      <Navbar />
+      <Navbar content={global.nav} />
 
       {/* ── Header ──────────────────────────────────────────────── */}
       <section className="pt-40 sm:pt-48 pb-14 px-6 sm:px-14 border-b border-white/15">
         <div className="text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-8 uppercase font-medium">
-          Get In Touch
+          {hero.eyebrow}
         </div>
         <h1 className="m-0 font-normal uppercase text-4xl sm:text-6xl md:text-7xl leading-[0.96] tracking-tight text-white">
-          Contact
+          {hero.title}
         </h1>
         <p className="mt-8 max-w-[52ch] text-base sm:text-lg leading-relaxed text-white/65">
-          Tell us about your project and we&apos;ll get back to you within one
-          working day.
+          {hero.intro}
         </p>
       </section>
 
@@ -75,7 +84,7 @@ export default async function ContactPage() {
         {/* Left — studio details. Sticky so it stays alongside the tall form. */}
         <div className="lg:sticky lg:top-28">
           <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 mb-10">
-            The Studio
+            {info.heading}
           </h2>
 
           <dl className="m-0">
@@ -110,17 +119,17 @@ export default async function ContactPage() {
 
             <div className="py-5 border-b border-white/15">
               <dt className="text-[9.5px] tracking-[0.2em] uppercase text-white/40">
-                Hours
+                {info.hoursLabel}
               </dt>
               <dd className="m-0 mt-2 text-sm sm:text-base text-white/80">
-                Monday – Saturday, 10:00 – 19:00
+                {info.hours}
               </dd>
             </div>
           </dl>
 
           <div className="mt-8">
             <div className="text-[9.5px] tracking-[0.2em] uppercase text-white/40 mb-3.5">
-              Follow
+              {info.followLabel}
             </div>
             <SocialLinks
               instagramUrl={instagram}
@@ -136,13 +145,13 @@ export default async function ContactPage() {
               rel="noopener noreferrer"
               className="text-[10px] tracking-[0.18em] px-6 py-3.5 border border-white/35 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
             >
-              WhatsApp
+              {info.whatsappButton}
             </a>
             <Link
-              href="/past-projects"
+              href={info.workHref}
               className="text-[10px] tracking-[0.18em] px-6 py-3.5 border border-white/35 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
             >
-              View Work
+              {info.workButton}
             </Link>
           </div>
         </div>
@@ -150,7 +159,7 @@ export default async function ContactPage() {
         {/* Right — project intake, shared with the Start A Project modal */}
         <div>
           <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 mb-10">
-            Start a Project
+            {form.heading}
           </h2>
           <StartProjectForm />
         </div>
@@ -159,7 +168,7 @@ export default async function ContactPage() {
       {/* ── Map ─────────────────────────────────────────────────── */}
       <section className="px-6 sm:px-14 pb-20 pt-4">
         <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 mb-8">
-          Find Us
+          {map.heading}
         </h2>
         <div className="w-full h-[380px] sm:h-[460px] border border-white/15 overflow-hidden bg-zinc-900">
           <iframe
@@ -177,15 +186,17 @@ export default async function ContactPage() {
           )}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center mt-5 text-[10px] tracking-[0.18em] uppercase text-[#c39a5f] hover:text-white transition-colors"
+          className="inline-flex items-center mt-5 text-[10px] tracking-[0.18em] uppercase text-accent hover:text-white transition-colors"
         >
-          Open in Google Maps →
+          {map.linkLabel}
         </a>
       </section>
 
       {/* ── Footer strip ────────────────────────────────────────── */}
       <section className="px-6 sm:px-14 py-10 border-t border-white/15 flex flex-col sm:flex-row justify-between gap-4 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-        <span>© 2026 F.QUAD STUDIO · HYDERABAD, TELANGANA, INDIA</span>
+        <span>
+          © {new Date().getFullYear()} F.QUAD STUDIO · {address.toUpperCase()}
+        </span>
         <a href={`mailto:${email}`} className="hover:text-white">
           {email.toUpperCase()}
         </a>

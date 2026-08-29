@@ -208,8 +208,8 @@ export default function AwardsPage() {
                     fontSize: 10,
                     letterSpacing: '0.08em',
                     fontWeight: 700,
-                    color: '#8B6F47',
-                    border: '1px solid #C4A97D',
+                    color: '#4A4A4A',
+                    border: '1px solid #C9C9C9',
                     borderRadius: 2,
                     padding: '4px 8px',
                   }}

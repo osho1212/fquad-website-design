@@ -3,7 +3,9 @@
   "configurations": [
     {
       "name": "fquad-dev",
-      "url": "http://localhost:3002"
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3002
     }
   ]
 }
