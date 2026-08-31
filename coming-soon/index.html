@@ -82,9 +82,11 @@ body{
 .shell{position:relative;z-index:2;flex:1;display:flex;flex-direction:column}
 
 /* ── Mark ─────────────────────────────────────────────────────────── */
-.mark{display:inline-flex;align-items:center;gap:11px;text-decoration:none;color:inherit;align-self:flex-start}
-.mark svg{width:30px;height:30px;display:block}
-.mark b{font-family:'Good Times',system-ui,sans-serif;font-size:13px;letter-spacing:.16em;font-weight:400}
+.brand{display:inline-flex;align-items:center;gap:11px;text-decoration:none;color:inherit;align-self:flex-start}
+.brand svg{width:32px;height:32px;display:block;flex-shrink:0}
+.brand-text{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.brand-text b{font-family:'Good Times',system-ui,sans-serif;font-size:13px;letter-spacing:.16em;font-weight:400;color:var(--fg);line-height:1}
+.brand-byline{font-family:'Good Times',system-ui,sans-serif;font-size:7px;letter-spacing:.14em;font-weight:400;color:var(--fg);text-transform:uppercase;line-height:1;white-space:nowrap}
 
 /* ── The statement ────────────────────────────────────────────────── */
 main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(10px,2vh,28px) 0}
@@ -172,9 +174,12 @@ a:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 
 <div class="shell">
 
-  <a class="mark" href="/" aria-label="F.QUAD Studio">
+  <a class="brand" href="/" aria-label="F.QUAD Studio — By Amit and Ashmi">
     <svg viewBox="340 166 204 204" fill="#111" aria-hidden="true"><path d="M394.27,319.33c-1.04.89-1.63,3.73-.99,4.77.85,1.4,2.67,2.15,4.66,2.15l78.79-.02v40.19s-92.81-.02-92.81-.02c-.38-1.09.3-105.17.3-105.17l97.25-74.47c1.83-1.41,2.89-3.11,2.76-5.09-.1-1.56-3.27-4.33-4.76-3.21l-103.14,79.65v108.3s-35.47,0-35.47,0l.27-202.64h202.34s.02,202.64.02,202.64h-59.42s-.02-40.14-.02-40.14l24.6-.05c2.13-.5,3.38-2.61,3.38-4.45,0-1.49-2.22-3.91-4.23-3.91l-23.75-.34.02-65.82c-.73-1.33-2.25-2.82-3.36-3.1-1.2-.3-3.9,1.69-3.91,3.05l-.36,66-67.12-.23,47.68-39.71c1.73-1.43,2.17-4.71.92-6.22-1.81-2.19-4.7-1.16-6.64.43l-6.26,5.16-50.76,42.24Z"/></svg>
-    <b>F.QUAD</b>
+    <div class="brand-text">
+      <b>F.QUAD</b>
+      <span class="brand-byline">BY AMIT and ASHMI</span>
+    </div>
   </a>
 
   <main>
@@ -204,16 +209,25 @@ a:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 document.getElementById('yr').textContent = new Date().getFullYear();
 
 /* ════════════════════════════════════════════════════════════════════
-   Countdown to launch.
-   ▼▼ EDIT THIS ONE LINE to set the real launch date. ▼▼
-   ISO 8601 with an explicit +05:30 offset so the target is a fixed
-   moment in IST — every visitor counts down to the same instant
-   regardless of their own timezone.
+   Countdown to launch (2 Weeks / 14 Days).
+   Persists via localStorage so the countdown ticks down smoothly
+   from 14 days without resetting on refresh.
    ══════════════════════════════════════════════════════════════════ */
-var LAUNCH_DATE = '2026-11-01T10:00:00+05:30';
+var TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+var target;
+try {
+  var saved = localStorage.getItem('fq_launch_target');
+  if (saved && !isNaN(Number(saved)) && Number(saved) > Date.now()) {
+    target = Number(saved);
+  } else {
+    target = Date.now() + TWO_WEEKS_MS;
+    localStorage.setItem('fq_launch_target', String(target));
+  }
+} catch (e) {
+  target = Date.now() + TWO_WEEKS_MS;
+}
 
 (function () {
-  var target = new Date(LAUNCH_DATE).getTime();
   var box = document.getElementById('count');
   var sr = document.getElementById('cdSr');
   if (!box || isNaN(target)) return;

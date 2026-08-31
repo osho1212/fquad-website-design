@@ -75,14 +75,13 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     }
 
     // GSAP ScrollTrigger:
-    // 0.0 -> 0.45: frame scrubs 0 -> 150 (construction animation completes)
-    // 0.45 -> 1.0: holds completely on frame 150 (the finished building)
+    // Paced across a longer scroll distance with enhanced damping for a luxury, deliberate scrub
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container,
         start: "top top",
         end: "bottom bottom",
-        scrub: 0.8,
+        scrub: 1.4,
         onUpdate: (self) => {
           setScrollProgress(self.progress);
         },
@@ -92,12 +91,12 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     tl.to(seq, {
       frame: frameCount - 1,
       ease: "none",
-      duration: 0.45,
+      duration: 0.52,
       onUpdate: render,
     });
 
     // Hold on final frame for the remainder of the timeline
-    tl.to({}, { duration: 0.55 });
+    tl.to({}, { duration: 0.48 });
 
     return () => {
       tl.kill();
@@ -118,8 +117,8 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       : Math.max(-30, Math.min(0, -(scrollProgress - 0.58) * 70));
 
   // 2. Surrounding Screen Darkening (Stationary Stencil):
-  // Phase 1 (0.0 -> 0.45): Full construction animation scrubs on full-screen canvas
-  // Phase 2 (0.45 -> 0.68): Full-screen final finished building holds with SPACE IS OUR MEDIUM overlay
+  // Phase 1 (0.0 -> 0.52): Full construction animation scrubs on full-screen canvas
+  // Phase 2 (0.52 -> 0.68): Full-screen final finished building holds with SPACE IS OUR MEDIUM overlay
   // Phase 3 (0.68 -> 0.88): Surrounding stage darkens into pitch-black around centered F.QUAD stencil
   let surroundingDarkness = 0;
   if (scrollProgress > 0.68) {
@@ -130,7 +129,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   const cueOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.86) / 0.12));
 
   return (
-    <section id="top" ref={containerRef} className="relative h-[420vh] bg-black">
+    <section id="top" ref={containerRef} className="relative h-[580vh] bg-black">
       <div
         className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-black bg-[url('/assets/hero-sequence/ezgif-frame-001.jpg')] bg-cover bg-center flex flex-col justify-center items-center${
           onOriginalFrames ? " fq-hero-stage--original" : ""
