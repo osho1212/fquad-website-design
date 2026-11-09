@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Navbar } from "@/components/ui/mini-navbar";
+import { PageShell } from "@/components/layout/PageShell";
+import { pageMetadata, jsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { siteUrl } from "@/lib/site";
 import { ProjectCarousel } from "@/components/ui/ProjectCarousel";
 import RevealOnScroll from "@/app/components/RevealOnScroll";
 import { getPastProjects, getPastProject, defaultPastProjects } from "@/lib/past-projects";
@@ -24,11 +26,13 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const project = await getPastProject(params.slug);
-  if (!project) return { title: "Project — F.QUAD Studio" };
-  return {
-    title: `${project.name} — F.QUAD Studio`,
-    description: project.tagline,
-  };
+  if (!project) return pageMetadata({ title: "Projects", description: "Our projects.", path: "/past-projects", noIndex: true });
+  return pageMetadata({
+    title: project.name,
+    description: project.tagline || `${project.name} — a ${project.type || "project"} by F.QUAD Studio, Hyderabad.`,
+    path: `/past-projects/${project.slug}`,
+    image: project.images[0] ?? null,
+  });
 }
 
 export default async function PastProjectDetailPage({
@@ -61,21 +65,50 @@ export default async function PastProjectDetailPage({
   ].filter((f) => f.value);
 
   return (
-    <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      <Navbar content={global.nav} />
+    <PageShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd({
+            "@context": "https://schema.org",
+            "@type": "CreativeWork",
+            name: project.name,
+            description: project.tagline,
+            url: `${siteUrl()}/past-projects/${project.slug}`,
+            creator: { "@type": "ProfessionalService", name: "F.QUAD Studio", url: siteUrl() },
+            ...(project.images[0] ? { image: project.images[0] } : {}),
+            ...(project.location ? { locationCreated: { "@type": "Place", name: project.location } } : {}),
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            breadcrumbJsonLd(
+              [
+                { name: "Home", path: "/" },
+                { name: "Projects", path: "/past-projects" },
+                { name: project.name, path: `/past-projects/${project.slug}` },
+              ],
+              siteUrl()
+            )
+          ),
+        }}
+      />
 
       {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="pt-40 sm:pt-48 pb-14 px-6 sm:px-14 border-b border-white/15">
         <Link
           href="/past-projects"
-          className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-white/45 hover:text-white transition-colors mb-10"
+          className="fq-link inline-flex items-center gap-2 min-h-[32px] text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors mb-8"
         >
           {labels.backLabel}
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 lg:gap-16">
           <div>
-            <div className="text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-6 uppercase font-medium">
+            <div className="text-[11px] tracking-[0.22em] text-[#a09d94] mb-6 uppercase font-medium">
               {project.type}
             </div>
 
@@ -102,7 +135,7 @@ export default async function PastProjectDetailPage({
             <dl className="flex flex-row flex-wrap lg:flex-col gap-x-10 gap-y-6 lg:gap-y-8 lg:min-w-[200px] lg:pl-2">
               {heroFacts.map((fact) => (
                 <div key={fact.label}>
-                  <dt className="text-[9.5px] tracking-[0.2em] uppercase text-white/40">
+                  <dt className="text-[11px] tracking-[0.2em] uppercase text-white/40">
                     {fact.label}
                   </dt>
                   <dd className="mt-2 m-0 font-display text-base sm:text-lg leading-snug text-white">
@@ -132,7 +165,7 @@ export default async function PastProjectDetailPage({
           <RevealOnScroll key={chapterIndex} delay={0.05}>
             <div className="grid grid-cols-1 lg:grid-cols-[0.4fr_1fr] gap-6 lg:gap-12 py-16 border-t border-white/15">
               <div className="flex items-start gap-4">
-                <span className="font-display text-[10px] tracking-[0.24em] text-white/30 pt-1">
+                <span className="font-display text-[11px] tracking-[0.24em] text-white/30 pt-1">
                   {chapter.num}
                 </span>
                 <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 pt-1">
@@ -162,7 +195,7 @@ export default async function PastProjectDetailPage({
         <div>
           {prev && (
             <Link href={`/past-projects/${prev.slug}`} className="group block">
-              <div className="text-[9.5px] tracking-[0.2em] uppercase text-white/35 mb-3">
+              <div className="text-[11px] tracking-[0.2em] uppercase text-white/35 mb-3">
                 {labels.prevLabel}
               </div>
               <div className="font-display uppercase text-xl sm:text-2xl text-white/70 group-hover:text-white transition-colors">
@@ -174,7 +207,7 @@ export default async function PastProjectDetailPage({
         <div className="sm:text-right">
           {next && (
             <Link href={`/past-projects/${next.slug}`} className="group block">
-              <div className="text-[9.5px] tracking-[0.2em] uppercase text-white/35 mb-3">
+              <div className="text-[11px] tracking-[0.2em] uppercase text-white/35 mb-3">
                 {labels.nextLabel}
               </div>
               <div className="font-display uppercase text-xl sm:text-2xl text-white/70 group-hover:text-white transition-colors">
@@ -194,7 +227,7 @@ export default async function PastProjectDetailPage({
           <div className="flex flex-wrap gap-4 mt-12">
             <Link
               href="/past-projects"
-              className="text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
+              className="text-[11px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
             >
               {labels.ctaPrimaryLabel}
             </Link>
@@ -208,14 +241,7 @@ export default async function PastProjectDetailPage({
             </button>
           </div>
         </div>
-
-        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-10 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-          <span>© {new Date().getFullYear()} F.QUAD STUDIO · {address.toUpperCase()}</span>
-          <a href={`mailto:${email}`} className="hover:text-white">
-            {email.toUpperCase()}
-          </a>
-        </div>
       </section>
-    </div>
+    </PageShell>
   );
 }

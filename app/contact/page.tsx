@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Navbar } from "@/components/ui/mini-navbar";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHero } from "@/components/layout/PageHero";
+import { pageMetadata } from "@/lib/seo";
+import { SITE } from "@/lib/site";
 import { StartProjectForm } from "@/components/ui/StartProjectForm";
 import { SocialLinks } from "@/components/ui/SocialLinks";
 import { getSiteSettings } from "@/lib/public-content";
@@ -8,18 +11,14 @@ import { getPage } from "@/lib/cms/content";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Contact — F.QUAD Studio",
+export const metadata: Metadata = pageMetadata({
+  title: "Contact",
   description:
-    "Get in touch with F.QUAD Studio — architecture and interior design, Hyderabad.",
-};
+    "Start a conversation with F.QUAD Studio — architecture and interior design in Hyderabad. Tell us about your project, or reach us by email, phone or WhatsApp.",
+  path: "/contact",
+});
 
-const FALLBACK = {
-  email: "admin@fquad.com",
-  whatsapp: "+919876543210",
-  address: "Hyderabad, Telangana, India",
-  instagramUrl: "https://instagram.com/fquadstudio",
-};
+const FALLBACK = SITE.fallback;
 
 export default async function ContactPage() {
   const [settings, content, global] = await Promise.all([
@@ -63,21 +62,15 @@ export default async function ContactPage() {
   ];
 
   return (
-    <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      <Navbar content={global.nav} />
+    <PageShell>
 
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <section className="pt-40 sm:pt-48 pb-14 px-6 sm:px-14 border-b border-white/15">
-        <div className="text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-8 uppercase font-medium">
-          {hero.eyebrow}
-        </div>
-        <h1 className="m-0 font-normal uppercase text-4xl sm:text-6xl md:text-7xl leading-[0.96] tracking-tight text-white">
-          {hero.title}
-        </h1>
-        <p className="mt-8 max-w-[52ch] text-base sm:text-lg leading-relaxed text-white/65">
-          {hero.intro}
-        </p>
-      </section>
+      <PageHero
+        eyebrow={hero.eyebrow}
+        title={hero.title}
+        intro={hero.intro}
+        crumbs={[{ label: "Home", href: "/" }, { label: "Contact" }]}
+        art="dining"
+      />
 
       {/* ── Details (left) + Form (right) ───────────────────────── */}
       <section className="px-6 sm:px-14 py-16 grid grid-cols-1 lg:grid-cols-[0.8fr_1fr] gap-14 lg:gap-20 items-start">
@@ -93,7 +86,7 @@ export default async function ContactPage() {
                 key={d.label}
                 className="py-5 border-b border-white/15 first:pt-0"
               >
-                <dt className="text-[9.5px] tracking-[0.2em] uppercase text-white/40">
+                <dt className="text-[11px] tracking-[0.2em] uppercase text-white/40">
                   {d.label}
                 </dt>
                 <dd className="m-0 mt-2 text-sm sm:text-base text-white/80">
@@ -106,7 +99,7 @@ export default async function ContactPage() {
                           ? "noopener noreferrer"
                           : undefined
                       }
-                      className="hover:text-white transition-colors"
+                      className="inline-block py-1.5 hover:text-white transition-colors"
                     >
                       {d.value}
                     </a>
@@ -118,7 +111,7 @@ export default async function ContactPage() {
             ))}
 
             <div className="py-5 border-b border-white/15">
-              <dt className="text-[9.5px] tracking-[0.2em] uppercase text-white/40">
+              <dt className="text-[11px] tracking-[0.2em] uppercase text-white/40">
                 {info.hoursLabel}
               </dt>
               <dd className="m-0 mt-2 text-sm sm:text-base text-white/80">
@@ -128,7 +121,7 @@ export default async function ContactPage() {
           </dl>
 
           <div className="mt-8">
-            <div className="text-[9.5px] tracking-[0.2em] uppercase text-white/40 mb-3.5">
+            <div className="text-[11px] tracking-[0.2em] uppercase text-white/40 mb-3.5">
               {info.followLabel}
             </div>
             <SocialLinks
@@ -143,13 +136,13 @@ export default async function ContactPage() {
               href={`https://wa.me/${waDigits}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] tracking-[0.18em] px-6 py-3.5 border border-white/35 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
+              className="text-[11px] tracking-[0.18em] px-6 py-3.5 border border-white/35 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
             >
               {info.whatsappButton}
             </a>
             <Link
               href={info.workHref}
-              className="text-[10px] tracking-[0.18em] px-6 py-3.5 border border-white/35 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
+              className="text-[11px] tracking-[0.18em] px-6 py-3.5 border border-white/35 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
             >
               {info.workButton}
             </Link>
@@ -186,21 +179,11 @@ export default async function ContactPage() {
           )}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center mt-5 text-[10px] tracking-[0.18em] uppercase text-accent hover:text-white transition-colors"
+          className="inline-flex items-center mt-4 min-h-[32px] text-[11px] tracking-[0.18em] uppercase text-accent hover:text-white transition-colors"
         >
           {map.linkLabel}
         </a>
       </section>
-
-      {/* ── Footer strip ────────────────────────────────────────── */}
-      <section className="px-6 sm:px-14 py-10 border-t border-white/15 flex flex-col sm:flex-row justify-between gap-4 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-        <span>
-          © {new Date().getFullYear()} F.QUAD STUDIO · {address.toUpperCase()}
-        </span>
-        <a href={`mailto:${email}`} className="hover:text-white">
-          {email.toUpperCase()}
-        </a>
-      </section>
-    </div>
+    </PageShell>
   );
 }

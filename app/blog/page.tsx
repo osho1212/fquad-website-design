@@ -1,231 +1,129 @@
-import Link from 'next/link';
-import { SiteNav } from '@/components/ui/SiteNav';
-import { SiteFooter } from '@/components/ui/SiteFooter';
-import { getBlogPosts, getSiteSettings, mediaUrl } from '@/lib/public-content';
-import { getPage } from '@/lib/cms/content';
+import type { Metadata } from "next";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHero } from "@/components/layout/PageHero";
+import { Section } from "@/components/layout/Section";
+import { InView } from "@/components/motion/InView";
+import { ClosingBand } from "@/components/pages/blog/ClosingBand";
+import { JournalEmpty } from "@/components/pages/blog/JournalEmpty";
+import { PostCard } from "@/components/pages/blog/PostCard";
+import { absoluteUrl, countLabel, orEmpty, postDate } from "@/components/pages/blog/helpers";
+import { PrimaryAction, TextAction } from "@/components/pages/blog/ui";
+import { getPage } from "@/lib/cms/content";
+import { getBlogPosts } from "@/lib/public-content";
+import { jsonLd, pageMetadata } from "@/lib/seo";
+import { SITE, siteUrl } from "@/lib/site";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
-function formatDate(publishedAt: Date | null, createdAt: Date) {
-  const d = publishedAt ?? createdAt;
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
-}
-
-function getExcerpt(excerpt: string | null, body: string) {
-  if (excerpt) return excerpt;
-  const snippet = body.slice(0, 140).trim();
-  return body.length > 140 ? `${snippet}…` : snippet;
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Journal",
+  description:
+    "Notes from F.QUAD Studio on interior design and architecture: materials, light, small-space planning and the craft of making rooms work.",
+  path: "/blog",
+});
 
 export default async function BlogPage() {
-  const posts = await getBlogPosts();
-  const settings = await getSiteSettings();
-  const [blogContent, globalContent] = await Promise.all([getPage('blog'), getPage('global')]);
-  const hero = blogContent.hero;
-  const nav = globalContent.page_nav;
-  const footer = globalContent.page_footer;
-  const footerSettings = {
-    email: settings?.email ?? null,
-    phone: settings?.phone ?? null,
-    address: settings?.address ?? null,
-    instagramUrl: settings?.instagramUrl ?? null,
-    whatsapp: settings?.whatsapp ?? null,
-  };
+  const [posts, content] = await Promise.all([
+    // An unreachable database falls through to the "being written" state.
+    orEmpty(getBlogPosts()),
+    getPage("blog"),
+  ]);
+
+  const hero = content.hero;
+  const [latest, ...earlier] = posts;
+  const origin = siteUrl();
+
+  const intro =
+    (typeof hero.intro === "string" && hero.intro) ||
+    (latest
+      ? "Notes from the studio on materials, light, planning and the craft of making rooms work."
+      : "The journal is being written: notes from the studio on materials, light, planning and the craft of making rooms work.");
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: BLOG_STYLES }} />
+    <PageShell>
+      {latest && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLd({
+              "@context": "https://schema.org",
+              "@type": "Blog",
+              name: `${SITE.name} Journal`,
+              url: `${origin}/blog`,
+              publisher: { "@type": "Organization", name: SITE.name, url: origin },
+              blogPost: posts.slice(0, 20).map((p) => ({
+                "@type": "BlogPosting",
+                headline: p.title.slice(0, 110),
+                url: absoluteUrl(`/blog/${p.slug}`, origin),
+                datePublished: postDate(p).toISOString(),
+              })),
+            }),
+          }}
+        />
+      )}
 
-      <div className="page-fade">
-      <SiteNav content={nav} active="/blog" solid={false} />
-
-      <section className="journal-hero">
-        <div className="journal-hero-content reveal">
-          <div className="eyebrow">{hero.eyebrow}</div>
-          <h1>{hero.title}</h1>
-        </div>
-      </section>
-
-      <section className="journal-section">
-        <div className="journal-grid stagger">
-          {posts.map((post) => {
-            const img = post.media ? (mediaUrl(post.media, 'medium') || mediaUrl(post.media, 'full')) : null;
-            return (
-              <Link href={`/blog/${post.slug}`} className="blog-card reveal" key={post.id}>
-                <div className="blog-card-image">
-                  {img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={img} alt={post.title} />
-                  ) : (
-                    <div className="blog-card-placeholder" />
-                  )}
-                </div>
-                <div className="blog-card-date">{formatDate(post.publishedAt, post.createdAt)}</div>
-                <div className="blog-card-title">{post.title}</div>
-                <p className="blog-card-excerpt">{getExcerpt(post.excerpt, post.body)}</p>
-                <div className="blog-card-read">Read →</div>
-              </Link>
-            );
-          })}
-        </div>
-        {posts.length === 0 && (
-          <p className="blog-empty">{hero.emptyState}</p>
+      <PageHero eyebrow={hero.eyebrow} title={hero.title} intro={intro} art="studio">
+        {!latest && (
+          <>
+            <PrimaryAction action={{ label: "Start a project", startProject: true }} />
+            <TextAction action={{ label: "Browse past projects →", href: "/past-projects" }} />
+          </>
         )}
-      </section>
+      </PageHero>
 
-      <SiteFooter content={footer} settings={footerSettings} />
-      </div>
+      {latest ? (
+        <>
+          <Section
+            eyebrow="Latest entry"
+            aside={<span className="text-white/60">{countLabel(posts.length, "entry", "entries")}</span>}
+          >
+            <div className="max-w-[1500px]">
+              <PostCard post={latest} variant="feature" />
+            </div>
+          </Section>
 
-      <script dangerouslySetInnerHTML={{ __html: BLOG_SCRIPT }} />
-    </>
+          {earlier.length > 0 && (
+            <>
+              {/* Header only: each card below reveals on its own, so a long
+                  archive never depends on one tall observer. */}
+              <Section eyebrow="Earlier entries" className="!pt-0 !pb-0">
+                {null}
+              </Section>
+              <div className="px-6 sm:px-14 pb-20 sm:pb-28">
+                <ul
+                  role="list"
+                  className="m-0 p-0 list-none grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 lg:gap-x-10 gap-y-14 max-w-[1500px]"
+                >
+                  {earlier.map((post, i) => (
+                    <InView as="li" key={post.id} className="min-w-0">
+                      <PostCard post={post} index={i % 3} />
+                    </InView>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )}
+
+          <ClosingBand
+            eyebrow="Work with us"
+            title={"Planning a space\nof your own?"}
+            body="Tell us about your site, your brief and how you want it to feel."
+            primary={{ label: "Start a project", startProject: true }}
+            secondary={{ label: "See past projects →", href: "/past-projects" }}
+          />
+        </>
+      ) : (
+        <>
+          <JournalEmpty />
+          <ClosingBand
+            eyebrow="Suggest a topic"
+            title={"Tell us what to\nwrite about next."}
+            body="Planning a space and curious about something specific? Tell us. It may well become an entry."
+            primary={{ label: "Write to the studio", href: "/contact" }}
+            secondary={{ label: "Start a project →", startProject: true }}
+          />
+        </>
+      )}
+    </PageShell>
   );
 }
-
-const BLOG_SCRIPT = `
-(function() {
-  var nav = document.getElementById('site-nav');
-  if (nav) {
-    window.addEventListener('scroll', function() {
-      nav.classList.toggle('scrolled', window.scrollY > 60);
-    });
-  }
-  var hamburger = document.querySelector('[data-toggle-nav]');
-  var mobileMenu = document.getElementById('mobile-menu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function() {
-      var isOpen = mobileMenu.classList.toggle('open');
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
-  }
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-})();
-`;
-
-const BLOG_STYLES = `
-  :root {
-    --black: #2C2C2C; --white: #FAFAF8; --grey-dark: #6B6560; --grey-light: #9C9488;
-    --grey-bg: #F5F0EA; --border: #E2DDD8; --bg-dark: #1E1E1E; --bg-darker: #1E1E1E;
-    --font-goodtimes: 'Good Times', sans-serif;
-    --h1: 64px; --h2: 40px; --h3: 28px; --h4: 24px;
-    --body-lg: 18px; --body: 16px; --body-sm: 15px; --eyebrow: 11px;
-    --margin-desktop: 48px; --margin-tablet: 32px; --margin-mobile: 20px;
-    --gap-xxl: 48px; --gap-xl: 32px; --gap-lg: 24px; --gap-md: 16px; --gap-sm: 12px; --gap-xs: 8px;
-    --nav-h: 84px;
-  }
-  html { scroll-behavior: smooth; }
-  body { background: var(--white); color: var(--black); line-height: 1.5; -webkit-font-smoothing: antialiased; }
-  a { color: inherit; text-decoration: none; }
-  img, video { display: block; max-width: 100%; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .page-fade { animation: fadeIn 0.4s ease; }
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1); }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-  .stagger > .reveal:nth-child(2) { transition-delay: 0.08s; }
-  .stagger > .reveal:nth-child(3) { transition-delay: 0.16s; }
-  .stagger > .reveal:nth-child(4) { transition-delay: 0.24s; }
-  .stagger > .reveal:nth-child(5) { transition-delay: 0.32s; }
-  .stagger > .reveal:nth-child(6) { transition-delay: 0.40s; }
-
-  .eyebrow { font-size: var(--eyebrow); letter-spacing: 0.22em; color: var(--grey-light); margin-bottom: var(--gap-md); text-transform: uppercase; }
-
-  .nav { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--gap-lg) var(--margin-desktop); height: var(--nav-h); background: rgba(248, 248, 246, 0.92); backdrop-filter: blur(8px); border-bottom: 0.5px solid var(--border); z-index: 100; }
-  .nav-logo { font-family: var(--font-goodtimes); font-size: var(--h4); font-weight: 700; letter-spacing: 0.14em; color: var(--black); }
-  .nav-links { display: flex; align-items: center; gap: var(--gap-xxl); list-style: none; }
-  .nav-links a { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-dark); transition: color 0.25s ease; }
-  .nav-links a:hover, .nav-links a.active { color: var(--black); font-weight: 600; }
-  .nav-item { position: relative; display: inline-block; }
-  .nav-dropdown {
-    position: absolute; top: 100%; left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-    background: #1E1E1E; min-width: 180px; padding: 8px 0;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-    border: 0.5px solid #2C2C2C; z-index: 200; pointer-events: none;
-  }
-  .nav-item:hover .nav-dropdown {
-    opacity: 1; visibility: visible;
-    transform: translateX(-50%) translateY(0); pointer-events: auto;
-  }
-  .nav-dropdown a {
-    display: block; padding: 10px 20px; color: #9C9488;
-    font-size: 11px; letter-spacing: 0.1em; text-decoration: none;
-    transition: color 0.2s ease;
-  }
-  .nav-dropdown a:hover, .nav-dropdown a.active { color: #FAFAF8; }
-  .btn-enquire { padding: var(--gap-sm) var(--gap-lg); background: var(--black); color: var(--white); border: 0.5px solid var(--black); font-size: var(--eyebrow); letter-spacing: 0.12em; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .btn-enquire:hover { background: transparent; color: var(--black); }
-  .mobile-menu {
-    position: fixed; inset: 0; background: #1E1E1E; z-index: 500;
-    display: flex; flex-direction: column; justify-content: center;
-    align-items: center; gap: 28px;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s;
-  }
-  .mobile-menu.open { opacity: 1; visibility: visible; }
-  .mobile-menu a { font-size: 20px; color: #FAFAF8; letter-spacing: 0.1em; text-decoration: none; }
-  .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: inherit; }
-  .hamburger svg { width: 28px; height: 28px; }
-  @media (max-width: 768px) {
-    .hamburger { display: block; }
-    .nav-links { display: none !important; }
-    .btn-enquire { display: none; }
-  }
-
-  .journal-hero { background: var(--bg-dark); min-height: 50vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: calc(var(--nav-h) + var(--gap-xxl)) var(--margin-desktop) var(--gap-xxl); }
-  .journal-hero-content { max-width: 640px; }
-  .journal-hero-content .eyebrow { color: var(--grey-light); display: flex; justify-content: center; }
-  .journal-hero-content h1 { font-family: var(--font-goodtimes); font-size: var(--h1); font-weight: 500; letter-spacing: 0.01em; color: var(--white); }
-
-  .journal-section { max-width: 1920px; margin: 0 auto; }
-  .journal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 0 80px 80px; margin-top: 64px; }
-
-  .blog-card { display: block; }
-  .blog-card-image { aspect-ratio: 16 / 9; overflow: hidden; border-radius: 2px; background: var(--border); position: relative; }
-  .blog-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
-  .blog-card:hover .blog-card-image img { transform: scale(1.05); }
-  .blog-card-placeholder { position: absolute; inset: 0; background: var(--border); }
-  .blog-card-date { font-size: 11px; color: var(--grey-light); letter-spacing: 0.1em; margin-top: 20px; }
-  .blog-card-title { font-size: 22px; color: var(--black); margin-top: 8px; font-weight: 500; }
-  .blog-card-excerpt { font-size: 14px; color: var(--grey-dark); line-height: 1.65; margin-top: 10px; }
-  .blog-card-read { font-size: 12px; color: var(--grey-light); letter-spacing: 0.1em; margin-top: 16px; display: block; }
-
-  .blog-empty { text-align: center; color: var(--grey-light); padding: 120px 0; }
-
-  footer { background: var(--bg-darker); color: var(--white); padding: var(--gap-xxl) var(--margin-desktop); }
-  .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-xxl); margin-bottom: var(--gap-xxl); }
-  .footer-brand { font-family: var(--font-goodtimes); font-size: 22px; font-weight: 400; letter-spacing: 0.14em; margin-bottom: var(--gap-lg); }
-  .footer-tagline { font-size: 13px; color: var(--grey-dark); line-height: 1.7; }
-  .footer-contact-line { font-size: 13px; color: var(--grey-dark); margin-bottom: var(--gap-md); }
-  .footer-nav-heading { font-size: 11px; letter-spacing: 0.16em; color: #9C9488; margin-bottom: 20px; font-weight: 400; }
-  .footer-nav-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-  .footer-nav-links a { font-size: 13px; color: #6B6560; text-decoration: none; transition: color 0.25s ease; }
-  .footer-nav-links a:hover { color: #FAFAF8; }
-  .footer-social { display: flex; gap: 16px; margin-top: 20px; }
-  .footer-social a { font-size: 12px; color: #6B6560; letter-spacing: 0.08em; text-decoration: none; transition: color 0.25s ease; }
-  .footer-social a:hover { color: #FAFAF8; }
-  .footer-bottom { border-top: 0.5px solid #2C2C2C; padding-top: var(--gap-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--gap-lg); font-size: 11px; color: #6B6560; letter-spacing: 0.08em; }
-  .footer-bottom-links { display: flex; gap: var(--gap-xxl); }
-  .footer-bottom-links a { color: #6B6560; }
-  .footer-bottom-links a:hover { color: #FAFAF8; }
-
-  @media (max-width: 1024px) {
-    :root { --margin-desktop: var(--margin-tablet); --h1: 42px; --h2: 32px; }
-    .nav-links { gap: var(--gap-lg); }
-    .journal-grid { padding: 0 32px 64px; gap: 28px; }
-  }
-  @media (max-width: 720px) {
-    :root { --margin-desktop: var(--margin-mobile); --h1: 40px; --h2: 28px; --h4: 20px; --body-lg: 16px; }
-    .nav { padding: var(--gap-md) var(--margin-mobile); height: auto; }
-    .journal-grid { grid-template-columns: 1fr; padding: 0 20px 48px; margin-top: 40px; gap: 32px; }
-    .footer-grid { grid-template-columns: 1fr; }
-    .footer-bottom { flex-direction: column; align-items: flex-start; }
-  }
-`;

@@ -154,7 +154,7 @@ export const globalPage: PageDef = {
         copyright: '© {year} F.QUAD Studio. All rights reserved.',
         legalLinks: [
           { label: 'PRIVACY', href: '#' },
-          { label: 'SITEMAP', href: '#' },
+          { label: 'SITEMAP', href: '/sitemap.xml' },
         ],
       },
     },
@@ -208,7 +208,7 @@ export const globalPage: PageDef = {
         copyright: '© {year} F.QUAD STUDIO. ALL RIGHTS RESERVED.',
         legalLinks: [
           { label: 'PRIVACY', href: '#' },
-          { label: 'SITEMAP', href: '#' },
+          { label: 'SITEMAP', href: '/sitemap.xml' },
         ],
       },
     },

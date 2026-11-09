@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Navbar } from "@/components/ui/mini-navbar";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHero } from "@/components/layout/PageHero";
+import { pageMetadata } from "@/lib/seo";
 import { ProjectCarousel } from "@/components/ui/ProjectCarousel";
 import RevealOnScroll from "@/app/components/RevealOnScroll";
 import { getPastProjects, type ProjectCategory } from "@/lib/past-projects";
@@ -10,11 +12,12 @@ import { getSiteSettings } from "@/lib/public-content";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Past Projects — F.QUAD Studio",
+export const metadata: Metadata = pageMetadata({
+  title: "Past Projects",
   description:
-    "Selected work from F.QUAD Studio — residences, showrooms, salons and hospitality interiors shaped by function, craft and considered detail.",
-};
+    "Residential, commercial and hospitality spaces designed and delivered by F.QUAD Studio, Hyderabad — each shaped by its brief, its site and the people who use it.",
+  path: "/past-projects",
+});
 
 export default async function PastProjectsPage() {
   const [content, global, pastProjects, settings] = await Promise.all([
@@ -34,23 +37,17 @@ export default async function PastProjectsPage() {
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
 
   return (
-    <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      <Navbar content={global.nav} />
+    <PageShell>
 
-      {/* ── Page header ─────────────────────────────────────────── */}
-      <section className="pt-40 sm:pt-48 pb-16 px-6 sm:px-14 border-b border-white/15">
-        <div className="text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-8 uppercase font-medium">
-          {fill(hero.eyebrow, {
-            count: String(pastProjects.length).padStart(2, "0"),
-          })}
-        </div>
-        <h1 className="m-0 font-normal uppercase text-4xl sm:text-6xl md:text-7xl leading-[0.96] tracking-tight text-white">
-          {hero.title}
-        </h1>
-        <p className="mt-8 max-w-[58ch] text-base sm:text-lg leading-relaxed text-white/65">
-          {hero.intro}
-        </p>
-      </section>
+      <PageHero
+        eyebrow={fill(hero.eyebrow, {
+          count: String(pastProjects.length).padStart(2, "0"),
+        })}
+        title={hero.title}
+        intro={hero.intro}
+        crumbs={[{ label: "Home", href: "/" }, { label: "Projects" }]}
+        art="living"
+      />
 
       {/* ── Project list, grouped by category ───────────────────── */}
       {groups.map(({ id, label }) => {
@@ -64,7 +61,7 @@ export default async function PastProjectsPage() {
               <h2 className="m-0 font-normal uppercase text-2xl sm:text-4xl md:text-5xl tracking-tight text-white">
                 {label}
               </h2>
-              <span className="text-[10px] tracking-[0.2em] uppercase text-[#a09d94] whitespace-nowrap">
+              <span className="text-[11px] tracking-[0.2em] uppercase text-[#a09d94] whitespace-nowrap">
                 {String(grouped.length).padStart(2, "0")}{" "}
                 {grouped.length === 1
                   ? groupSettings.countSingular
@@ -77,7 +74,7 @@ export default async function PastProjectsPage() {
                 <article className="group grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-10 lg:gap-16 items-center py-16 sm:py-20 border-b border-white/15">
                   {/* Text column */}
                   <div className="lg:pr-6">
-                    <div className="text-[10px] tracking-[0.24em] text-white/35 mb-6 font-display">
+                    <div className="text-[11px] tracking-[0.24em] text-white/35 mb-6 font-display">
                       {String(i + 1).padStart(2, "0")}
                     </div>
 
@@ -91,7 +88,7 @@ export default async function PastProjectsPage() {
                       </div>
                     )}
 
-                    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] tracking-[0.2em] uppercase text-[#a09d94]">
+                    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] tracking-[0.2em] uppercase text-[#a09d94]">
                       <span>{project.location || project.type}</span>
                       {project.location && (
                         <>
@@ -113,7 +110,7 @@ export default async function PastProjectsPage() {
 
                     <Link
                       href={`/past-projects/${project.slug}`}
-                      className="inline-flex items-center mt-9 text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white hover:bg-white hover:text-black text-white transition-all duration-300 uppercase font-medium"
+                      className="inline-flex items-center mt-9 text-[11px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white hover:bg-white hover:text-black text-white transition-all duration-300 uppercase font-medium"
                     >
                       {groupSettings.exploreLabel}
                     </Link>
@@ -146,7 +143,7 @@ export default async function PastProjectsPage() {
           <div className="flex flex-wrap gap-4 mt-12">
             <Link
               href={cta.contactHref}
-              className="text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
+              className="text-[11px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
             >
               {cta.contactLabel}
             </Link>
@@ -160,14 +157,7 @@ export default async function PastProjectsPage() {
             </button>
           </div>
         </div>
-
-        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-10 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-          <span>© {new Date().getFullYear()} F.QUAD STUDIO · {address.toUpperCase()}</span>
-          <a href={`mailto:${email}`} className="hover:text-white">
-            {email.toUpperCase()}
-          </a>
-        </div>
       </section>
-    </div>
+    </PageShell>
   );
 }

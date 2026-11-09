@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ElegantCarousel, { SlideData } from "../ui/elegant-carousel";
 import { withDefaults } from "@/lib/cms/schema";
+import { scrollToY } from "@/lib/motion";
 
 interface FaceContent {
   title: string;
@@ -95,10 +96,8 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
       const targetScrollY =
         sectionTop + (targetIndex / numSlides) * totalScrollable + 20;
 
-      window.scrollTo({
-        top: targetScrollY,
-        behavior: "smooth",
-      });
+      // Through Lenis when it's running, so the glide shares its easing.
+      scrollToY(targetScrollY, { duration: 1.1 });
     },
     [numSlides]
   );
@@ -153,11 +152,11 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
         <div className="w-full flex justify-between items-center mb-3 px-1">
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-none bg-accent animate-pulse" />
-            <span className="text-[10px] tracking-[0.24em] text-white/70 uppercase font-medium">
+            <span className="text-[11px] tracking-[0.24em] text-white/70 uppercase font-medium">
               {c.eyebrow}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] text-accent uppercase font-medium">
+          <div className="flex items-center gap-2 text-[11px] tracking-[0.2em] text-accent uppercase font-medium">
             <span>{c.hint}</span>
             <span className="text-white/40">↓</span>
           </div>

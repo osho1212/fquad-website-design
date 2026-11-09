@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useId } from 'react';
 
 const PROJECT_TYPES = [
   'Residential Architecture',
@@ -64,6 +64,7 @@ export function StartProjectForm({
   onClose,
   onSubmittingChange,
 }: StartProjectFormProps) {
+  const uid = useId();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -206,14 +207,14 @@ export function StartProjectForm({
             href={`https://wa.me/919876543210?text=Hi%20F.QUAD%20Studio,%20I%20just%20submitted%20a%20project%20brief%20for%20${encodeURIComponent(name)}.`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-6 py-3 border border-white/30 hover:border-white text-white text-[10px] tracking-[0.2em] uppercase font-medium transition-colors"
+            className="px-6 py-3 border border-white/30 hover:border-white text-white text-[11px] tracking-[0.2em] uppercase font-medium transition-colors"
           >
             CHAT ON WHATSAPP →
           </a>
           {onClose ? (
             <button
               onClick={onClose}
-              className="btn-metallic text-[10px] tracking-[0.2em] px-6 py-3 uppercase font-medium"
+              className="btn-metallic text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium"
             >
               CLOSE WINDOW
             </button>
@@ -221,7 +222,7 @@ export function StartProjectForm({
             <button
               type="button"
               onClick={() => setIsSuccess(false)}
-              className="btn-metallic text-[10px] tracking-[0.2em] px-6 py-3 uppercase font-medium cursor-pointer"
+              className="btn-metallic text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium cursor-pointer"
             >
               SUBMIT ANOTHER →
             </button>
@@ -234,23 +235,24 @@ export function StartProjectForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-7">
       {errorMessage && (
-        <div className="p-3.5 bg-red-950/40 border border-red-500/40 text-red-200 text-xs tracking-wide">
+        <div role="alert" className="p-3.5 bg-red-950/40 border border-red-500/40 text-red-200 text-xs tracking-wide">
           {errorMessage}
         </div>
       )}
 
       {/* 1. Client Contact Info */}
       <div className="space-y-4">
-        <div className="text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium">
+        <div className="text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium">
           01 · CONTACT DETAILS
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10.5px] uppercase tracking-[0.14em] text-white/75 mb-1.5 font-medium">
+            <label htmlFor={`${uid}-name`} className="block text-[11px] uppercase tracking-[0.14em] text-white/75 mb-1.5 font-medium">
               Your Name *
             </label>
-            <input
+            <input id={`${uid}-name`}
               type="text"
+              autoComplete="name"
               required
               placeholder="e.g. Rahul Sharma"
               value={name}
@@ -259,11 +261,12 @@ export function StartProjectForm({
             />
           </div>
           <div>
-            <label className="block text-[10.5px] uppercase tracking-[0.14em] text-white/75 mb-1.5 font-medium">
+            <label htmlFor={`${uid}-email`} className="block text-[11px] uppercase tracking-[0.14em] text-white/75 mb-1.5 font-medium">
               Email Address *
             </label>
-            <input
+            <input id={`${uid}-email`}
               type="email"
+              autoComplete="email"
               required
               placeholder="e.g. rahul@example.com"
               value={email}
@@ -275,11 +278,12 @@ export function StartProjectForm({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
           <div>
-            <label className="block text-[10.5px] uppercase tracking-[0.14em] text-white/75 mb-1.5 font-medium">
+            <label htmlFor={`${uid}-phone`} className="block text-[11px] uppercase tracking-[0.14em] text-white/75 mb-1.5 font-medium">
               Phone Number *
             </label>
-            <input
+            <input id={`${uid}-phone`}
               type="tel"
+              autoComplete="tel"
               required
               placeholder="+91 98765 43210"
               value={phone}
@@ -306,19 +310,20 @@ export function StartProjectForm({
       {/* 2. Type of Project */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium">
+          <div id={`${uid}-type`} className="text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium">
             02 · TYPE OF PROJECT →
-          </label>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div role="group" aria-labelledby={`${uid}-type`} className="flex flex-wrap gap-2">
           {PROJECT_TYPES.map((type) => {
             const isSelected = projectType === type;
             return (
               <button
                 key={type}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => setProjectType(type)}
-                className={`text-[11px] px-3.5 py-2 border rounded-none transition-all uppercase tracking-wider ${
+                className={`text-[11px] px-3.5 py-2.5 min-h-[40px] border rounded-none transition-all uppercase tracking-wider ${
                   isSelected
                     ? 'bg-white text-black font-semibold border-white shadow-lg'
                     : 'bg-white/[0.02] text-white/75 border-white/20 hover:border-white/50 hover:text-white'
@@ -333,6 +338,7 @@ export function StartProjectForm({
           <input
             type="text"
             placeholder="Specify project type..."
+            aria-label="Specify your project type"
             value={customProjectType}
             onChange={(e) => setCustomProjectType(e.target.value)}
             className="mt-2 w-full bg-white/[0.04] border border-white/20 focus:border-white px-3.5 py-2 text-xs text-white placeholder:text-white/30 outline-none"
@@ -343,28 +349,28 @@ export function StartProjectForm({
       {/* 3. Sft. area & Location */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium mb-1.5">
+          <label htmlFor={`${uid}-area`} className="block text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium mb-1.5">
             03 · SFT. AREA →
           </label>
           <div className="relative">
-            <input
+            <input id={`${uid}-area`}
               type="text"
               placeholder="e.g. 5,000"
               value={sftArea}
               onChange={(e) => setSftArea(e.target.value)}
               className="w-full bg-white/[0.04] border border-white/20 focus:border-white px-3.5 py-2.5 text-xs text-white placeholder:text-white/30 outline-none pr-16"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-white/40 uppercase tracking-widest pointer-events-none">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-white/40 uppercase tracking-widest pointer-events-none">
               SQ.FT
             </span>
           </div>
         </div>
 
         <div>
-          <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium mb-1.5">
+          <label htmlFor={`${uid}-location`} className="block text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium mb-1.5">
             04 · LOCATION →
           </label>
-          <input
+          <input id={`${uid}-location`}
             type="text"
             placeholder="e.g. Jubilee Hills, Hyderabad"
             value={location}
@@ -378,16 +384,17 @@ export function StartProjectForm({
 
       {/* 4. Stage (bracketed list, circled) */}
       <div className="space-y-3">
-        <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium">
+        <div id={`${uid}-stage`} className="block text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium">
           05 · STAGE → (SELECT CURRENT STATUS)
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        </div>
+        <div role="group" aria-labelledby={`${uid}-stage`} className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {PROJECT_STAGES.map((s) => {
             const isSelected = stage === s.label;
             return (
               <button
                 key={s.id}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => setStage(s.label)}
                 className={`flex items-center gap-3 px-3.5 py-3 border text-left rounded-none transition-all ${
                   isSelected
@@ -419,18 +426,19 @@ export function StartProjectForm({
       {/* 5. Timeline & Budget */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="space-y-2.5">
-          <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium">
+          <div id={`${uid}-timeline`} className="block text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium">
             06 · TIMELINE — APPROX.
-          </label>
-          <div className="flex flex-wrap gap-1.5">
+          </div>
+          <div role="group" aria-labelledby={`${uid}-timeline`} className="flex flex-wrap gap-1.5">
             {TIMELINES.map((t) => {
               const isSelected = timeline === t;
               return (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setTimeline(t)}
-                  className={`text-[10px] px-2.5 py-1.5 border rounded-none transition-all uppercase tracking-wider ${
+                  aria-pressed={isSelected}
+                onClick={() => setTimeline(t)}
+                  className={`text-[11px] px-3 py-2 min-h-[36px] border rounded-none transition-all uppercase tracking-wider ${
                     isSelected
                       ? 'bg-white text-black font-semibold border-white'
                       : 'bg-white/[0.02] text-white/70 border-white/20 hover:border-white/40'
@@ -444,18 +452,19 @@ export function StartProjectForm({
         </div>
 
         <div className="space-y-2.5">
-          <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium">
+          <div id={`${uid}-budget`} className="block text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium">
             07 · BUDGET:—
-          </label>
-          <div className="flex flex-wrap gap-1.5">
+          </div>
+          <div role="group" aria-labelledby={`${uid}-budget`} className="flex flex-wrap gap-1.5">
             {BUDGET_RANGES.map((b) => {
               const isSelected = budget === b;
               return (
                 <button
                   key={b}
                   type="button"
-                  onClick={() => setBudget(b)}
-                  className={`text-[10px] px-2.5 py-1.5 border rounded-none transition-all uppercase tracking-wider ${
+                  aria-pressed={isSelected}
+                onClick={() => setBudget(b)}
+                  className={`text-[11px] px-3 py-2 min-h-[36px] border rounded-none transition-all uppercase tracking-wider ${
                     isSelected
                       ? 'bg-white text-black font-semibold border-white'
                       : 'bg-white/[0.02] text-white/70 border-white/20 hover:border-white/40'
@@ -474,10 +483,10 @@ export function StartProjectForm({
       {/* 6. Upload Plan (any) */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium">
+          <div id={`${uid}-plan`} className="block text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium">
             08 · UPLOAD PLAN (ANY)
-          </label>
-          <span className="text-[10px] font-mono text-white/40 tracking-wider">
+          </div>
+          <span className="text-[11px] font-mono text-white/40 tracking-wider">
             [ pdf, JPG, CAD (.dwg format) ]
           </span>
         </div>
@@ -485,6 +494,15 @@ export function StartProjectForm({
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
+          role="button"
+          tabIndex={0}
+          aria-labelledby={`${uid}-plan`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           onClick={() => fileInputRef.current?.click()}
           className={`border border-dashed p-4 text-center cursor-pointer transition-colors bg-white/[0.02] hover:bg-white/[0.04] ${
             planFile ? 'border-white/60 bg-white/5' : 'border-white/25 hover:border-white/50'
@@ -493,6 +511,8 @@ export function StartProjectForm({
           <input
             ref={fileInputRef}
             type="file"
+            aria-label="Upload a plan file (PDF, JPG, PNG, DWG or DXF)"
+            tabIndex={-1}
             accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf"
             onChange={handleFileChange}
             className="hidden"
@@ -501,10 +521,13 @@ export function StartProjectForm({
           {planFile ? (
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2.5 text-left truncate">
-                <span className="text-base">📄</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="w-5 h-5 shrink-0 text-white/70" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square">
+                  <path d="M6 3h8l4 4v14H6z" />
+                  <path d="M14 3v4h4M9 12h6M9 16h6" />
+                </svg>
                 <div className="truncate">
                   <p className="text-xs text-white font-medium truncate">{planFile.name}</p>
-                  <p className="text-[10px] text-white/40">
+                  <p className="text-[11px] text-white/40">
                     {(planFile.size / (1024 * 1024)).toFixed(2)} MB · Ready to send
                   </p>
                 </div>
@@ -516,7 +539,7 @@ export function StartProjectForm({
                   setPlanFile(null);
                   if (fileInputRef.current) fileInputRef.current.value = '';
                 }}
-                className="text-[10px] tracking-widest uppercase text-white/60 hover:text-white px-2 py-1 border border-white/20"
+                className="text-[11px] tracking-widest uppercase text-white/60 hover:text-white px-2 py-1 border border-white/20"
               >
                 Remove
               </button>
@@ -526,7 +549,7 @@ export function StartProjectForm({
               <p className="text-xs text-white/80 font-medium mb-1">
                 Drag & Drop or <span className="underline underline-offset-2">Browse file</span>
               </p>
-              <p className="text-[10px] text-white/40">
+              <p className="text-[11px] text-white/40">
                 Supports PDF, JPG/PNG images, and CAD drawing files (.dwg, .dxf) up to 30MB
               </p>
             </div>
@@ -536,10 +559,10 @@ export function StartProjectForm({
 
       {/* 7. Additional Notes */}
       <div>
-        <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50 font-medium mb-1.5">
+        <label htmlFor={`${uid}-notes`} className="block text-[11px] tracking-[0.2em] uppercase text-white/50 font-medium mb-1.5">
           09 · SPECIFIC REQUIREMENTS / NOTES (OPTIONAL)
         </label>
-        <textarea
+        <textarea id={`${uid}-notes`}
           rows={3}
           placeholder="Any particular design goals, family requirements, site constraints, or architectural references..."
           value={notes}
@@ -561,7 +584,7 @@ export function StartProjectForm({
             <span>SUBMIT PROJECT BRIEF →</span>
           )}
         </button>
-        <p className="text-center text-[10px] text-white/40 tracking-wider mt-3 uppercase">
+        <p className="text-center text-[11px] text-white/40 tracking-wider mt-3 uppercase">
           CONFIDENTIAL &amp; SECURE · DIRECT REVIEW BY FOUNDING PARTNERS
         </p>
       </div>

@@ -12,10 +12,10 @@ const nextConfig = {
     minimumCacheTTL: 60,
   },
   headers: async () => {
-    // Scoped to static media only. A blanket '/:path*' rule also matched HTML
-    // documents and /_next/static chunks — which meant visitors could be served
-    // an hour-old page and its stale JS after a deploy. Next already applies
-    // immutable caching to its own hashed assets, so it needs no help here.
+    // Cache rules are scoped to static media only. A blanket '/:path*' rule also
+    // matched HTML documents and /_next/static chunks — which meant visitors
+    // could be served an hour-old page and its stale JS after a deploy. Next
+    // already applies immutable caching to its own hashed assets.
     return [
       {
         source: '/assets/:path*',
@@ -23,6 +23,32 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        // The hero film's frames are large and change only when the film does,
+        // so repeat visitors keep them for a week instead of re-downloading.
+        source: '/assets/hero/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        // Baseline hardening for every response. No CSP here on purpose: the
+        // site relies on inline theme/motion boot scripts and a Google Maps
+        // embed, so a policy needs nonces and its own testing pass.
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
           },
         ],
       },

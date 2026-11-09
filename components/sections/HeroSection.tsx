@@ -5,17 +5,180 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 import { withDefaults } from "@/lib/cms/schema";
+import { clamp, hasFinePointer, onFrame, pointer, prefersReducedMotion, retainPointer } from "@/lib/motion";
+import { ParallaxField, type ParallaxItem } from "@/components/parallax/ParallaxField";
+import { Magnetic } from "@/components/motion/Reveal";
+
+/**
+ * The hero is a scroll-scrubbed film: a building going from pencil sketch to
+ * clay model to finished render (public/assets/hero, exported from the studio
+ * video). `d-` frames are 1440px wide for desktop, `m-` 800px for phones.
+ */
+const FRAME_COUNT = 190;
+/** Frames the preloader waits on — the opening of the scrub, not all 190. */
+const PRIORITY_FRAMES = 20;
+/** First frame of the clay model / of the finished render. */
+const MODEL_FROM_INDEX = 24;
+const RENDER_FROM_INDEX = 58;
+const PHASES = ["Sketch", "Model", "Render"] as const;
+
+/**
+ * Furniture and drafting marks at the edges of the stage. Faint on purpose:
+ * the film is the subject, this only frames it. Their ink colour follows the
+ * hero's (dark on the paper-white sketch, white once the render takes over).
+ */
+const HERO_ART: ParallaxItem[] = [
+  { art: "pendant", x: "17%", y: "-1%", w: 64, depth: 0.5, opacity: 0.5, desktopOnly: true, delay: 0.2 },
+  { art: "pendant", x: "76%", y: "-2%", w: 48, depth: 0.9, opacity: 0.42, desktopOnly: true, delay: 0.5 },
+  { art: "plant", x: "1.5%", y: "58%", w: 110, depth: -0.3, opacity: 0.3, desktopOnly: true, delay: 0.7 },
+  { art: "armchair", x: "85%", y: "60%", w: 140, depth: 0.4, opacity: 0.26, desktopOnly: true, delay: 0.9 },
+  { art: "dimension", x: "2%", y: "26%", w: 210, depth: 0.3, rotate: 90, opacity: 0.38, desktopOnly: true, delay: 0.4 },
+  { art: "cross", x: "9%", y: "17%", w: 36, depth: 0.8, spin: 120, opacity: 0.5, delay: 0.3 },
+  { art: "cross", x: "92%", y: "44%", w: 30, depth: 1, spin: -120, opacity: 0.45, delay: 0.8 },
+];
+
+const pad3 = (n: number) => String(n).padStart(3, "0");
+
+const STENCIL = {
+  landscape: {
+    viewBox: "0 0 1920 1080",
+    fit: "xMidYMid slice",
+    cx: 960,
+    titleY: 480,
+    titleSize: 170,
+    subY: 610,
+    subSize: 24,
+    bylineY: 662,
+    bylineSize: 18,
+  },
+  // Title ≈ 4.8× its font size wide, so 128 fills ~80% of a 760-unit sheet.
+  portrait: {
+    viewBox: "0 0 760 1200",
+    fit: "xMidYMid meet",
+    cx: 380,
+    titleY: 540,
+    titleSize: 128,
+    subY: 632,
+    subSize: 15,
+    bylineY: 668,
+    bylineSize: 12,
+  },
+} as const;
+
+/**
+ * The finale artwork: paper everywhere except a F.QUAD-shaped window onto the
+ * film, with a hairline around the window and two plain lines beneath. The
+ * mask holds only the title — a window that thin shows nothing legible.
+ */
+function StencilArt({
+  variant,
+  title,
+  subtitle,
+  byline,
+}: {
+  variant: keyof typeof STENCIL;
+  title: string;
+  subtitle: string;
+  byline: string;
+}) {
+  const s = STENCIL[variant];
+  const id = `fquad-stencil-${variant}`;
+  const font = { fontFamily: "Good Times, sans-serif", textAnchor: "middle" as const };
+  return (
+    <svg
+      viewBox={s.viewBox}
+      preserveAspectRatio={s.fit}
+      className={`fq-stencil fq-stencil--${variant} w-full h-full absolute inset-0`}
+      role="img"
+      aria-label={title}
+    >
+      <defs>
+        <mask id={id}>
+          {/* White: the paper stays. Black: the title punches through. */}
+          <rect x="-2000" y="-2000" width="6000" height="5000" fill="white" />
+          <text
+            x={s.cx}
+            y={s.titleY}
+            dominantBaseline="central"
+            fill="black"
+            fontWeight="bold"
+            fontSize={s.titleSize}
+            letterSpacing="0.08em"
+            {...font}
+          >
+            {title}
+          </text>
+        </mask>
+      </defs>
+      <rect
+        className="fq-hero-stencil-fill"
+        x="-2000"
+        y="-2000"
+        width="6000"
+        height="5000"
+        mask={`url(#${id})`}
+      />
+      <text
+        className="fq-hero-stencil-line"
+        x={s.cx}
+        y={s.titleY}
+        dominantBaseline="central"
+        fontWeight="bold"
+        fontSize={s.titleSize}
+        letterSpacing="0.08em"
+        {...font}
+      >
+        {title}
+      </text>
+      <text
+        className="fq-hero-stencil-sub"
+        x={s.cx}
+        y={s.subY}
+        dominantBaseline="central"
+        fontWeight="500"
+        fontSize={s.subSize}
+        letterSpacing="0.18em"
+        {...font}
+      >
+        {subtitle}
+      </text>
+      <text
+        className="fq-hero-stencil-sub"
+        x={s.cx}
+        y={s.bylineY}
+        dominantBaseline="central"
+        fontWeight="500"
+        fontSize={s.bylineSize}
+        letterSpacing="0.22em"
+        opacity="0.7"
+        {...font}
+      >
+        {byline}
+      </text>
+    </svg>
+  );
+}
 
 export function HeroSection({ content }: { content?: Record<string, any> }) {
   const c = withDefaults("home", "hero", content);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  // Frames 1–35 are blueprint line-art, which the light theme inverts. From
-  // frame 36 the sequence becomes the finished render, which must show its
-  // original colours — and the overlay text flips back to white to stay
-  // legible against it. Dark theme is unaffected.
-  const [onOriginalFrames, setOnOriginalFrames] = useState(false);
+  const canvasWrapRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-driven layers are updated through refs, not React state: setState
+  // on every scroll tick re-rendered this whole tree up to 60 times a second.
+  const textRef = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const hudRef = useRef<HTMLDivElement>(null);
+  const hudFrameRef = useRef<HTMLSpanElement>(null);
+  const hudPhaseRef = useRef<HTMLSpanElement>(null);
+  const hudBarRef = useRef<HTMLDivElement>(null);
+  const stencilRef = useRef<HTMLDivElement>(null);
+  const cueRef = useRef<HTMLDivElement>(null);
+
+  // The one thing that stays in React state: it flips once per scrub and
+  // swaps the ink colour (dark on the sketch, white over the render).
+  const [onRender, setOnRender] = useState(false);
   const { openModal } = useStartProjectModal();
 
   useEffect(() => {
@@ -29,316 +192,357 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
-    const frameCount = 114;
-    const images: HTMLImageElement[] = [];
-    const seq = { frame: 0 };
+    // Phones, data-saver and slow connections get the small frame set; on
+    // data-saver / 2g / 3g every other frame is skipped (the scrub holds the
+    // nearest loaded frame, so motion stays continuous).
+    const conn = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }).connection;
+    const slow = Boolean(conn?.saveData) || /(^|-)(2g|3g)$/.test(conn?.effectiveType ?? "");
+    const prefix = slow || window.matchMedia("(max-width: 767px)").matches ? "m" : "d";
+    const stride = slow ? 2 : 1;
+    const maxInflight = slow ? 3 : 6;
 
-    // Frame numbers are 1-based in the filenames; index 34 === frame 035.
-    const ORIGINAL_FROM_INDEX = 35;
-    let wasOriginal = false;
+    const images: (HTMLImageElement | undefined)[] = new Array(FRAME_COUNT);
+    const started: boolean[] = new Array(FRAME_COUNT).fill(false);
+    const seq = { frame: 0 };
+    let wasRender = false;
+    let lastDrawn = -1;
+    let priorityLoaded = 0;
+    let inflight = 0;
+    const priorityTotal = Array.from({ length: PRIORITY_FRAMES }, (_, k) => k).filter(
+      (k) => k % stride === 0
+    ).length;
+    window.__fqHero = { loaded: 0, total: priorityTotal };
 
     const render = () => {
-      const frameIdx = Math.min(frameCount - 1, Math.max(0, Math.round(seq.frame)));
+      const frameIdx = Math.min(FRAME_COUNT - 1, Math.max(0, Math.round(seq.frame)));
 
       // Only re-render React when the boundary is actually crossed — render()
       // runs on every scroll tick.
-      const isOriginal = frameIdx >= ORIGINAL_FROM_INDEX;
-      if (isOriginal !== wasOriginal) {
-        wasOriginal = isOriginal;
-        setOnOriginalFrames(isOriginal);
+      const isRender = frameIdx >= RENDER_FROM_INDEX;
+      if (isRender !== wasRender) {
+        wasRender = isRender;
+        setOnRender(isRender);
       }
 
-      const img = images[frameIdx] || images[0];
-      if (img && img.complete && img.naturalWidth) {
+      // Frames still downloading (or skipped on a slow connection): hold the
+      // nearest one that has arrived rather than flashing back to frame 1.
+      let shown = frameIdx;
+      let img = images[shown];
+      if (!(img && img.complete && img.naturalWidth)) {
+        img = undefined;
+        for (let k = frameIdx - 1; k >= 0; k--) {
+          const cand = images[k];
+          if (cand?.complete && cand.naturalWidth) {
+            img = cand;
+            shown = k;
+            break;
+          }
+        }
+      }
+      if (img) {
         if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
           canvas.width = img.naturalWidth;
           canvas.height = img.naturalHeight;
+          lastDrawn = -1;
         }
-        ctx.drawImage(img, 0, 0);
+        if (shown !== lastDrawn) {
+          ctx.drawImage(img, 0, 0);
+          lastDrawn = shown;
+        }
+      }
+      pump();
+
+      // Live drawing readout.
+      if (hudFrameRef.current) {
+        hudFrameRef.current.textContent = `${pad3(frameIdx + 1)} / ${FRAME_COUNT}`;
+      }
+      if (hudPhaseRef.current) {
+        hudPhaseRef.current.textContent =
+          PHASES[frameIdx >= RENDER_FROM_INDEX ? 2 : frameIdx >= MODEL_FROM_INDEX ? 1 : 0];
+      }
+      if (hudBarRef.current) {
+        hudBarRef.current.style.transform = `scaleX(${(seq.frame / (FRAME_COUNT - 1)).toFixed(4)})`;
       }
     };
 
-    for (let i = 1; i <= frameCount; i++) {
+    // Just-in-time loading: a few requests in flight at a time, always the
+    // unloaded frame closest to where the visitor is scrolling (forward
+    // first). The opening frames load immediately; nothing queues 190
+    // downloads ahead of the page's other assets.
+    // Only a window around the playhead is ever requested: a visitor who
+    // reads the headline and leaves downloads ~a third of the film, not all
+    // of it. Scrolling slides the window; a far jump (an anchor link) simply
+    // holds the nearest loaded frame until its neighbourhood arrives.
+    const AHEAD = slow ? 36 : 64;
+    const BEHIND = 10;
+    const nextWanted = (): number => {
+      const cur = Math.round(seq.frame);
+      for (let d = 0; d <= AHEAD; d++) {
+        const fwd = cur + d;
+        if (fwd < FRAME_COUNT && !started[fwd] && fwd % stride === 0) return fwd;
+        if (d > 0 && d <= BEHIND) {
+          const back = cur - d;
+          if (back >= 0 && !started[back] && back % stride === 0) return back;
+        }
+      }
+      return -1;
+    };
+
+    const startFrame = (idx: number) => {
+      started[idx] = true;
+      inflight += 1;
       const img = new Image();
-      img.onload = () => {
-        if (i === 1 || Math.round(seq.frame) === i - 1) {
-          render();
+      const priority = idx < PRIORITY_FRAMES;
+      const settle = () => {
+        inflight -= 1;
+        if (priority) {
+          priorityLoaded += 1;
+          window.__fqHero = { loaded: priorityLoaded, total: priorityTotal };
         }
       };
-      img.src = `/assets/hero-sequence/ezgif-frame-${i.toString().padStart(3, "0")}.jpg`;
-      images.push(img);
+      img.onload = () => {
+        settle();
+        if (idx === 0 || Math.round(seq.frame) === idx) render();
+        else pump();
+      };
+      // A failed frame must not hold the intro hostage.
+      img.onerror = () => {
+        settle();
+        pump();
+      };
+      img.decoding = "async";
+      img.src = `/assets/hero/${prefix}-${pad3(idx + 1)}.webp`;
+      images[idx] = img;
+    };
+
+    function pump() {
+      while (inflight < maxInflight) {
+        const idx = nextWanted();
+        if (idx < 0) return;
+        startFrame(idx);
+      }
     }
+    pump();
 
     // Try initial draw immediately in case first image is cached
-    if (images[0] && images[0].complete) {
-      render();
-    }
+    if (images[0] && images[0].complete) render();
 
-    // GSAP ScrollTrigger:
-    // Paced across a longer scroll distance with enhanced damping for a luxury, deliberate scrub
+    // Phase layout across the 600vh scroll distance:
+    //   0.00 → 0.50  the film scrubs: sketch → model → render
+    //   0.50 → 0.66  the finished render holds under the headline
+    //   0.66 → 0.88  the stage settles to paper around the F.QUAD cut-out
+    const setDisplay = (el: HTMLElement | null, on: boolean, display: string) => {
+      if (el) el.style.display = on ? display : "none";
+    };
+
+    const apply = (p: number) => {
+      const textOp = p <= 0.56 ? 1 : clamp(1 - (p - 0.56) / 0.12);
+      const textY = p <= 0.56 ? 0 : Math.max(-30, Math.min(0, -(p - 0.56) * 70));
+      const text = textRef.current;
+      if (text) {
+        text.style.opacity = String(textOp);
+        text.style.transform = `translateY(${textY}px)`;
+        text.style.display = textOp <= 0.01 ? "none" : "flex";
+        text.style.pointerEvents = textOp > 0.3 ? "auto" : "none";
+      }
+      if (fieldRef.current) fieldRef.current.style.opacity = String(textOp);
+      // Inline opacity only once the HUD fades out; before that, leave it to
+      // the CSS intro transition (an inline value would beat it).
+      if (hudRef.current) {
+        hudRef.current.style.opacity = p > 0.56 ? String(clamp(1 - (p - 0.58) / 0.1)) : "";
+      }
+
+      const settle = p > 0.66 ? clamp((p - 0.66) / 0.22) : 0;
+      if (stencilRef.current) stencilRef.current.style.opacity = String(settle);
+      setDisplay(stencilRef.current, settle > 0.01, "block");
+
+      const cue = clamp((p - 0.86) / 0.12);
+      if (cueRef.current) cueRef.current.style.opacity = String(cue);
+      setDisplay(cueRef.current, cue > 0.01, "flex");
+    };
+    apply(0);
+
+    // With Lenis already easing the scroll, a short scrub is enough inertia.
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container,
         start: "top top",
         end: "bottom bottom",
-        scrub: 1.4,
-        onUpdate: (self) => {
-          setScrollProgress(self.progress);
-        },
+        scrub: 0.5,
+        onUpdate: (self) => apply(self.progress),
       },
     });
 
     tl.to(seq, {
-      frame: frameCount - 1,
+      frame: FRAME_COUNT - 1,
       ease: "none",
-      duration: 0.52,
+      duration: 0.5,
       onUpdate: render,
     });
 
     // Hold on final frame for the remainder of the timeline
-    tl.to({}, { duration: 0.48 });
+    tl.to({}, { duration: 0.5 });
+
+    // Depth: the film drifts a few px against the pointer.
+    let stopDepth: (() => void) | null = null;
+    let releasePointer: (() => void) | null = null;
+    const wrap = canvasWrapRef.current;
+    if (wrap && hasFinePointer() && !prefersReducedMotion()) {
+      releasePointer = retainPointer();
+      stopDepth = onFrame(() => {
+        wrap.style.transform = `translate3d(${(-pointer.x * 12).toFixed(2)}px, ${(
+          -pointer.y * 9
+        ).toFixed(2)}px, 0) scale(1.035)`;
+      });
+    }
 
     return () => {
+      stopDepth?.();
+      releasePointer?.();
+      tl.scrollTrigger?.kill();
       tl.kill();
-      ScrollTrigger.getAll().forEach((st) => st.kill());
+      delete window.__fqHero;
     };
   }, []);
 
-  // 1. Initial State (SPACE IS OUR MEDIUM + CTAs):
-  // Stays visible for at least 60% of the scroll timeline (0.00 -> 0.58), then fades out smoothly (0.58 -> 0.70)
-  const initialTextOpacity =
-    scrollProgress <= 0.58
-      ? 1
-      : Math.max(0, Math.min(1, 1 - (scrollProgress - 0.58) / 0.12));
-
-  const initialTextTranslate =
-    scrollProgress <= 0.58
-      ? 0
-      : Math.max(-30, Math.min(0, -(scrollProgress - 0.58) * 70));
-
-  // 2. Surrounding Screen Darkening (Stationary Stencil):
-  // Phase 1 (0.0 -> 0.52): Full construction animation scrubs on full-screen canvas
-  // Phase 2 (0.52 -> 0.68): Full-screen final finished building holds with SPACE IS OUR MEDIUM overlay
-  // Phase 3 (0.68 -> 0.88): Surrounding stage darkens into pitch-black around centered F.QUAD stencil
-  let surroundingDarkness = 0;
-  if (scrollProgress > 0.68) {
-    surroundingDarkness = Math.min(1, Math.max(0, (scrollProgress - 0.68) / 0.2));
-  }
-
-  // 3. Settled Stencil Subtitle ("DISCOVER THE PRACTICE")
-  const cueOpacity = Math.max(0, Math.min(1, (scrollProgress - 0.86) / 0.12));
-
   return (
-    <section id="top" ref={containerRef} className="relative h-[580vh] bg-black">
+    <section id="top" ref={containerRef} className="relative h-[600vh] bg-black">
       <div
-        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-black bg-[url('/assets/hero-sequence/ezgif-frame-001.jpg')] bg-cover bg-center flex flex-col justify-center items-center${
-          onOriginalFrames ? " fq-hero-stage--original" : ""
+        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp')] bg-cover bg-center flex flex-col justify-center items-center${
+          onRender ? " fq-hero-stage--render" : ""
         }`}
       >
-        {/* Layer 0: 114-Frame Construction Canvas (Full Screen Background) */}
-        <canvas
-          ref={canvasRef}
-          className={`fq-hero-canvas absolute inset-0 w-full h-full object-cover block z-0${
-            onOriginalFrames ? " fq-hero-canvas--original" : ""
-          }`}
+        {/* Layer 0: the film, drawn frame by frame on a canvas */}
+        <div ref={canvasWrapRef} className="absolute inset-0 z-0 will-change-transform">
+          <canvas
+            ref={canvasRef}
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover block"
+          />
+        </div>
+
+        {/* Layer 0.2: soft scrim so white type holds up over the render */}
+        <div
+          aria-hidden="true"
+          className="fq-hero-scrim absolute inset-x-0 bottom-0 h-[58%] z-[2] pointer-events-none"
         />
 
-        {/* Layer 1: Initial Full-Screen Hero View (SPACE IS OUR MEDIUM - +10% Font Size + Stays for 60% of Scroll) */}
+        {/* Layer 0.5: drifting furniture and drafting marks, tied to hero progress */}
+        <div ref={fieldRef} className="absolute inset-0 z-[5] pointer-events-none">
+          <ParallaxField items={HERO_ART} track={containerRef} draw="intro" range={260} />
+        </div>
+
+        {/* Layer 1: headline and calls to action */}
         <div
-          style={{
-            opacity: initialTextOpacity,
-            transform: `translateY(${initialTextTranslate}px)`,
-            display: initialTextOpacity <= 0.01 ? "none" : "flex",
-          }}
-          className={`fq-hero-text${
-            onOriginalFrames ? " fq-hero-text--on-dark" : ""
-          } absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center transition-all duration-75 ease-out ${initialTextOpacity > 0.3 ? "pointer-events-auto" : "pointer-events-none"
-            }`}
+          ref={textRef}
+          className="fq-hero-copy absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center pointer-events-auto"
         >
-          <h1 className="m-0 font-bold text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight text-white uppercase drop-shadow-[0_4px_35px_rgba(0,0,0,0.95)]">
+          <h1
+            className="fq-intro-item fq-hero-h1 m-0 font-bold text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight uppercase"
+            style={{ ["--i" as string]: 0 }}
+          >
             {c.headline}
           </h1>
 
-          <div className="flex items-center gap-3.5 mt-5 sm:mt-6">
-            <a
-              href={c.primaryCtaHref}
-              className="btn-metallic text-[11px] sm:text-xs py-2 px-6 tracking-[0.2em] uppercase font-semibold"
-            >
-              {c.primaryCtaLabel}
-            </a>
-            <button
-              type="button"
-              onClick={() => openModal()}
-              className="text-[9.5px] tracking-[0.2em] px-4 py-2 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase bg-black/50 backdrop-blur-md cursor-pointer"
-            >
-              {c.secondaryCtaLabel}
-            </button>
+          <div
+            className="fq-intro-item flex items-center gap-3.5 mt-5 sm:mt-6"
+            style={{ ["--i" as string]: 1 }}
+          >
+            <Magnetic strength={0.22}>
+              <a
+                href={c.primaryCtaHref}
+                className="btn-metallic text-[11px] sm:text-xs py-2 px-6 tracking-[0.2em] uppercase font-semibold"
+              >
+                {c.primaryCtaLabel}
+              </a>
+            </Magnetic>
+            <Magnetic strength={0.22}>
+              <button
+                type="button"
+                onClick={() => openModal()}
+                className="fq-hero-ghost text-[11px] tracking-[0.2em] px-4 py-2 uppercase cursor-pointer"
+              >
+                {c.secondaryCtaLabel}
+              </button>
+            </Magnetic>
           </div>
 
-          <div className="flex flex-col items-center gap-2 text-white/50 text-[9.5px] tracking-[0.24em] uppercase mt-7 pointer-events-none">
+          <div
+            className="fq-intro-item fq-hero-sub flex flex-col items-center gap-2 text-[11px] tracking-[0.24em] uppercase mt-7 pointer-events-none"
+            style={{ ["--i" as string]: 2 }}
+          >
             <span>{c.scrollHint}</span>
-            <div className="w-[1px] h-5 bg-gradient-to-b from-white/60 to-transparent animate-bounce" />
+            <div className="fq-hero-sub-rule w-[1px] h-5 animate-bounce" />
           </div>
         </div>
 
-        {/* Layer 1.5: White Illumination Overlay behind Stencil to make F.QUAD Pop */}
+        {/* Layer 1.2: drawing HUD — location, phase, frame counter, progress */}
         <div
-          style={{
-            opacity: surroundingDarkness * 0.0,
-            display: surroundingDarkness <= 0.01 ? "none" : "block",
-          }}
-          className="absolute inset-0 z-15 pointer-events-none transition-opacity duration-75 ease-out bg-white"
-        />
-        <div
-          style={{
-            opacity: surroundingDarkness * 0.67,
-            display: surroundingDarkness <= 0.01 ? "none" : "block",
-          }}
-          className="absolute inset-0 z-15 pointer-events-none transition-opacity duration-75 ease-out bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.85)_0%,rgba(255,255,255,0.4)_45%,transparent_75%)]"
-        />
-
-        {/* Layer 2: Pitch-Black Stencil Mask Layer (Full Screen Cover on ALL Screen Sizes) */}
-        <div
-          style={{
-            opacity: surroundingDarkness,
-            display: surroundingDarkness <= 0.01 ? "none" : "block",
-          }}
-          className="absolute inset-0 z-20 pointer-events-none transition-opacity duration-75 ease-out w-full h-full overflow-hidden"
+          ref={hudRef}
+          aria-hidden="true"
+          className="fq-hero-sub fq-intro-item hidden md:flex absolute inset-x-11 bottom-6 z-10 justify-between items-end pointer-events-none text-[11px] tracking-[0.24em] uppercase"
+          style={{ ["--i" as string]: 3 }}
         >
-          {/* SVG Stationary Stencil Mask: Solid Black Stage */}
-          <svg
-            viewBox="0 0 1920 1080"
-            preserveAspectRatio="xMidYMid slice"
-            className="w-full h-full absolute inset-0 block"
-          >
-            <defs>
-              <mask id="fquad-stationary-stencil">
-                {/* White background: keeps surrounding black stage visible */}
-                <rect x="-2000" y="-2000" width="6000" height="5000" fill="white" />
-
-                {/* Black centered cutout: punches transparent hole showing finished building canvas inside */}
-                <text
-                  x="960"
-                  y="480"
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="black"
-                  fontFamily="Good Times, sans-serif"
-                  fontWeight="bold"
-                  fontSize="150"
-                  letterSpacing="0.08em"
-                >
-                  {c.stencilTitle}
-                </text>
-                <text
-                  x="960"
-                  y="585"
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="black"
-                  fontFamily="Good Times, sans-serif"
-                  fontWeight="500"
-                  fontSize="24"
-                  letterSpacing="0.18em"
-                >
-                  {c.stencilSubtitle}
-                </text>
-                <text
-                  x="960"
-                  y="635"
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="black"
-                  fontFamily="Good Times, sans-serif"
-                  fontWeight="500"
-                  fontSize="18"
-                  letterSpacing="0.22em"
-                >
-                  {c.stencilByline}
-                </text>
-              </mask>
-            </defs>
-
-            {/* Oversized Solid Black Stage — reveals the finished-building
-                video through the punched-out text. Dark theme only; in
-                light theme .fq-hero-stencil-fill becomes an opaque white
-                rect with no mask (see globals.css), so nothing peeks
-                through and the plain-text version below shows instead. */}
-            <rect
-              className="fq-hero-stencil-fill"
-              x="-2000"
-              y="-2000"
-              width="6000"
-              height="5000"
-              fill="#000000"
-              mask="url(#fquad-stationary-stencil)"
-            />
-          </svg>
-
-          {/* Light-theme counterpart: the same three lines as plain dark
-              text, no video reveal. Hidden by default; shown only under
-              [data-theme='light'] in globals.css. */}
-          <svg
-            viewBox="0 0 1920 1080"
-            preserveAspectRatio="xMidYMid slice"
-            className="fq-hero-stencil-light w-full h-full absolute inset-0 block"
-          >
-            <text
-              x="960"
-              y="480"
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#111111"
-              fontFamily="Good Times, sans-serif"
-              fontWeight="bold"
-              fontSize="150"
-              letterSpacing="0.08em"
-            >
-              {c.stencilTitle}
-            </text>
-            <text
-              x="960"
-              y="585"
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#111111"
-              fontFamily="Good Times, sans-serif"
-              fontWeight="500"
-              fontSize="24"
-              letterSpacing="0.18em"
-            >
-              {c.stencilSubtitle}
-            </text>
-            <text
-              x="960"
-              y="635"
-              textAnchor="middle"
-              dominantBaseline="central"
-              fill="#111111"
-              fontFamily="Good Times, sans-serif"
-              fontWeight="500"
-              fontSize="18"
-              letterSpacing="0.22em"
-            >
-              {c.stencilByline}
-            </text>
-          </svg>
-
-          {/* Subtle Golden Blueprint Arcs & Architectural Grid on the Dark Stage */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
-            <div className="w-[75vw] max-w-4xl aspect-square border border-white/25 rounded-full animate-pulse" />
-            <div className="w-[50vw] max-w-2xl aspect-square border border-white/20 rounded-full" />
-            <div className="w-[30vw] max-w-md aspect-square border border-dashed border-white/25 rounded-full" />
+          <div className="flex flex-col gap-1.5">
+            <span>17.3850° N · 78.4867° E</span>
+            <span className="opacity-70">Hyderabad · IN</span>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-3">
+              <span ref={hudPhaseRef}>Sketch</span>
+              <span ref={hudFrameRef} className="tabular-nums">
+                001 / {FRAME_COUNT}
+              </span>
+            </div>
+            <div className="fq-hero-hud-track w-36 h-px overflow-hidden">
+              <div
+                ref={hudBarRef}
+                className="fq-hero-hud-fill h-full w-full origin-left"
+                style={{ transform: "scaleX(0)" }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Layer 3: Settled Subtitle Navigation Cue */}
+        {/* Layer 2: finale — the stage settles to paper around a F.QUAD cut-out
+            that frames the finished render. The mask holds only the title;
+            the two smaller lines are plain type (a window that thin shows
+            nothing legible). */}
         <div
-          style={{
-            opacity: cueOpacity,
-            display: cueOpacity <= 0.01 ? "none" : "flex",
-          }}
-          className="absolute bottom-10 z-30 pointer-events-none flex flex-col items-center gap-2 text-white/60 text-[10px] tracking-[0.24em] uppercase transition-opacity duration-150"
+          ref={stencilRef}
+          style={{ opacity: 0, display: "none" }}
+          className="absolute inset-0 z-20 pointer-events-none w-full h-full overflow-hidden"
+        >
+          {/* Two compositions: landscape fills the screen (slice); portrait
+              fits a taller sheet whole (meet) so the title is never cropped. */}
+          <StencilArt
+            variant="landscape"
+            title={c.stencilTitle}
+            subtitle={c.stencilSubtitle}
+            byline={c.stencilByline}
+          />
+          <StencilArt
+            variant="portrait"
+            title={c.stencilTitle}
+            subtitle={c.stencilSubtitle}
+            byline={c.stencilByline}
+          />
+
+          {/* Concentric drafting arcs, as on a layout sheet */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+            <div className="w-[75vw] max-w-4xl aspect-square border border-white/25 rounded-full" />
+            <div className="absolute w-[50vw] max-w-2xl aspect-square border border-white/20 rounded-full" />
+            <div className="absolute w-[30vw] max-w-md aspect-square border border-dashed border-white/25 rounded-full" />
+          </div>
+        </div>
+
+        {/* Layer 3: settled navigation cue */}
+        <div
+          ref={cueRef}
+          style={{ opacity: 0, display: "none" }}
+          className="absolute bottom-10 z-30 pointer-events-none flex flex-col items-center gap-2 text-white/60 text-[11px] tracking-[0.24em] uppercase"
         >
           <span className="text-accent font-medium">{c.discoverLabel}</span>
           <div className="w-[1px] h-6 bg-gradient-to-b from-white to-transparent animate-bounce" />

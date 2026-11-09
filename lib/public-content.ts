@@ -4,14 +4,17 @@
 // here is the record-shaped content the studio maintains as rows: team,
 // awards, testimonials, journal posts, and the studio's own contact details.
 
+import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 
-export async function getSiteSettings() {
+// Wrapped in cache() so the layout, generateMetadata and the page itself share
+// one query per request instead of each hitting the database.
+export const getSiteSettings = cache(async () => {
   return prisma.siteSettings.findUnique({
     where: { id: 'default' },
     include: { ogImage: { include: { variants: true } } },
   });
-}
+});
 
 export function mediaUrl(
   media: { variants: { label: string; path: string }[]; path: string } | null,

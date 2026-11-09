@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Navbar } from "@/components/ui/mini-navbar";
+import { PageShell } from "@/components/layout/PageShell";
+import { pageMetadata, jsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { siteUrl } from "@/lib/site";
 import RevealOnScroll from "@/app/components/RevealOnScroll";
 import { getServices, getService, defaultServices } from "@/lib/services";
 import { getPage } from "@/lib/cms/content";
@@ -24,11 +26,12 @@ export async function generateMetadata({
   params: { slug: string };
 }): Promise<Metadata> {
   const service = await getService(params.slug);
-  if (!service) return { title: "Services — F.QUAD Studio" };
-  return {
-    title: `${service.title} — F.QUAD Studio`,
+  if (!service) return pageMetadata({ title: "Services", description: "Our services.", path: "/services", noIndex: true });
+  return pageMetadata({
+    title: service.title,
     description: service.desc,
-  };
+    path: `/services/${service.slug}`,
+  });
 }
 
 export default async function ServiceDetailPage({
@@ -53,19 +56,47 @@ export default async function ServiceDetailPage({
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
 
   return (
-    <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      <Navbar content={global.nav} />
+    <PageShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd({
+            "@context": "https://schema.org",
+            "@type": "Service",
+            name: service.title,
+            description: service.desc,
+            provider: { "@type": "ProfessionalService", name: "F.QUAD Studio", url: siteUrl() },
+            areaServed: "Hyderabad",
+            url: `${siteUrl()}/services/${service.slug}`,
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            breadcrumbJsonLd(
+              [
+                { name: "Home", path: "/" },
+                { name: "Services", path: "/services" },
+                { name: service.title, path: `/services/${service.slug}` },
+              ],
+              siteUrl()
+            )
+          ),
+        }}
+      />
 
       {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="pt-40 sm:pt-48 pb-16 px-6 sm:px-14 border-b border-white/15">
         <Link
           href="/services"
-          className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-white/45 hover:text-white transition-colors mb-10"
+          className="fq-link inline-flex items-center gap-2 min-h-[32px] text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors mb-8"
         >
           {labels.backLabel}
         </Link>
 
-        <div className="text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-6 uppercase font-medium">
+        <div className="text-[11px] tracking-[0.22em] text-[#a09d94] mb-6 uppercase font-medium">
           {service.num} · {labels.eyebrowSuffix}
         </div>
 
@@ -124,7 +155,7 @@ export default async function ServiceDetailPage({
                 key={item}
                 className="flex items-baseline gap-3 py-4 border-b border-white/10 text-sm sm:text-base text-white/70"
               >
-                <span className="text-[#c0c0c0] text-[10px]" aria-hidden>
+                <span className="text-[#c0c0c0] text-[11px]" aria-hidden>
                   ◆
                 </span>
                 {item}
@@ -136,7 +167,7 @@ export default async function ServiceDetailPage({
 
       {/* ── Services ────────────────────────────────────────────── */}
       <section className="px-6 sm:px-14 py-16 border-t border-white/15">
-        <div className="text-[10px] tracking-[0.22em] text-white/45 uppercase font-medium mb-10">
+        <div className="text-[11px] tracking-[0.22em] text-white/45 uppercase font-medium mb-10">
           {labels.siblingsHeading}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[1px] bg-white/15 border border-white/15">
@@ -153,7 +184,7 @@ export default async function ServiceDetailPage({
                     : "bg-black hover:bg-white/[0.04]"
                 }`}
               >
-                <div className="text-[10px] text-[#c0c0c0] tracking-[0.2em]">
+                <div className="text-[11px] text-[#c0c0c0] tracking-[0.2em]">
                   {svc.num}
                 </div>
                 <h3
@@ -166,7 +197,7 @@ export default async function ServiceDetailPage({
                   {svc.title}
                 </h3>
                 {isCurrent && (
-                  <div className="mt-3 text-[9px] tracking-[0.2em] uppercase text-accent">
+                  <div className="mt-3 text-[11px] tracking-[0.2em] uppercase text-accent">
                     {labels.currentLabel}
                   </div>
                 )}
@@ -186,7 +217,7 @@ export default async function ServiceDetailPage({
             {next && next.slug !== service.slug && (
               <Link
                 href={`/services/${next.slug}`}
-                className="text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
+                className="text-[11px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white transition-colors uppercase font-medium inline-flex items-center"
               >
                 {fill(labels.nextTemplate, { title: next.title })}
               </Link>
@@ -201,14 +232,7 @@ export default async function ServiceDetailPage({
             </button>
           </div>
         </div>
-
-        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-10 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-          <span>© {new Date().getFullYear()} F.QUAD STUDIO · {address}</span>
-          <a href={`mailto:${email}`} className="hover:text-white">
-            {email.toUpperCase()}
-          </a>
-        </div>
       </section>
-    </div>
+    </PageShell>
   );
 }
