@@ -30,6 +30,7 @@ export function StartProjectModal() {
 
   return (
     <div
+      data-lenis-prevent
       className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
@@ -42,7 +43,7 @@ export function StartProjectModal() {
         {/* Top Header Bar */}
         <div className="sticky top-0 z-20 bg-[#0e0e0e]/95 backdrop-blur-md px-6 sm:px-8 py-5 border-b border-white/10 flex items-center justify-between">
           <div>
-            <span className="text-[9px] tracking-[0.24em] text-white/50 uppercase font-medium block mb-1">
+            <span className="text-[11px] tracking-[0.24em] text-white/50 uppercase font-medium block mb-1">
               F.QUAD STUDIO · PROJECT INTAKE
             </span>
             <h2 className="m-0 font-display text-xl sm:text-2xl tracking-[0.14em] uppercase text-white font-medium">

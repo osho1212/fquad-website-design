@@ -1,209 +1,140 @@
-import Link from 'next/link';
-import { SiteNav } from '@/components/ui/SiteNav';
-import { SiteFooter } from '@/components/ui/SiteFooter';
-import { getAwards, getSiteSettings } from '@/lib/public-content';
-import { getPage } from '@/lib/cms/content';
+import type { Metadata } from "next";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHero } from "@/components/layout/PageHero";
+import { Section } from "@/components/layout/Section";
+import { AwardsByYear, groupByYear } from "@/components/pages/awards/AwardsByYear";
+import { RecognitionList } from "@/components/pages/awards/RecognitionList";
+import { ClosingBand } from "@/components/pages/blog/ClosingBand";
+import { countLabel, orEmpty } from "@/components/pages/blog/helpers";
+import { PrimaryAction, TextAction } from "@/components/pages/blog/ui";
+import { getPage } from "@/lib/cms/content";
+import { getAwards } from "@/lib/public-content";
+import { pageMetadata } from "@/lib/seo";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
-export default async function AwardsPage() {
-  const awards = await getAwards();
-  const settings = await getSiteSettings();
-  const [awardsContent, globalContent] = await Promise.all([getPage('awards'), getPage('global')]);
-  const hero = awardsContent.hero;
-  const nav = globalContent.page_nav;
-  const footer = globalContent.page_footer;
-  const footerSettings = {
-    email: settings?.email ?? null,
-    phone: settings?.phone ?? null,
-    address: settings?.address ?? null,
-    instagramUrl: settings?.instagramUrl ?? null,
-    whatsapp: settings?.whatsapp ?? null,
-  };
+export const metadata: Metadata = pageMetadata({
+  title: "Awards & Recognition",
+  description:
+    "The awards and institutions that have recognised F.QUAD Studio's architecture and interior design work in Hyderabad.",
+  path: "/awards",
+});
 
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: AWARDS_STYLES }} />
-
-      <div className="page-fade">
-      <SiteNav content={nav} active="/awards" />
-
-      <section className="awards-hero">
-        <div className="awards-hero-content reveal">
-          <div className="eyebrow">{hero.eyebrow}</div>
-          <h1>{hero.title}</h1>
-        </div>
-      </section>
-
-      <section className="awards-timeline">
-        {awards.length > 0 ? (
-          awards.map((award) => (
-            <div className="award-row reveal" key={award.id}>
-              <div className="award-year">{award.year}</div>
-              <div>
-                <div className="award-title">{award.title}</div>
-                <p className="award-body">{award.body}</p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="awards-empty">{hero.emptyState}</p>
-        )}
-      </section>
-
-      <SiteFooter content={footer} settings={footerSettings} />
-      </div>
-
-      <script dangerouslySetInnerHTML={{ __html: AWARDS_SCRIPT }} />
-    </>
-  );
+/**
+ * Merge several lists of names, dropping repeats ("IIID" appears on both the
+ * home marquee and the About page) while keeping the first spelling and order.
+ */
+function mergeNames(...lists: unknown[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const raw of list) {
+      if (typeof raw !== "string") continue;
+      const name = raw.trim().replace(/\s+/g, " ");
+      const key = name.normalize("NFKC").toLowerCase();
+      if (!name || seen.has(key)) continue;
+      seen.add(key);
+      out.push(name);
+    }
+  }
+  return out;
 }
 
-const AWARDS_SCRIPT = `
-(function() {
-  var nav = document.getElementById('site-nav');
-  if (nav) {
-    window.addEventListener('scroll', function() {
-      nav.classList.toggle('scrolled', window.scrollY > 60);
-    });
-  }
-  var toggle = document.querySelector('[data-toggle-nav]');
-  var mobileMenu = document.getElementById('mobile-menu');
-  if (toggle && mobileMenu) {
-    toggle.addEventListener('click', function() {
-      var isOpen = mobileMenu.classList.toggle('open');
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-      toggle.classList.toggle('active');
-    });
-    mobileMenu.querySelectorAll('a').forEach(function(link) {
-      link.addEventListener('click', function() {
-        mobileMenu.classList.remove('open');
-        toggle.classList.remove('active');
-        document.body.style.overflow = '';
-      });
-    });
-  }
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-})();
-`;
+export default async function AwardsPage() {
+  const [awards, content, home, about] = await Promise.all([
+    // An unreachable database falls through to the CMS recognitions below.
+    orEmpty(getAwards()),
+    getPage("awards"),
+    getPage("home"),
+    getPage("about"),
+  ]);
 
-const AWARDS_STYLES = `
-  :root {
-    --black: #2C2C2C; --white: #FAFAF8; --grey-dark: #6B6560; --grey-light: #9C9488;
-    --grey-bg: #F5F0EA; --border: #E2DDD8; --bg-dark: #1E1E1E; --bg-darker: #1E1E1E;
-    --font-goodtimes: 'Good Times', sans-serif;
-    --h1: 64px; --h2: 40px; --h3: 28px; --h4: 24px;
-    --body-lg: 18px; --body: 16px; --body-sm: 15px; --eyebrow: 11px;
-    --margin-desktop: 48px; --margin-tablet: 32px; --margin-mobile: 20px;
-    --gap-xxl: 48px; --gap-xl: 32px; --gap-lg: 24px; --gap-md: 16px; --gap-sm: 12px; --gap-xs: 8px;
-    --nav-h: 84px;
-  }
-  html { scroll-behavior: smooth; }
-  body { background: var(--white); color: var(--black); line-height: 1.5; -webkit-font-smoothing: antialiased; }
-  a { color: inherit; text-decoration: none; }
-  img, video { display: block; max-width: 100%; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .page-fade { animation: fadeIn 0.4s ease; }
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1); }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-  .stagger > .reveal:nth-child(2) { transition-delay: 0.08s; }
-  .stagger > .reveal:nth-child(3) { transition-delay: 0.16s; }
-  .stagger > .reveal:nth-child(4) { transition-delay: 0.24s; }
-  .stagger > .reveal:nth-child(5) { transition-delay: 0.32s; }
-  .stagger > .reveal:nth-child(6) { transition-delay: 0.40s; }
+  const hero = content.hero;
+  const groups = groupByYear(awards);
+  const hasRecords = awards.length > 0;
 
-  .eyebrow { font-size: var(--eyebrow); letter-spacing: 0.22em; color: var(--grey-light); margin-bottom: var(--gap-md); text-transform: uppercase; }
+  // With no award rows the recognitions already written elsewhere in the CMS
+  // are the content. They carry no dates, so none are shown.
+  const names = mergeNames(home.awards_marquee?.items, about.recognition?.items);
 
-  .nav { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--gap-lg) var(--margin-desktop); height: var(--nav-h); background: rgba(248, 248, 246, 0.92); backdrop-filter: blur(8px); border-bottom: 0.5px solid var(--border); z-index: 100; }
-  .nav-logo { font-family: var(--font-goodtimes); font-size: var(--h4); font-weight: 700; letter-spacing: 0.14em; color: var(--black); }
-  .nav-links { display: flex; align-items: center; gap: var(--gap-xxl); list-style: none; }
-  .nav-links a { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-dark); transition: color 0.25s ease; }
-  .nav-links a:hover, .nav-links a.active { color: var(--black); font-weight: 600; }
-  .nav-item { position: relative; display: inline-block; }
-  .nav-dropdown {
-    position: absolute; top: 100%; left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-    background: #1E1E1E; min-width: 180px; padding: 8px 0;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-    border: 0.5px solid #2C2C2C; z-index: 200; pointer-events: none;
-  }
-  .nav-item:hover .nav-dropdown {
-    opacity: 1; visibility: visible;
-    transform: translateX(-50%) translateY(0); pointer-events: auto;
-  }
-  .nav-dropdown a {
-    display: block; padding: 10px 20px; color: #9C9488;
-    font-size: 11px; letter-spacing: 0.1em; text-decoration: none;
-    transition: color 0.2s ease;
-  }
-  .nav-dropdown a:hover, .nav-dropdown a.active { color: #FAFAF8; }
-  .btn-enquire { padding: var(--gap-sm) var(--gap-lg); background: var(--black); color: var(--white); border: 0.5px solid var(--black); font-size: var(--eyebrow); letter-spacing: 0.12em; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .btn-enquire:hover { background: transparent; color: var(--black); }
-  .mobile-menu {
-    position: fixed; inset: 0; background: #1E1E1E; z-index: 500;
-    display: flex; flex-direction: column; justify-content: center;
-    align-items: center; gap: 28px;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s;
-  }
-  .mobile-menu.open { opacity: 1; visibility: visible; }
-  .mobile-menu a { font-size: 20px; color: #FAFAF8; letter-spacing: 0.1em; text-decoration: none; }
-  .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: inherit; }
-  .hamburger svg { width: 28px; height: 28px; }
-  @media (max-width: 768px) {
-    .hamburger { display: block; }
-    .nav-links { display: none !important; }
-    .btn-enquire { display: none; }
-  }
+  // The About page's headline award count ("22+ Design Awards"), when present.
+  const stat = ((about.stats?.items ?? []) as { number?: number | string; suffix?: string; label?: string }[]).find(
+    (s) => s?.label && /award/i.test(s.label)
+  );
 
-  .awards-hero { background: var(--bg-darker); min-height: 50vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: calc(var(--nav-h) + var(--gap-xxl)) var(--margin-desktop) var(--gap-xxl); }
-  .awards-hero-content { max-width: 720px; margin: 0 auto; color: var(--white); }
-  .awards-hero-content .eyebrow { justify-content: center; }
-  .awards-hero-content h1 { font-family: var(--font-goodtimes); font-size: var(--h1); font-weight: 500; letter-spacing: 0.01em; color: var(--white); }
+  const intro =
+    (typeof hero.intro === "string" && hero.intro) ||
+    (hasRecords
+      ? "Awards earned by F.QUAD Studio's architecture and interior design work, year by year."
+      : about.recognition?.intro ||
+        "The institutions and publications that have recognised F.QUAD Studio's work.");
 
-  .awards-timeline { max-width: 900px; margin: 0 auto; padding: 80px var(--margin-desktop); }
-  .award-row { display: grid; grid-template-columns: 120px 1fr; gap: 40px; border-bottom: 0.5px solid var(--border); padding: 40px 0; }
-  .award-year { font-size: 40px; font-weight: 500; color: var(--border); }
-  .award-title { font-size: 20px; font-weight: 500; color: var(--black); }
-  .award-body { font-size: 14px; color: var(--grey-dark); line-height: 1.7; margin-top: 8px; }
-  .awards-empty { text-align: center; color: var(--grey-light); padding: 120px 0; font-size: var(--body); }
+  return (
+    <PageShell>
+      <PageHero eyebrow={hero.eyebrow} title={hero.title} intro={intro} art="dining">
+        <PrimaryAction action={{ label: "Start a project", startProject: true }} />
+        <TextAction action={{ label: "See past projects →", href: "/past-projects" }} />
+      </PageHero>
 
-  footer { background: var(--bg-darker); color: var(--white); padding: var(--gap-xxl) var(--margin-desktop); }
-  .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-xxl); margin-bottom: var(--gap-xxl); }
-  .footer-wordmark { font-family: var(--font-goodtimes); font-size: 22px; font-weight: 400; letter-spacing: 0.14em; margin-bottom: var(--gap-md); }
-  .footer-tagline { font-size: 13px; color: var(--grey-dark); line-height: 1.7; }
-  .footer-nav-heading { font-size: 11px; letter-spacing: 0.16em; color: #9C9488; margin-bottom: 20px; font-weight: 400; }
-  .footer-nav-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-  .footer-nav-links a { font-size: 13px; color: #6B6560; text-decoration: none; transition: color 0.25s ease; }
-  .footer-nav-links a:hover { color: #FAFAF8; }
-  .footer-social { display: flex; gap: 16px; margin-top: 20px; }
-  .footer-social a { font-size: 12px; color: #6B6560; letter-spacing: 0.08em; text-decoration: none; transition: color 0.25s ease; }
-  .footer-social a:hover { color: #FAFAF8; }
-  .footer-contact-info p { font-size: 13px; color: var(--grey-dark); margin-bottom: var(--gap-sm); }
-  .footer-bottom { border-top: 0.5px solid #2C2C2C; padding-top: var(--gap-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--gap-lg); font-size: 11px; color: var(--grey-dark); letter-spacing: 0.08em; }
-  .footer-bottom-links { display: flex; gap: var(--gap-xxl); }
-  .footer-bottom-links a { color: var(--grey-dark); }
+      {hasRecords ? (
+        <>
+          {/* Header only: the list below reveals row by row (see AwardsByYear). */}
+          <Section
+            eyebrow="Recognition by year"
+            aside={
+              <span className="text-white/60">
+                {countLabel(awards.length, "award", "awards")} / {countLabel(groups.length, "year", "years")}
+              </span>
+            }
+            className="!pb-0"
+          >
+            {null}
+          </Section>
+          <div className="px-6 sm:px-14 pb-20 sm:pb-28">
+            <div className="max-w-[1500px]">
+              <AwardsByYear groups={groups} />
+            </div>
+          </div>
+        </>
+      ) : (
+        names.length > 0 && (
+          <Section
+            eyebrow="Recognised by"
+            aside={
+              <span className="text-white/60">
+                {countLabel(names.length, "institution", "institutions")}
+              </span>
+            }
+          >
+            <div
+              className={`max-w-[1500px] ${
+                stat ? "grid grid-cols-1 lg:grid-cols-[minmax(0,0.3fr)_minmax(0,1fr)] gap-10 lg:gap-16" : ""
+              }`}
+            >
+              {stat && (
+                // dt first for assistive tech; the figure is displayed above its label.
+                <dl className="fq-fade m-0 flex flex-col-reverse gap-3 lg:sticky lg:top-28 self-start">
+                  <dt className="text-[11px] tracking-[0.2em] uppercase text-white/60">{stat.label}</dt>
+                  <dd className="fq-outline m-0 font-display font-light text-6xl sm:text-7xl leading-none tabular-nums">
+                    {stat.number}
+                    {stat.suffix}
+                  </dd>
+                </dl>
+              )}
+              <RecognitionList items={names} />
+            </div>
+          </Section>
+        )
+      )}
 
-  @media (max-width: 1024px) {
-    :root { --margin-desktop: var(--margin-tablet); --h1: 42px; --h2: 32px; }
-    .nav-links { gap: var(--gap-lg); }
-  }
-  @media (max-width: 720px) {
-    :root { --margin-desktop: var(--margin-mobile); --h1: 40px; --h2: 28px; --h4: 20px; --body-lg: 16px; }
-    .nav { padding: var(--gap-md) var(--margin-mobile); height: var(--nav-h); }
-    .awards-timeline { padding: 48px var(--margin-mobile); }
-    .award-row { grid-template-columns: 1fr; gap: var(--gap-sm); padding: var(--gap-xl) 0; }
-    .award-year { font-size: 28px; }
-    .footer-grid { grid-template-columns: 1fr; }
-    .footer-bottom { flex-direction: column; align-items: flex-start; }
-  }
-`;
+      <ClosingBand
+        eyebrow="Our work"
+        title={"See the work\nbehind it."}
+        body="Browse the projects, or tell us about the space you have in mind."
+        primary={{ label: "Start a project", startProject: true }}
+        secondary={{ label: "Read our story →", href: "/about" }}
+      />
+    </PageShell>
+  );
+}

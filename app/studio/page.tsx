@@ -1,11 +1,20 @@
 import React from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/ui/mini-navbar";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHero } from "@/components/layout/PageHero";
+import { pageMetadata } from "@/lib/seo";
 import { getPage } from "@/lib/cms/content";
 import { toLines } from "@/lib/cms/schema";
 import { getSiteSettings } from "@/lib/public-content";
 
 export const revalidate = 60;
+
+export const metadata = pageMetadata({
+  title: "The Studio",
+  description:
+    "Inside F.QUAD Studio — how an award-winning Hyderabad architecture and interior design practice thinks, works and delivers, from brief to handover.",
+  path: "/studio",
+});
 
 interface Metric {
   value: string;
@@ -44,22 +53,16 @@ export default async function StudioPage() {
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
 
   return (
-    <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      {/* Floating Pill Navbar */}
-      <Navbar content={global.nav} />
+    <PageShell>
 
-      {/* Studio Hero */}
-      <section className="pt-40 sm:pt-48 pb-20 px-6 sm:px-14 border-b border-white/15">
-        <div className="text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-8 uppercase font-medium">
-          {hero.eyebrow}
-        </div>
-        <h1 className="m-0 font-normal uppercase text-3xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.96] tracking-tight max-w-[24ch] text-white">
-          {hero.title}
-        </h1>
-        <p className="mt-10 max-w-[60ch] text-base sm:text-lg leading-relaxed text-white/70">
-          {hero.intro}
-        </p>
-      </section>
+      <PageHero
+        eyebrow={hero.eyebrow}
+        title={hero.title}
+        intro={hero.intro}
+        crumbs={[{ label: "Home", href: "/" }, { label: "The Studio" }]}
+        art="studio"
+        titleClass="text-3xl sm:text-5xl md:text-6xl lg:text-7xl max-w-[24ch]"
+      />
 
       {/* Studio Image & Metrics */}
       <section className="px-6 sm:px-14 py-16">
@@ -80,21 +83,21 @@ export default async function StudioPage() {
               <div className="font-light text-5xl sm:text-7xl leading-none text-white">
                 {metric.value}
               </div>
-              <div className="text-[10px] tracking-[0.2em] text-white/45 mt-3 uppercase">
+              <div className="text-[11px] tracking-[0.2em] text-white/45 mt-3 uppercase">
                 {metric.label}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="pt-6 text-[10px] tracking-[0.2em] text-white/50 uppercase">
+        <div className="pt-6 text-[11px] tracking-[0.2em] text-white/50 uppercase">
           {showcase.sectorLine}
         </div>
       </section>
 
       {/* Our Story */}
       <section className="px-6 sm:px-14 py-24 grid grid-cols-1 lg:grid-cols-[0.4fr_1fr] gap-12 border-t border-white/15">
-        <div className="text-[10px] tracking-[0.22em] text-white/45 uppercase font-medium">
+        <div className="text-[11px] tracking-[0.22em] text-white/45 uppercase font-medium">
           {story.eyebrow}
         </div>
         <div>
@@ -115,7 +118,7 @@ export default async function StudioPage() {
       {/* The Four F's Grid */}
       <section className="px-6 sm:px-14 py-24 bg-zinc-950 border-t border-white/15">
         <div className="flex flex-col sm:flex-row justify-between sm:items-baseline gap-4 mb-16 pb-6 border-b border-white/15">
-          <div className="text-[10px] tracking-[0.22em] text-white/45 uppercase">
+          <div className="text-[11px] tracking-[0.22em] text-white/45 uppercase">
             {fourFs.eyebrow}
           </div>
           <h2 className="m-0 font-normal uppercase text-3xl sm:text-4xl md:text-5xl text-white">
@@ -126,7 +129,7 @@ export default async function StudioPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 divide-y sm:divide-y-0 sm:divide-x divide-white/15">
           {(fourFs.items as Principle[]).map((item, i) => (
             <div key={i} className="pt-6 sm:pt-0 sm:px-8 first:sm:pl-0 last:sm:pr-0">
-              <div className="text-[10px] tracking-[0.2em] text-[#c0c0c0]">
+              <div className="text-[11px] tracking-[0.2em] text-[#c0c0c0]">
                 {item.num}
               </div>
               <h3 className="m-0 mt-4 font-normal uppercase text-2xl sm:text-3xl text-white">
@@ -142,7 +145,7 @@ export default async function StudioPage() {
 
       {/* Meet the Founders */}
       <section className="px-6 sm:px-14 py-28 border-t border-white/15">
-        <div className="text-[10px] tracking-[0.22em] text-white/45 mb-14 uppercase font-medium">
+        <div className="text-[11px] tracking-[0.22em] text-white/45 mb-14 uppercase font-medium">
           {founders.eyebrow}
         </div>
 
@@ -160,7 +163,7 @@ export default async function StudioPage() {
                 </figure>
               ) : (
                 <div className="w-4/5 aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
-                  <span className="text-[10px] tracking-[0.2em] text-white/40 uppercase leading-relaxed">
+                  <span className="text-[11px] tracking-[0.2em] text-white/40 uppercase leading-relaxed">
                     FOUNDER PORTRAIT
                     <br />
                     {person.name}
@@ -170,7 +173,7 @@ export default async function StudioPage() {
               <h3 className="m-0 mt-8 font-normal uppercase text-3xl sm:text-4xl text-white">
                 {person.name}
               </h3>
-              <div className="text-[10px] tracking-[0.2em] text-[#a9a9a9] mt-2.5 uppercase">
+              <div className="text-[11px] tracking-[0.2em] text-[#a9a9a9] mt-2.5 uppercase">
                 {person.role}
               </div>
               <p className="mt-5 text-sm sm:text-base leading-relaxed text-white/70 max-w-[46ch]">
@@ -183,7 +186,7 @@ export default async function StudioPage() {
 
       {/* Recognition */}
       <section className="px-6 sm:px-14 py-24 border-t border-white/15 grid grid-cols-1 lg:grid-cols-[0.4fr_1fr] gap-12">
-        <div className="text-[10px] tracking-[0.22em] text-white/45 uppercase font-medium">
+        <div className="text-[11px] tracking-[0.22em] text-white/45 uppercase font-medium">
           {recognition.eyebrow}
         </div>
         <div>
@@ -205,7 +208,7 @@ export default async function StudioPage() {
                 <span className="text-xl sm:text-2xl md:text-3xl font-normal uppercase text-white transition-colors">
                   {rec}
                 </span>
-                <span className="text-[9.5px] tracking-[0.18em] text-[#a09d94] uppercase">
+                <span className="text-[11px] tracking-[0.18em] text-[#a09d94] uppercase">
                   {recognition.itemLabel}
                 </span>
               </div>
@@ -227,7 +230,7 @@ export default async function StudioPage() {
           <div className="flex flex-wrap gap-4 mt-12">
             <Link
               href={cta.primaryHref}
-              className="text-[10.5px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase font-medium inline-flex items-center"
+              className="text-[11px] tracking-[0.16em] px-7 py-4 border border-white/40 hover:border-white text-white rounded-none transition-colors uppercase font-medium inline-flex items-center"
             >
               {cta.primaryLabel}
             </Link>
@@ -242,14 +245,7 @@ export default async function StudioPage() {
             </button>
           </div>
         </div>
-
-        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-10 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-          <span>© {new Date().getFullYear()} F.QUAD STUDIO · {address}</span>
-          <a href={`mailto:${email}`} className="hover:text-white">
-            {email.toUpperCase()}
-          </a>
-        </div>
       </section>
-    </div>
+    </PageShell>
   );
 }

@@ -1,281 +1,170 @@
-import Link from 'next/link';
-import { SiteNav } from '@/components/ui/SiteNav';
-import { SiteFooter } from '@/components/ui/SiteFooter';
-import { getTeamMembers, getSiteSettings, mediaUrl } from '@/lib/public-content';
-import { getPage } from '@/lib/cms/content';
+import type { Metadata } from "next";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHero } from "@/components/layout/PageHero";
+import { Section } from "@/components/layout/Section";
+import { InView } from "@/components/motion/InView";
+import { ClosingBand } from "@/components/pages/blog/ClosingBand";
+import { countLabel, orEmpty, responsiveImage } from "@/components/pages/blog/helpers";
+import { PrimaryAction, TextAction } from "@/components/pages/blog/ui";
+import { PersonCard, type Person } from "@/components/pages/team/PersonCard";
+import { getPage } from "@/lib/cms/content";
+import { getSiteSettings, getTeamMembers } from "@/lib/public-content";
+import { pageMetadata } from "@/lib/seo";
+import { SITE } from "@/lib/site";
 
-export const revalidate = 0;
+export const revalidate = 60;
+
+export const metadata: Metadata = pageMetadata({
+  title: "Our Team",
+  description:
+    "The architects and interior designers behind F.QUAD Studio in Hyderabad: meet the principals and the people who carry each project from first sketch to handover.",
+  path: "/team",
+});
 
 export default async function TeamPage() {
-  const members = await getTeamMembers();
-  const settings = await getSiteSettings();
-  const [teamContent, globalContent] = await Promise.all([getPage('team'), getPage('global')]);
-  const hero = teamContent.hero;
-  const nav = globalContent.page_nav;
-  const footer = globalContent.page_footer;
-  const footerSettings = {
-    email: settings?.email ?? null,
-    phone: settings?.phone ?? null,
-    address: settings?.address ?? null,
-    instagramUrl: settings?.instagramUrl ?? null,
-    whatsapp: settings?.whatsapp ?? null,
-  };
+  const [members, content, about, settings] = await Promise.all([
+    // Falls through to the CMS founders below when the database is unreachable.
+    orEmpty(getTeamMembers()),
+    getPage("team"),
+    getPage("about"),
+    getSiteSettings().catch(() => null),
+  ]);
 
+  const hero = content.hero;
+  const email = settings?.email || SITE.fallback.email;
 
-  const founders = members.filter((m) => m.featured);
-  const rest = members.filter((m) => !m.featured);
+  const people: (Person & { featured: boolean })[] = members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    role: m.role,
+    bio: m.bio,
+    linkedIn: m.linkedIn,
+    image: responsiveImage(m.media, "medium"),
+    alt: m.media?.alt,
+    featured: m.featured,
+  }));
+  const principals = people.filter((p) => p.featured);
+  const studio = people.filter((p) => !p.featured);
+
+  // With no published team members, the founders already written for the
+  // About page are the team. (`portrait` is '' until a photo is uploaded.)
+  const founders: Person[] = (
+    (about.founders?.people ?? []) as { name?: string; role?: string; portrait?: string; bio?: string }[]
+  )
+    .filter((f) => f?.name)
+    .map((f, i) => ({
+      id: `founder-${i}`,
+      name: f.name as string,
+      role: f.role ?? "",
+      bio: f.bio,
+      image: f.portrait ? { src: f.portrait } : null,
+    }));
+
+  const hasTeam = people.length > 0;
+  const intro =
+    (typeof hero.intro === "string" && hero.intro) ||
+    "The people behind every F.QUAD project: the principals who lead each brief, and the studio that carries it from first sketch to handover.";
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: TEAM_STYLES }} />
+    <PageShell>
+      <PageHero eyebrow={hero.eyebrow} title={hero.title} intro={intro} art="living">
+        <PrimaryAction action={{ label: "Start a project", startProject: true }} />
+        <TextAction action={{ label: "Read our story →", href: "/about" }} />
+      </PageHero>
 
-      <div className="page-fade">
-      <SiteNav content={nav} active="/team" />
-
-      <section className="team-hero">
-        <div className="team-hero-content reveal">
-          <div className="eyebrow">{hero.eyebrow}</div>
-          <h1>{hero.title}</h1>
-        </div>
-      </section>
-
-      {members.length === 0 ? (
-        <div className="empty-state">{hero.emptyState}</div>
-      ) : (
+      {hasTeam ? (
         <>
-          {founders.length > 0 && (
-            <section className="section">
-              <div className="founders-grid stagger">
-                {founders.map((member) => {
-                  const img = mediaUrl(member.media, 'medium') || mediaUrl(member.media, 'full');
-                  return (
-                    <div className="founder-card reveal" key={member.id}>
-                      <div className="founder-image">
-                        {img ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={img} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <div className="image-placeholder" />
-                        )}
-                      </div>
-                      <div className="founder-name">{member.name}</div>
-                      <div className="founder-role">{member.role}</div>
-                      {member.bio && <p className="founder-bio">{member.bio}</p>}
-                      {member.linkedIn && (
-                        <a
-                          href={member.linkedIn}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="member-link"
-                        >
-                          LinkedIn ↗
-                        </a>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+          {principals.length > 0 && (
+            <Section
+              eyebrow={studio.length > 0 ? "Principals" : "The team"}
+              aside={
+                <span className="text-white/60">{countLabel(principals.length, "person", "people")}</span>
+              }
+            >
+              <ul
+                role="list"
+                className="m-0 p-0 list-none grid grid-cols-1 md:grid-cols-2 gap-x-10 lg:gap-x-16 gap-y-14 max-w-[1500px]"
+              >
+                {principals.map((person, i) => (
+                  <li key={person.id} className="min-w-0">
+                    <PersonCard person={person} variant="lead" index={i} />
+                  </li>
+                ))}
+              </ul>
+            </Section>
           )}
 
-          {rest.length > 0 && (
-            <section className="section">
-              <div className="team-grid stagger">
-                {rest.map((member) => {
-                  const img = mediaUrl(member.media, 'medium') || mediaUrl(member.media, 'full');
-                  return (
-                    <div className="team-card reveal" key={member.id}>
-                      <div className="team-image">
-                        {img ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={img} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <div className="image-placeholder" />
-                        )}
-                      </div>
-                      <div className="team-name">{member.name}</div>
-                      <div className="team-role">{member.role}</div>
-                      {member.bio && <p className="team-bio">{member.bio}</p>}
-                      {member.linkedIn && (
-                        <a
-                          href={member.linkedIn}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="member-link"
-                        >
-                          LinkedIn ↗
-                        </a>
-                      )}
-                    </div>
-                  );
-                })}
+          {studio.length > 0 && (
+            <>
+              {/* Header only: a long grid inside one Section would sit in a single
+                  tall observer that may never reach its 15% threshold. Each card
+                  reveals on its own instead. */}
+              <Section
+                eyebrow={principals.length > 0 ? "The studio" : "The team"}
+                aside={
+                  <span className="text-white/60">{countLabel(studio.length, "person", "people")}</span>
+                }
+                className={principals.length > 0 ? "!pt-0 !pb-0" : "!pb-0"}
+              >
+                {null}
+              </Section>
+              <div className="px-6 sm:px-14 pb-20 sm:pb-28">
+                <ul
+                  role="list"
+                  className="m-0 p-0 list-none grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 lg:gap-x-10 gap-y-14 max-w-[1500px]"
+                >
+                  {studio.map((person, i) => (
+                    <InView as="li" key={person.id} className="min-w-0">
+                      <PersonCard person={person} variant="grid" index={i % 3} />
+                    </InView>
+                  ))}
+                </ul>
               </div>
-            </section>
+            </>
           )}
         </>
+      ) : (
+        founders.length > 0 && (
+          <Section
+            eyebrow={about.founders?.eyebrow || "Meet the founders"}
+            aside={
+              <span className="text-white/60">{countLabel(founders.length, "founder", "founders")}</span>
+            }
+          >
+            <ul
+              role="list"
+              className="m-0 p-0 list-none grid grid-cols-1 md:grid-cols-2 gap-x-10 lg:gap-x-16 gap-y-14 max-w-[1500px]"
+            >
+              {founders.map((person, i) => (
+                <li key={person.id} className="min-w-0">
+                  <PersonCard person={person} variant="lead" index={i} />
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )
       )}
 
-      <SiteFooter content={footer} settings={footerSettings} />
-      </div>
-
-      <script dangerouslySetInnerHTML={{ __html: TEAM_SCRIPT }} />
-    </>
+      {hasTeam ? (
+        <ClosingBand
+          eyebrow="Work with us"
+          title={"Let's talk\nabout your space."}
+          body="Tell us what you have in mind. The people above will take it from there."
+          primary={{ label: "Start a project", startProject: true }}
+          secondary={{ label: "Contact the studio →", href: "/contact" }}
+        />
+      ) : (
+        <ClosingBand
+          eyebrow="The wider studio"
+          title={"Meet the studio,\non request."}
+          body="We don't profile the whole team online. If you'd like to meet the people who would work on your project, ask and we'll make the introductions."
+          primary={{
+            label: "Ask for an introduction",
+            href: `mailto:${email}?subject=${encodeURIComponent("Meeting the F.QUAD team")}`,
+          }}
+          secondary={{ label: "Start a project →", startProject: true }}
+        />
+      )}
+    </PageShell>
   );
 }
-
-const TEAM_SCRIPT = `
-(function() {
-  var nav = document.getElementById('site-nav');
-  if (nav) {
-    window.addEventListener('scroll', function() {
-      nav.classList.toggle('scrolled', window.scrollY > 60);
-    });
-  }
-  var hamburger = document.querySelector('[data-toggle-nav]');
-  var mobileMenu = document.getElementById('mobile-menu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function() {
-      var isOpen = mobileMenu.classList.toggle('open');
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
-  }
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-})();
-`;
-
-const TEAM_STYLES = `
-  :root {
-    --black: #2C2C2C; --white: #FAFAF8; --grey-dark: #6B6560; --grey-light: #9C9488;
-    --grey-bg: #F5F0EA; --border: #E2DDD8; --bg-dark: #1E1E1E; --bg-darker: #1E1E1E;
-    --font-goodtimes: 'Good Times', sans-serif;
-    --h1: 64px; --h2: 40px; --h3: 28px; --h4: 24px;
-    --body-lg: 18px; --body: 16px; --body-sm: 15px; --eyebrow: 11px;
-    --margin-desktop: 48px; --margin-tablet: 32px; --margin-mobile: 20px;
-    --gap-xxl: 48px; --gap-xl: 32px; --gap-lg: 24px; --gap-md: 16px; --gap-sm: 12px; --gap-xs: 8px;
-    --nav-h: 84px;
-  }
-  html { scroll-behavior: smooth; }
-  body { background: var(--white); color: var(--black); line-height: 1.5; -webkit-font-smoothing: antialiased; }
-  a { color: inherit; text-decoration: none; }
-  img, video { display: block; max-width: 100%; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .page-fade { animation: fadeIn 0.4s ease; }
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1); }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-  .stagger > .reveal:nth-child(2) { transition-delay: 0.08s; }
-  .stagger > .reveal:nth-child(3) { transition-delay: 0.16s; }
-  .stagger > .reveal:nth-child(4) { transition-delay: 0.24s; }
-  .stagger > .reveal:nth-child(5) { transition-delay: 0.32s; }
-  .stagger > .reveal:nth-child(6) { transition-delay: 0.40s; }
-
-  .eyebrow { font-size: var(--eyebrow); letter-spacing: 0.22em; color: var(--grey-light); margin-bottom: var(--gap-md); text-transform: uppercase; }
-
-  .nav { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--gap-lg) var(--margin-desktop); height: var(--nav-h); background: rgba(248, 248, 246, 0.92); backdrop-filter: blur(8px); border-bottom: 0.5px solid var(--border); z-index: 100; }
-  .nav-logo { font-family: var(--font-goodtimes); font-size: var(--h4); font-weight: 700; letter-spacing: 0.14em; color: var(--black); }
-  .nav-links { display: flex; align-items: center; gap: var(--gap-xxl); list-style: none; }
-  .nav-links a { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-dark); transition: color 0.25s ease; }
-  .nav-links a:hover, .nav-links a.active { color: var(--black); font-weight: 600; }
-  .nav-item { position: relative; display: inline-block; }
-  .nav-dropdown {
-    position: absolute; top: 100%; left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-    background: #1E1E1E; min-width: 180px; padding: 8px 0;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-    border: 0.5px solid #2C2C2C; z-index: 200; pointer-events: none;
-  }
-  .nav-item:hover .nav-dropdown {
-    opacity: 1; visibility: visible;
-    transform: translateX(-50%) translateY(0); pointer-events: auto;
-  }
-  .nav-dropdown a {
-    display: block; padding: 10px 20px; color: #9C9488;
-    font-size: 11px; letter-spacing: 0.1em; text-decoration: none;
-    transition: color 0.2s ease;
-  }
-  .nav-dropdown a:hover, .nav-dropdown a.active { color: #FAFAF8; }
-  .btn-enquire { padding: var(--gap-sm) var(--gap-lg); background: var(--black); color: var(--white); border: 0.5px solid var(--black); font-size: var(--eyebrow); letter-spacing: 0.12em; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .btn-enquire:hover { background: transparent; color: var(--black); }
-  .mobile-menu {
-    position: fixed; inset: 0; background: #1E1E1E; z-index: 500;
-    display: flex; flex-direction: column; justify-content: center;
-    align-items: center; gap: 28px;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s;
-  }
-  .mobile-menu.open { opacity: 1; visibility: visible; }
-  .mobile-menu a { font-size: 20px; color: #FAFAF8; letter-spacing: 0.1em; text-decoration: none; }
-  .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: inherit; }
-  .hamburger svg { width: 28px; height: 28px; }
-  @media (max-width: 768px) {
-    .hamburger { display: block; }
-    .nav-links { display: none !important; }
-    .btn-enquire { display: none; }
-  }
-
-  .team-hero { background: var(--bg-darker); min-height: 50vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: calc(var(--nav-h) + var(--gap-xxl)) var(--margin-desktop) var(--gap-xxl); }
-  .team-hero-content { max-width: 720px; margin: 0 auto; }
-  .team-hero-content .eyebrow { color: var(--grey-light); justify-content: center; }
-  .team-hero-content h1 { font-family: var(--font-goodtimes); font-size: var(--h1); font-weight: 500; letter-spacing: 0.01em; color: var(--white); }
-
-  .section { padding: var(--gap-xxl) var(--margin-desktop); max-width: 1920px; margin: 0 auto; }
-
-  .founders-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 64px; }
-  .founder-card { transition: transform 0.3s ease; }
-  .founder-card:hover { transform: scale(1.01); }
-  .founder-image { aspect-ratio: 3 / 4; background: var(--bg-darker); overflow: hidden; border-radius: 2px; }
-  .founder-name { font-size: 24px; font-weight: 500; color: var(--black); margin-top: 24px; }
-  .founder-role { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-light); margin-top: 6px; }
-  .founder-bio { font-size: 14px; color: var(--grey-dark); line-height: 1.7; margin-top: 12px; }
-
-  .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 64px; }
-  .team-card { transition: transform 0.3s ease; }
-  .team-card:hover { transform: scale(1.01); }
-  .team-image { aspect-ratio: 4 / 3; background: var(--bg-darker); overflow: hidden; border-radius: 2px; }
-  .team-name { font-size: 18px; font-weight: 500; color: var(--black); margin-top: 24px; }
-  .team-role { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-light); margin-top: 6px; }
-  .team-bio { font-size: 14px; color: var(--grey-dark); line-height: 1.7; margin-top: 12px; }
-  .member-link { display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grey-light); margin-top: 12px; text-decoration: none; transition: color 0.2s ease; }
-  .member-link:hover { color: var(--black); }
-
-  .image-placeholder { width: 100%; height: 100%; background: #E2DDD8; }
-
-  .empty-state { text-align: center; color: var(--grey-light); padding: 120px 0; font-size: var(--h4); }
-
-  footer { background: var(--bg-darker); color: var(--white); padding: var(--gap-xxl) var(--margin-desktop); }
-  .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-xxl); margin-bottom: var(--gap-xxl); }
-  .footer-brand { font-family: var(--font-goodtimes); font-size: 22px; font-weight: 400; letter-spacing: 0.14em; margin-bottom: var(--gap-lg); }
-  .footer-tagline { font-size: 13px; color: var(--grey-dark); line-height: 1.7; }
-  .footer-nav-heading { font-size: 11px; letter-spacing: 0.16em; color: #9C9488; margin-bottom: 20px; font-weight: 400; }
-  .footer-nav-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-  .footer-nav-links a { font-size: 13px; color: #6B6560; text-decoration: none; transition: color 0.25s ease; }
-  .footer-nav-links a:hover { color: #FAFAF8; }
-  .footer-social { display: flex; gap: 16px; margin-top: 20px; }
-  .footer-social a { font-size: 12px; color: #6B6560; letter-spacing: 0.08em; text-decoration: none; transition: color 0.25s ease; }
-  .footer-social a:hover { color: #FAFAF8; }
-  .footer-bottom { border-top: 0.5px solid var(--black); padding-top: var(--gap-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--gap-lg); font-size: 11px; color: #6B6560; letter-spacing: 0.08em; }
-  .footer-bottom-links { display: flex; gap: var(--gap-xxl); }
-  .footer-bottom-links a { color: #6B6560; }
-
-  @media (max-width: 1024px) {
-    :root { --margin-desktop: var(--margin-tablet); --h1: 42px; --h2: 32px; }
-    .nav-links { gap: var(--gap-lg); }
-    .team-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 720px) {
-    :root { --margin-desktop: var(--margin-mobile); --h1: 40px; --h2: 28px; --h4: 20px; --body-lg: 16px; }
-    .nav { padding: var(--gap-md) var(--margin-mobile); height: auto; }
-    .founders-grid { grid-template-columns: 1fr; }
-    .team-grid { grid-template-columns: 1fr; }
-    .footer-grid { grid-template-columns: 1fr; }
-    .footer-bottom { flex-direction: column; align-items: flex-start; }
-  }
-`;

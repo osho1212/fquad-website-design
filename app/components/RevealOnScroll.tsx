@@ -1,20 +1,28 @@
 'use client';
 
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { InView } from '@/components/motion/InView';
 
-export default function RevealOnScroll({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
+/**
+ * Fade-and-rise on first view. Kept as a thin wrapper so existing pages don't
+ * change, but it now runs on the site's shared reveal (IntersectionObserver +
+ * CSS transition, see InView and .fq-fade) instead of a separate framer-motion
+ * path with its own easing — one motion language, no extra JS on these pages.
+ */
+export default function RevealOnScroll({
+  children,
+  delay = 0,
+  className = '',
+}: {
+  children: React.ReactNode;
+  /** Seconds. */
+  delay?: number;
+  className?: string;
+}) {
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
-      transition={{ duration: 0.75, delay, ease: [0.25, 0.1, 0.25, 1] }}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <InView className={className}>
+      <div className="fq-fade" style={{ transitionDelay: `${Math.round(delay * 1000)}ms` }}>
+        {children}
+      </div>
+    </InView>
   );
 }

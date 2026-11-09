@@ -1,7 +1,8 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Navbar } from "@/components/ui/mini-navbar";
+import { PageShell } from "@/components/layout/PageShell";
+import { pageMetadata } from "@/lib/seo";
 import { getServices } from "@/lib/services";
 import { getPage } from "@/lib/cms/content";
 import { fill, toLines } from "@/lib/cms/schema";
@@ -10,11 +11,12 @@ import { SOCIAL_FALLBACKS } from "@/lib/social";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Services — F.QUAD Studio",
+export const metadata: Metadata = pageMetadata({
+  title: "Services",
   description:
-    "Architecture, interior design, styling and farmhouse projects by F.QUAD Studio, Hyderabad.",
-};
+    "Architecture, interior design, interior styling and farmhouse projects by F.QUAD Studio in Hyderabad — planned from the first sketch to the last cushion.",
+  path: "/services",
+});
 
 interface Stage {
   num: string;
@@ -49,14 +51,12 @@ export default async function ServicesPage() {
   const typeList: string[] = types.items ?? [];
 
   return (
-    <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      {/* Floating Pill Navbar */}
-      <Navbar content={global.nav} />
+    <PageShell>
 
       {/* Services Hero */}
       <section className="pt-40 sm:pt-48 pb-20 px-6 sm:px-14 grid grid-cols-1 lg:grid-cols-[1fr_0.85fr] gap-12 lg:gap-16 items-end border-b border-white/15">
         <div>
-          <div className="flex items-center gap-3 text-[10.5px] tracking-[0.22em] text-[#a09d94] mb-8 uppercase font-medium">
+          <div className="flex items-center gap-3 text-[11px] tracking-[0.22em] text-[#a09d94] mb-8 uppercase font-medium">
             <span className="w-12 h-[1px] bg-white/30" />
             {hero.eyebrow}
           </div>
@@ -106,7 +106,7 @@ export default async function ServicesPage() {
                 </p>
                 <Link
                   href={`/services/${svc.slug}`}
-                  className="inline-flex items-center gap-2.5 mt-7 text-[10.5px] tracking-[0.16em] uppercase text-white/90 hover:text-white border-b border-white/40 hover:border-white pb-1 transition-colors"
+                  className="inline-flex items-center gap-2.5 mt-5 min-h-[32px] text-[11px] tracking-[0.16em] uppercase text-white/90 hover:text-white border-b border-white/40 hover:border-white pb-1 transition-colors"
                 >
                   {fill(rows.ctaTemplate, { title: svc.title.toUpperCase() })}
                 </Link>
@@ -134,7 +134,7 @@ export default async function ServicesPage() {
       {/* How We Work - 4 Stages */}
       <section className="px-6 sm:px-14 py-24 bg-zinc-950 border-t border-white/15">
         <div className="flex flex-col md:flex-row justify-between md:items-baseline gap-4 mb-16 pb-6 border-b border-white/15">
-          <div className="text-[10px] tracking-[0.22em] text-white/45 uppercase">
+          <div className="text-[11px] tracking-[0.22em] text-white/45 uppercase">
             {stages.eyebrow}
           </div>
           <h2 className="m-0 font-normal uppercase text-2xl sm:text-4xl md:text-5xl text-white">
@@ -167,7 +167,7 @@ export default async function ServicesPage() {
               <div className="font-light text-5xl sm:text-7xl leading-none text-white">
                 {metric.value}
               </div>
-              <div className="text-[10px] tracking-[0.2em] text-white/45 mt-3 uppercase">
+              <div className="text-[11px] tracking-[0.2em] text-white/45 mt-3 uppercase">
                 {metric.label}
               </div>
               {metric.note && (
@@ -182,7 +182,7 @@ export default async function ServicesPage() {
 
       {/* Spaces We Design */}
       <section className="px-6 sm:px-14 py-20 grid grid-cols-1 lg:grid-cols-[0.4fr_1fr] gap-10 border-b border-white/15">
-        <div className="text-[10px] tracking-[0.22em] text-white/45 uppercase font-medium">
+        <div className="text-[11px] tracking-[0.22em] text-white/45 uppercase font-medium">
           {types.eyebrow}
         </div>
         <div>
@@ -226,7 +226,7 @@ export default async function ServicesPage() {
               href={`https://wa.me/${waDigits}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] tracking-[0.18em] px-6 py-4 border border-white/35 hover:border-white text-white rounded-none transition-colors uppercase font-medium"
+              className="text-[11px] tracking-[0.18em] px-6 py-4 border border-white/35 hover:border-white text-white rounded-none transition-colors uppercase font-medium"
             >
               {cta.whatsappLabel}
             </a>
@@ -240,14 +240,7 @@ export default async function ServicesPage() {
             </button>
           </div>
         </div>
-
-        <div className="flex flex-col sm:flex-row justify-between gap-4 pt-10 text-[9.5px] tracking-[0.16em] text-white/40 uppercase">
-          <span>© {new Date().getFullYear()} F.QUAD STUDIO · {address}</span>
-          <a href={`mailto:${email}`} className="hover:text-white">
-            {email.toUpperCase()}
-          </a>
-        </div>
       </section>
-    </div>
+    </PageShell>
   );
 }

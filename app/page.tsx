@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/ui/mini-navbar";
+import { Preloader } from "@/components/motion/Preloader";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { StatsSection } from "@/components/sections/StatsSection";
 import { StudioSection } from "@/components/sections/StudioSection";
@@ -28,10 +29,15 @@ export default async function Home() {
 
   return (
     <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
+      {/* First-visit intro; tracks the hero's real frame loading */}
+      <Preloader />
+
       {/* Floating Pill Mini-Navbar */}
       <Navbar content={global.nav} />
 
-      {/* Hero Section with Canvas Image Scrub & Bottom Left Typography */}
+      {/* The skip link in the root layout lands here. */}
+      <main id="main" tabIndex={-1} className="outline-none">
+      {/* Hero: the scroll-scrubbed sketch-to-render film */}
       <HeroSection content={home.hero} />
 
       {/* Animated Stats Section */}
@@ -58,13 +64,17 @@ export default async function Home() {
       {/* Client Testimonial */}
       <Testimonial content={home.testimonial} />
 
-      {/* Contact & Multi-column Studio Footer */}
+      </main>
+
+      {/* Contact call-to-action, then the shared footer */}
       <ContactFooter
         content={home.cta}
         footer={global.footer}
         settings={{
           email: settings?.email ?? null,
           whatsapp: settings?.whatsapp ?? null,
+          phone: settings?.phone ?? null,
+          address: settings?.address ?? null,
           instagramUrl: settings?.instagramUrl ?? null,
         }}
       />

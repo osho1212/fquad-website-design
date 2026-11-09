@@ -1,220 +1,118 @@
-import Link from 'next/link';
-import { SiteNav } from '@/components/ui/SiteNav';
-import { SiteFooter } from '@/components/ui/SiteFooter';
-import { getTestimonials, getFeaturedTestimonial, getSiteSettings } from '@/lib/public-content';
-import { getPage } from '@/lib/cms/content';
+import React from "react";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHero } from "@/components/layout/PageHero";
+import { InView } from "@/components/motion/InView";
+import { getTestimonials, mediaUrl } from "@/lib/public-content";
+import { getPage } from "@/lib/cms/content";
+import { pageMetadata } from "@/lib/seo";
+import { FeaturedQuote } from "@/components/pages/testimonials/FeaturedQuote";
+import { QuoteCard, type QuoteImage, type QuoteItem } from "@/components/pages/testimonials/QuoteCard";
+import { Invite } from "@/components/pages/testimonials/Invite";
 
 export const revalidate = 60;
 
-export default async function TestimonialsPage() {
-  const testimonials = await getTestimonials();
-  const featured = await getFeaturedTestimonial();
-  const settings = await getSiteSettings();
-  const [testimonialsContent, globalContent] = await Promise.all([getPage('testimonials'), getPage('global')]);
-  const hero = testimonialsContent.hero;
-  const nav = globalContent.page_nav;
-  const footer = globalContent.page_footer;
-  const footerSettings = {
-    email: settings?.email ?? null,
-    phone: settings?.phone ?? null,
-    address: settings?.address ?? null,
-    instagramUrl: settings?.instagramUrl ?? null,
-    whatsapp: settings?.whatsapp ?? null,
-  };
+export const metadata = pageMetadata({
+  title: "Client Testimonials",
+  description:
+    "Clients of F.QUAD Studio on living with the homes, interiors and commercial spaces we designed in Hyderabad, in their own words.",
+  path: "/testimonials",
+});
 
+type TestimonialRow = Awaited<ReturnType<typeof getTestimonials>>[number];
+
+/** A row's photo, if it has one, with alt text that always says something real. */
+function imageOf(t: TestimonialRow, label: string): QuoteImage | null {
+  const src = mediaUrl(t.media, label);
+  if (!src) return null;
+  return {
+    src,
+    alt: t.media?.alt || [t.clientName, t.projectName].filter(Boolean).join(", "),
+    width: t.media?.width,
+    height: t.media?.height,
+  };
+}
+
+export default async function TestimonialsPage() {
+  const [content, home, rows] = await Promise.all([
+    getPage("testimonials"),
+    getPage("home"),
+    // An unreachable database shows the CMS quote instead of an error page.
+    getTestimonials().catch(() => [] as TestimonialRow[]),
+  ]);
+
+  const hero = content.hero;
+  const homeQuote = home.testimonial;
+
+  // The editor's featured row leads; failing that, the first in order does.
+  const lead = rows.find((t) => t.featured) ?? rows[0];
+  const rest = lead ? rows.filter((t) => t.id !== lead.id) : [];
+
+  const cards: QuoteItem[] = rest.map((t) => ({
+    id: t.id,
+    quote: t.quote,
+    clientName: t.clientName,
+    projectName: t.projectName,
+    image: imageOf(t, "grid"),
+  }));
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: TESTIMONIALS_STYLES }} />
+    <PageShell>
+      <PageHero
+        eyebrow={hero.eyebrow}
+        title={hero.title}
+        crumbs={[{ label: "Home", href: "/" }, { label: "Testimonials" }]}
+        art="living"
+      />
 
-      <div className="page-fade">
-      <SiteNav content={nav} active="/testimonials" />
+      {/* With no rows yet, the home page's featured quote stands in: the page
+          always opens with a real client's words, never an empty state. */}
+      {lead ? (
+        <FeaturedQuote
+          eyebrow={homeQuote.eyebrow}
+          quote={lead.quote}
+          name={lead.clientName}
+          detail={lead.projectName}
+          image={imageOf(lead, "full")}
+        />
+      ) : (
+        homeQuote.quote && (
+          <FeaturedQuote
+            eyebrow={homeQuote.eyebrow}
+            quote={homeQuote.quote}
+            name={homeQuote.attribution}
+          />
+        )
+      )}
 
-      <section className="testi-hero">
-        <div className="testi-hero-content reveal">
-          <div className="eyebrow">{hero.eyebrow}</div>
-          <h1>{hero.title}</h1>
-        </div>
-      </section>
+      {cards.length > 0 && (
+        <section className="relative px-6 sm:px-14 pb-20 sm:pb-28">
+          {/* Its own header + InView (not <Section>): a long list is taller than
+              the 15% threshold allows, which would strand the header unrevealed. */}
+          <InView className="relative mb-10 flex items-baseline justify-between pt-6 sm:mb-14">
+            <span
+              aria-hidden="true"
+              className="fq-rule absolute left-0 right-0 top-0 h-px bg-white/25"
+            />
+            <h2 className="fq-fade m-0 text-[11px] font-medium uppercase tracking-[0.24em] text-white/60">
+              More client words
+            </h2>
+            <span
+              className="fq-fade text-[11px] uppercase tracking-[0.18em] text-white/55 tabular-nums"
+              style={{ ["--i" as string]: 1 }}
+            >
+              {String(cards.length).padStart(2, "0")} {cards.length === 1 ? "quote" : "quotes"}
+            </span>
+          </InView>
 
-      {featured && (
-        <section className="section">
-          <div className="featured-card reveal">
-            <p className="featured-quote">&ldquo;{featured.quote}&rdquo;</p>
-            <div className="featured-client">{featured.clientName}</div>
-            {featured.projectName && <div className="featured-project">{featured.projectName}</div>}
-          </div>
+          <ul role="list" className="m-0 grid list-none grid-cols-1 gap-5 p-0 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {cards.map((item, i) => (
+              <QuoteCard key={item.id} item={item} index={i} />
+            ))}
+          </ul>
         </section>
       )}
 
-      <section className="section">
-        {testimonials.length > 0 ? (
-          <div className="testi-grid stagger">
-            {testimonials.map((t) => (
-              <div className="testi-card reveal" key={t.id}>
-                <p className="testi-quote">&ldquo;{t.quote}&rdquo;</p>
-                <div className="testi-client">{t.clientName}</div>
-                {t.projectName && <div className="testi-project">{t.projectName}</div>}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="testi-empty">{hero.emptyState}</div>
-        )}
-      </section>
-
-      <SiteFooter content={footer} settings={footerSettings} />
-      </div>
-
-      <script dangerouslySetInnerHTML={{ __html: TESTIMONIALS_SCRIPT }} />
-    </>
+      <Invite />
+    </PageShell>
   );
 }
-
-const TESTIMONIALS_SCRIPT = `
-(function() {
-  var nav = document.getElementById('site-nav');
-  if (nav) {
-    window.addEventListener('scroll', function() {
-      nav.classList.toggle('scrolled', window.scrollY > 60);
-    });
-  }
-  var hamburger = document.querySelector('[data-toggle-nav]');
-  var mobileMenu = document.getElementById('mobile-menu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function() {
-      var isOpen = mobileMenu.classList.toggle('open');
-      document.body.style.overflow = isOpen ? 'hidden' : '';
-    });
-  }
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
-})();
-`;
-
-const TESTIMONIALS_STYLES = `
-  :root {
-    --black: #2C2C2C; --white: #FAFAF8; --grey-dark: #6B6560; --grey-light: #9C9488;
-    --grey-bg: #F5F0EA; --border: #E2DDD8; --bg-dark: #1E1E1E; --bg-darker: #1E1E1E;
-    --font-goodtimes: 'Good Times', sans-serif;
-    --h1: 64px; --h2: 40px; --h3: 28px; --h4: 24px;
-    --body-lg: 18px; --body: 16px; --body-sm: 15px; --eyebrow: 11px;
-    --margin-desktop: 48px; --margin-tablet: 32px; --margin-mobile: 20px;
-    --gap-xxl: 48px; --gap-xl: 32px; --gap-lg: 24px; --gap-md: 16px; --gap-sm: 12px; --gap-xs: 8px;
-    --nav-h: 84px;
-  }
-  html { scroll-behavior: smooth; }
-  body { background: var(--white); color: var(--black); line-height: 1.5; -webkit-font-smoothing: antialiased; }
-  a { color: inherit; text-decoration: none; }
-  img, video { display: block; max-width: 100%; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .page-fade { animation: fadeIn 0.4s ease; }
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1); }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-  .stagger > .reveal:nth-child(2) { transition-delay: 0.08s; }
-  .stagger > .reveal:nth-child(3) { transition-delay: 0.16s; }
-  .stagger > .reveal:nth-child(4) { transition-delay: 0.24s; }
-  .stagger > .reveal:nth-child(5) { transition-delay: 0.32s; }
-  .stagger > .reveal:nth-child(6) { transition-delay: 0.40s; }
-
-  .eyebrow { font-size: var(--eyebrow); letter-spacing: 0.22em; color: var(--grey-light); margin-bottom: var(--gap-md); text-transform: uppercase; }
-
-  .nav { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--gap-lg) var(--margin-desktop); height: var(--nav-h); background: rgba(248, 248, 246, 0.92); backdrop-filter: blur(8px); border-bottom: 0.5px solid var(--border); z-index: 100; }
-  .nav-logo { font-family: var(--font-goodtimes); font-size: var(--h4); font-weight: 700; letter-spacing: 0.14em; color: var(--black); }
-  .nav-links { display: flex; align-items: center; gap: var(--gap-xxl); list-style: none; }
-  .nav-links > li { position: relative; }
-  .nav-links a { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey-dark); transition: color 0.25s ease; }
-  .nav-links a:hover, .nav-links a.active { color: var(--black); font-weight: 600; }
-  .nav-item { position: relative; display: inline-block; }
-  .nav-dropdown {
-    position: absolute; top: 100%; left: 50%;
-    transform: translateX(-50%) translateY(-8px);
-    background: #1E1E1E; min-width: 180px; padding: 8px 0;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-    border: 0.5px solid #2C2C2C; z-index: 200; pointer-events: none;
-  }
-  .nav-item:hover .nav-dropdown {
-    opacity: 1; visibility: visible;
-    transform: translateX(-50%) translateY(0); pointer-events: auto;
-  }
-  .nav-dropdown a {
-    display: block; padding: 10px 20px; color: #9C9488;
-    font-size: 11px; letter-spacing: 0.1em; text-decoration: none;
-    transition: color 0.2s ease;
-  }
-  .nav-dropdown a:hover, .nav-dropdown a.active { color: #FAFAF8; }
-  .btn-enquire { padding: var(--gap-sm) var(--gap-lg); background: var(--black); color: var(--white); border: 0.5px solid var(--black); font-size: var(--eyebrow); letter-spacing: 0.12em; font-weight: 600; cursor: pointer; font-family: inherit; }
-  .btn-enquire:hover { background: transparent; color: var(--black); }
-  .mobile-menu {
-    position: fixed; inset: 0; background: #1E1E1E; z-index: 500;
-    display: flex; flex-direction: column; justify-content: center;
-    align-items: center; gap: 28px;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s;
-  }
-  .mobile-menu.open { opacity: 1; visibility: visible; }
-  .mobile-menu a { font-size: 20px; color: #FAFAF8; letter-spacing: 0.1em; text-decoration: none; }
-  .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: inherit; }
-  .hamburger svg { width: 28px; height: 28px; }
-  @media (max-width: 768px) {
-    .hamburger { display: block; }
-    .nav-links { display: none !important; }
-    .btn-enquire { display: none; }
-  }
-
-  .testi-hero { background: var(--bg-darker); min-height: 50vh; display: flex; align-items: center; padding: calc(var(--nav-h) + var(--gap-xxl)) var(--margin-desktop) var(--gap-xxl); }
-  .testi-hero-content { max-width: 720px; margin: 0 auto; text-align: center; color: var(--white); }
-  .testi-hero-content .eyebrow { color: var(--grey-light); justify-content: center; }
-  .testi-hero-content h1 { font-family: var(--font-goodtimes); font-size: var(--h1); font-weight: 500; letter-spacing: 0.01em; color: var(--white); }
-
-  .section { padding: var(--gap-xxl) var(--margin-desktop); max-width: 1920px; margin: 0 auto; }
-
-  .featured-card { background: var(--bg-darker); padding: var(--gap-xxl); text-align: center; max-width: 900px; margin: 0 auto; }
-  .featured-quote { font-size: 22px; color: var(--white); line-height: 1.8; font-style: italic; margin-bottom: var(--gap-xl); }
-  .featured-client { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey-light); }
-  .featured-project { font-size: var(--body-sm); color: var(--grey-dark); margin-top: var(--gap-xs); }
-
-  .testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); }
-  .testi-card { background: var(--white); border: 0.5px solid var(--border); padding: 28px; }
-  .testi-quote { font-size: 15px; color: var(--black); line-height: 1.75; }
-  .testi-client { font-size: 13px; font-weight: 700; color: var(--black); margin-top: var(--gap-lg); }
-  .testi-project { font-size: var(--eyebrow); letter-spacing: 0.1em; color: var(--grey-light); margin-top: var(--gap-xs); }
-
-  .testi-empty { text-align: center; color: var(--grey-light); font-size: var(--body); padding: 120px 0; }
-
-  .footer-nav-heading { font-size: 11px; letter-spacing: 0.16em; color: #9C9488; margin-bottom: 20px; font-weight: 400; }
-  .footer-nav-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-  .footer-nav-links a { font-size: 13px; color: #6B6560; text-decoration: none; transition: color 0.25s ease; }
-  .footer-nav-links a:hover { color: #FAFAF8; }
-  .footer-social { display: flex; gap: 16px; margin-top: 20px; }
-  .footer-social a { font-size: 12px; color: #6B6560; letter-spacing: 0.08em; text-decoration: none; transition: color 0.25s ease; }
-  .footer-social a:hover { color: #FAFAF8; }
-
-  footer { background: var(--bg-darker); color: var(--white); padding: var(--gap-xxl) var(--margin-desktop); }
-  .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-xxl); margin-bottom: var(--gap-xxl); }
-  .footer-wordmark { font-family: var(--font-goodtimes); font-size: 22px; font-weight: 400; letter-spacing: 0.14em; margin-bottom: var(--gap-lg); }
-  .footer-tagline { font-size: 13px; color: var(--grey-dark); line-height: 1.7; }
-  .footer-bottom { border-top: 0.5px solid #2C2C2C; padding-top: var(--gap-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--gap-lg); font-size: 11px; color: var(--grey-dark); letter-spacing: 0.08em; }
-  .footer-bottom a { color: var(--grey-dark); }
-
-  @media (max-width: 1024px) {
-    :root { --margin-desktop: var(--margin-tablet); --h1: 42px; --h2: 32px; }
-    .nav-links { gap: var(--gap-lg); }
-    .testi-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 720px) {
-    :root { --margin-desktop: var(--margin-mobile); --h1: 40px; --h2: 28px; --h4: 20px; --body-lg: 16px; }
-    .nav { padding: var(--gap-md) var(--margin-mobile); height: auto; }
-    .testi-grid { grid-template-columns: 1fr; }
-    .footer-grid { grid-template-columns: 1fr; }
-    .footer-bottom { flex-direction: column; align-items: flex-start; }
-  }
-`;

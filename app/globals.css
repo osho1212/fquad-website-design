@@ -129,7 +129,7 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
 /* Metallic Architectural Button */
 .btn-metallic {
   font-family: var(--font-good-times);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   padding: 10px 22px;
   font-weight: 500;
@@ -346,62 +346,101 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
   outline-offset: 2px;
 }
 
-/* ── Hero blueprint art in light mode ─────────────────────────────────────
-   The scroll sequence is raster line-art (white lines on black), so CSS
-   tokens cannot reach it. Inverting the canvas flips it to dark-lines-on-
-   light, which suits the light theme. Only the canvas is inverted — doing it
-   on the parent would invert the overlaid headline and buttons too. */
-[data-theme='light'] .fq-hero-canvas {
-  filter: invert(1);
+/* ── Hero film ────────────────────────────────────────────────────────────
+   The hero is a scroll-scrubbed film (sketch → clay model → render) on warm
+   paper in BOTH themes, so its colours are set by what's on screen rather
+   than by the site theme. --hero-ink is dark over the paper-white sketch and
+   flips to white once the render takes over (.fq-hero-stage--render); the
+   parallax marks read the same variable through --art-ink. */
+.fq-hero-stage {
+  --hero-ink: #151412;
+  --art-ink: var(--hero-ink);
+  background-color: #f5f3ee;
 }
-[data-theme='light'] .fq-hero-stage {
-  background-image: none !important;
-  background-color: #ffffff;
-}
-
-/* From frame 035 the sequence is the finished render rather than line-art, so
-   it keeps its original colours. The stage goes dark behind it and the overlay
-   text returns to white for legibility. Hero-only; dark theme is untouched. */
-[data-theme='light'] .fq-hero-canvas--original {
-  filter: none;
-}
-[data-theme='light'] .fq-hero-stage--original {
-  background-color: #ffffff;
+.fq-hero-stage--render {
+  --hero-ink: #ffffff;
 }
 
-/* The F.QUAD stencil reveal (surrounding area punched with text-shaped holes
-   showing the finished-building video underneath) is a dark-theme effect.
-   Light theme flips it: the reveal rect becomes an opaque white fill with no
-   mask — hiding the video entirely — and the plain-text layer beneath takes
-   over, showing "F.QUAD" and the two subtitle lines as solid dark text. */
-[data-theme='light'] .fq-hero-stencil-fill {
-  fill: #ffffff;
-  mask: none;
+.fq-hero-h1 {
+  color: var(--hero-ink);
+  transition: color 500ms ease, text-shadow 500ms ease;
 }
-.fq-hero-stencil-light {
-  display: none;
+.fq-hero-stage--render .fq-hero-h1 {
+  text-shadow: 0 2px 28px rgb(0 0 0 / 0.38);
 }
-[data-theme='light'] .fq-hero-stencil-light {
+.fq-hero-sub {
+  color: color-mix(in srgb, var(--hero-ink) 62%, transparent);
+  transition: color 500ms ease;
+}
+.fq-hero-sub-rule {
+  background: linear-gradient(to bottom, var(--hero-ink), transparent);
+}
+.fq-hero-hud-track {
+  background: color-mix(in srgb, var(--hero-ink) 22%, transparent);
+}
+.fq-hero-hud-fill {
+  background: var(--hero-ink);
+}
+
+/* Secondary button: an ink pill on the paper, a glass pill over the render. */
+.fq-hero-ghost {
+  color: #ffffff;
+  background: rgb(21 20 18 / 0.82);
+  border: 1px solid rgb(21 20 18 / 0.9);
+  backdrop-filter: blur(10px);
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease;
+}
+.fq-hero-stage--render .fq-hero-ghost {
+  background: rgb(255 255 255 / 0.14);
+  border-color: rgb(255 255 255 / 0.5);
+}
+@media (hover: hover) and (pointer: fine) {
+  .fq-hero-ghost:hover {
+    background: #151412;
+    border-color: #151412;
+  }
+  .fq-hero-stage--render .fq-hero-ghost:hover {
+    background: rgb(255 255 255 / 0.28);
+    border-color: #ffffff;
+  }
+}
+
+/* Soft shade across the lower stage — only once the render is showing. */
+.fq-hero-scrim {
+  background: linear-gradient(to top, rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.22) 45%, transparent);
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+.fq-hero-stage--render .fq-hero-scrim {
+  opacity: 1;
+}
+
+/* Finale: the stage settles to the page's paper around the F.QUAD cut-out. */
+.fq-hero-stencil-fill {
+  fill: rgb(var(--fq-bg));
+}
+.fq-hero-stencil-line {
+  fill: none;
+  stroke: rgb(var(--fq-fg));
+  stroke-width: 1.5;
+}
+.fq-hero-stencil-sub {
+  fill: rgb(var(--fq-fg));
+}
+/* One composition per orientation (see StencilArt). */
+.fq-stencil {
   display: block;
 }
-[data-theme='light'] .fq-hero-text--on-dark h1,
-[data-theme='light'] .fq-hero-text--on-dark span,
-[data-theme='light'] .fq-hero-text--on-dark button:not(.btn-metallic),
-[data-theme='light'] .fq-hero-text--on-dark a:not(.btn-metallic) {
-  color: #ffffff;
+.fq-stencil--portrait {
+  display: none;
 }
-[data-theme='light'] .fq-hero-text--on-dark button:not(.btn-metallic),
-[data-theme='light'] .fq-hero-text--on-dark a:not(.btn-metallic) {
-  border-color: rgba(255, 255, 255, 0.45);
-  background-color: rgba(0, 0, 0, 0.5);
-}
-/* The scroll cue's gradient rule is a background, not a text colour. */
-[data-theme='light'] .fq-hero-text--on-dark .bg-gradient-to-b {
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.6),
-    transparent
-  );
+@media (orientation: portrait) {
+  .fq-stencil--landscape {
+    display: none;
+  }
+  .fq-stencil--portrait {
+    display: block;
+  }
 }
 
 /* Placeholder text is text: it must clear 4.5:1 too. The design uses
@@ -430,4 +469,444 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
 .admin-root h5,
 .admin-root h6 {
   color: inherit;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM
+   Tokens, smooth-scroll plumbing, the intro, reveals, line-drawing and the
+   cursor. Everything here is gated for reduced motion at the bottom.
+   ═════════════════════════════════════════════════════════════════════════ */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Lenis owns easing once it's running; native smooth-scroll would fight it. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+::selection {
+  background: rgb(var(--fq-fg));
+  color: rgb(var(--fq-bg));
+}
+
+/* The logo marks are single-colour artwork (the CMS default is white). Forcing
+   them to ink in light theme and chalk in dark keeps them visible on either
+   page instead of vanishing white-on-white. */
+.fq-logo-mono {
+  filter: brightness(0);
+}
+[data-theme='dark'] .fq-logo-mono {
+  filter: brightness(0) invert(1);
+}
+
+/* Skip link: invisible until a keyboard user tabs to it. */
+.fq-skip {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 200;
+  padding: 12px 18px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgb(var(--fq-fg));
+  color: rgb(var(--fq-bg));
+  transform: translateY(-220%);
+  transition: transform 220ms var(--ease-out);
+}
+.fq-skip:focus {
+  transform: none;
+}
+
+/* Soft page-enter: opacity only, so fixed/sticky children keep their frame. */
+@keyframes fq-page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fq-page {
+  animation: fq-page-in 420ms var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fq-page {
+    animation: none;
+  }
+}
+
+/* ── Intro / preloader ────────────────────────────────────────────────── */
+.fq-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgb(var(--fq-bg));
+  color: rgb(var(--fq-fg));
+  transition: transform 900ms var(--ease-in-out);
+  will-change: transform;
+}
+html[data-intro='loading'] .fq-preloader,
+.fq-preloader[data-leaving='true'] {
+  display: flex;
+}
+/* The curtain lifts off the top edge. */
+.fq-preloader[data-leaving='true'] {
+  transform: translate3d(0, -100%, 0);
+}
+/* If the page script never arrives, don't trap the visitor behind the intro. */
+html[data-intro='loading'] .fq-preloader {
+  animation: fq-failsafe 0.01s linear 9s forwards;
+}
+@keyframes fq-failsafe {
+  to {
+    visibility: hidden;
+  }
+}
+
+.fq-preloader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(280px, 70vw);
+  transition: opacity 380ms ease, transform 500ms var(--ease-out);
+}
+.fq-preloader[data-leaving='true'] .fq-preloader-inner {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+.fq-preloader-mark {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 36px;
+}
+.fq-preloader-mark > * {
+  stroke-dasharray: 1;
+  animation: fq-draw 1.5s var(--ease-out) both;
+}
+.fq-preloader-mark > :nth-child(n + 4) {
+  animation-delay: 0.3s;
+}
+.fq-preloader-mark > :nth-child(n + 8) {
+  animation-delay: 0.65s;
+}
+.fq-preloader-meta {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-good-times);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+}
+.fq-preloader-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+.fq-preloader-rule {
+  width: 100%;
+  height: 1px;
+  margin: 12px 0 14px;
+  background: rgb(var(--fq-fg) / 0.18);
+  overflow: hidden;
+}
+.fq-preloader-rule-fill {
+  height: 100%;
+  background: rgb(var(--fq-fg));
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.fq-preloader-sub {
+  font-size: 8.5px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* Hero copy waits for the curtain, then rises in on a stagger. Only the
+   loading state hides anything, so no-JS and returning visitors see it all. */
+.fq-intro-item {
+  transition: opacity 900ms var(--ease-out), transform 1000ms var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 80ms + 180ms);
+}
+html[data-intro='loading'] .fq-intro-item {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: none;
+}
+
+/* ── Headline reveal (RevealText) ─────────────────────────────────────── */
+.fq-rt-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  /* room for descenders inside the mask, cancelled so line-height holds */
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.fq-rt-inner {
+  display: inline-block;
+  transition: transform 950ms var(--ease-out);
+}
+html.js .fq-rt-inner {
+  transform: translateY(108%);
+}
+html.js [data-in='true'] .fq-rt-inner {
+  transform: none;
+}
+html.js[data-intro='loading'] [data-in='true'] .fq-rt-inner {
+  transform: translateY(108%);
+}
+
+/* Fade-and-rise for blocks (paragraphs, cards). Scoped to html.js. */
+.fq-fade {
+  transition: opacity 800ms var(--ease-out), transform 900ms var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+html.js .fq-fade {
+  opacity: 0;
+  transform: translateY(26px);
+}
+html.js [data-in='true'].fq-fade,
+html.js [data-in='true'] .fq-fade {
+  opacity: 1;
+  transform: none;
+}
+
+/* ScrollWords: words start faint and are brought up by script. Scoped to
+   html.js so no-JS visitors read the text at full strength. */
+html.js [data-w] {
+  opacity: var(--fq-floor, 0.16);
+}
+
+/* Rules that wipe in from the left, like a ruled line being drawn. */
+.fq-rule {
+  transform-origin: left;
+  transition: transform 1100ms var(--ease-in-out);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+html.js .fq-rule {
+  transform: scaleX(0);
+}
+html.js [data-in='true'].fq-rule,
+html.js [data-in='true'] .fq-rule {
+  transform: none;
+}
+
+/* ── Blueprint line-drawing ───────────────────────────────────────────── */
+@keyframes fq-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.fq-art-field[data-draw-mode='intro'] [data-draw] {
+  stroke-dasharray: 1;
+  animation: fq-draw 2.6s var(--ease-out) both;
+  animation-delay: calc(var(--d, 0) * 1ms + 350ms);
+}
+html[data-intro='loading'] .fq-art-field[data-draw-mode='intro'] [data-draw] {
+  animation-play-state: paused;
+}
+html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.fq-art-item {
+  will-change: transform;
+}
+.fq-art-item svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ── Cursor ───────────────────────────────────────────────────────────── */
+.fq-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #fff;
+  border-radius: 50% !important;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 220ms ease, background-color 220ms ease;
+  will-change: transform;
+}
+.fq-cursor[data-mode='link'] {
+  background: rgba(255, 255, 255, 0.2);
+}
+.fq-cursor[data-mode='label'] {
+  background: #fff;
+}
+.fq-cursor-label {
+  font-family: var(--font-good-times);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #000;
+  white-space: nowrap;
+}
+@media (hover: none), (pointer: coarse) {
+  .fq-cursor {
+    display: none;
+  }
+}
+
+/* ── Small interaction details ────────────────────────────────────────── */
+
+/* Outlined type: transparent fill, hairline stroke in the foreground colour. */
+.fq-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(var(--fq-fg) / 0.55);
+}
+
+/* Underline that draws in from the left and retracts to the right. */
+.fq-link {
+  position: relative;
+}
+.fq-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 450ms var(--ease-out);
+}
+
+/* Cards whose edge-light follows the pointer (coordinates set per card). */
+.fq-spot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(var(--fq-fg) / 0.1),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 320ms ease;
+  pointer-events: none;
+}
+.fq-arrow {
+  display: inline-block;
+  transition: transform 400ms var(--ease-out), color 300ms ease;
+}
+
+/* Hover treatments are for real pointers only — touch fires false hovers. */
+@media (hover: hover) and (pointer: fine) {
+  .fq-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  .fq-spot:hover::before {
+    opacity: 1;
+  }
+  .fq-spot:hover .fq-arrow {
+    transform: translate(3px, -3px);
+  }
+}
+
+/* ── 3D scene host ────────────────────────────────────────────────────── */
+/* No position here: the host is placed by its utilities (absolute inset-0). */
+.fq-scene {
+  width: 100%;
+  height: 100%;
+}
+
+/* Corner ticks for framed "viewport" panels, drawn like a drawing sheet. */
+.fq-frame {
+  position: relative;
+}
+.fq-frame::before,
+.fq-frame::after,
+.fq-frame > .fq-frame-b::before,
+.fq-frame > .fq-frame-b::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 0 solid rgb(var(--fq-fg) / 0.55);
+  pointer-events: none;
+}
+.fq-frame::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+.fq-frame::after {
+  top: 0;
+  right: 0;
+  border-width: 1px 1px 0 0;
+}
+.fq-frame > .fq-frame-b::before {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 1px 1px;
+}
+.fq-frame > .fq-frame-b::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+/* ── Reduced motion: fewer, gentler — never a dead page ───────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .fq-preloader {
+    display: none !important;
+  }
+  .fq-intro-item,
+  html.js .fq-fade,
+  html.js .fq-rule {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  html.js .fq-rt-inner {
+    transform: none !important;
+    transition: none !important;
+  }
+  [data-draw] {
+    animation: none !important;
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+  .animate-fq-marquee {
+    animation: none !important;
+  }
+  .fq-cursor {
+    display: none;
+  }
 }

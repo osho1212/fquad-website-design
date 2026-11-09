@@ -284,6 +284,8 @@ export default function ElegantCarousel({
               src={currentSlide.imageUrl}
               alt={currentSlide.title}
               className="carousel-image"
+              loading="lazy"
+              decoding="async"
             />
             <div
               className="carousel-image-overlay"

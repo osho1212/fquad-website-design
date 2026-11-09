@@ -80,20 +80,26 @@ export function ProjectCarousel({
 
       {/* Dots */}
       {slides.length > 1 && (
-        <div className="flex items-center justify-center gap-2.5 mt-5">
+        <div className="flex items-center justify-center gap-0.5 mt-3">
           {slides.map((_, i) => (
+            // The visible dot is 5px, but the button around it is a 28×32px
+            // hit area (WCAG 2.5.8 asks for at least 24px).
             <button
               key={i}
               type="button"
               onClick={() => setIndex(i)}
               aria-label={`Go to image ${i + 1}`}
               aria-current={i === index}
-              className={`h-[5px] transition-all duration-400 ${
-                i === index
-                  ? "w-7 bg-gradient-to-r from-[#e6e6e6] via-[#a6a6a6] to-[#dfdfdf]"
-                  : "w-[5px] bg-white/25 hover:bg-white/50"
-              }`}
-            />
+              className="group/dot flex items-center justify-center min-w-[28px] h-8 px-1 cursor-pointer"
+            >
+              <span
+                className={`block h-[5px] transition-all duration-400 ${
+                  i === index
+                    ? "w-7 bg-gradient-to-r from-[#e6e6e6] via-[#a6a6a6] to-[#dfdfdf]"
+                    : "w-[5px] bg-white/25 group-hover/dot:bg-white/50"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}
