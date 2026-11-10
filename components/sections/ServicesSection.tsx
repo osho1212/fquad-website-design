@@ -200,7 +200,7 @@ export function ServicesSection({
             </div>
             <div className="wwd-hud-bottom">
               <span className="wwd-readout">
-                <span className="wwd-readout-label">Light</span>
+                <span className="wwd-readout-label">Next</span>
                 <span className="wwd-meter">
                   <span ref={meterRef} />
                 </span>

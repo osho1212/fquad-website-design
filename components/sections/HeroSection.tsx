@@ -229,6 +229,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   const hudBarRef = useRef<HTMLDivElement>(null);
   const stencilRef = useRef<HTMLDivElement>(null);
   const cueRef = useRef<HTMLDivElement>(null);
+  const scrollHintRef = useRef<HTMLDivElement>(null);
 
   // The one thing that stays in React state: it flips once per scrub and
   // swaps the ink colour (dark on the sketch, white over the render).
@@ -448,7 +449,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       if (images[0] && images[0].complete) render();
     });
 
-    // Phase layout across the 600vh scroll distance:
+    // Phase layout across the scroll distance (340vh section − 100vh pinned = 240vh):
     //   0.00 → 0.50  the film scrubs: sketch → model → render
     //   0.50 → 0.66  the finished render holds under the headline
     //   0.66 → 0.88  the stage settles to paper around the F.QUAD cut-out
@@ -477,6 +478,12 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       if (stencilRef.current) stencilRef.current.style.opacity = String(settle);
       setDisplay(stencilRef.current, settle > 0.01, "block");
 
+      // The "scroll" prompt has done its job once the visitor starts scrolling.
+      // Inline opacity only after that, so the CSS intro transition isn't beaten.
+      if (scrollHintRef.current) {
+        scrollHintRef.current.style.opacity = p > 0.002 ? String(clamp(1 - p / 0.08)) : "";
+      }
+
       const cue = clamp((p - 0.86) / 0.12);
       if (cueRef.current) cueRef.current.style.opacity = String(cue);
       setDisplay(cueRef.current, cue > 0.01, "flex");
@@ -489,7 +496,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
         trigger: container,
         start: "top top",
         end: "bottom bottom",
-        scrub: 0.5,
+        scrub: 0.3,
         onUpdate: (self) => apply(self.progress),
       },
     });
@@ -536,7 +543,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   }, [phone]);
 
   return (
-    <section id="top" ref={containerRef} className="relative h-[600vh] bg-black">
+    <section id="top" ref={containerRef} className="relative h-[340vh] bg-black">
       <div
         className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
@@ -597,12 +604,20 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
             </Magnetic>
           </div>
 
+          {/* Scroll prompt: label plus cascading arrows, visible until the first scroll */}
           <div
-            className="fq-intro-item fq-hero-sub flex flex-col items-center gap-2 text-[11px] tracking-[0.24em] uppercase mt-7 pointer-events-none"
+            ref={scrollHintRef}
+            className="fq-intro-item fq-scroll-cue flex flex-col items-center gap-3 mt-7 sm:mt-8 pointer-events-none"
             style={{ ["--i" as string]: 2 }}
           >
-            <span>{c.scrollHint}</span>
-            <div className="fq-hero-sub-rule w-[1px] h-5 animate-bounce" />
+            <span className="text-xs sm:text-[13px] tracking-[0.3em] uppercase font-semibold">{c.scrollHint}</span>
+            <span aria-hidden="true" className="fq-scroll-bob flex flex-col items-center gap-1.5">
+              <span className="fq-scroll-chevs">
+                <i />
+                <i />
+                <i />
+              </span>
+            </span>
           </div>
         </div>
 
