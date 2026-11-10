@@ -56,14 +56,14 @@ function StatCard({ item, index }: { item: StatItem; index: number }) {
   return (
     <div
       ref={ref}
-      className="fq-fade relative py-14 first:pl-0 pl-6 sm:pl-9 first:border-l-0 border-l border-white/15"
+      className="fq-fade relative py-9 sm:py-14 first:pl-0 pl-3.5 sm:pl-9 first:border-l-0 border-l border-white/15 min-w-0"
       style={{ ["--i" as string]: index }}
     >
-      <div className="font-semibold text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight uppercase leading-none text-white tabular-nums">
+      <div className="font-semibold text-[1.6rem] sm:text-4xl md:text-5xl lg:text-6xl tracking-tight uppercase leading-none text-white tabular-nums">
         {count}
         <span className="font-light text-white/60">{item.suffix}</span>
       </div>
-      <div className="mt-3 text-[11px] sm:text-[11px] tracking-[0.24em] text-white/50 uppercase font-medium">
+      <div className="mt-3 text-[11px] tracking-[0.14em] sm:tracking-[0.24em] text-white/70 uppercase font-medium">
         {item.label}
       </div>
     </div>
@@ -78,7 +78,9 @@ export function StatsSection({ content }: { content?: Record<string, any> }) {
 
   return (
     <InView as="section" className="px-6 sm:px-11 bg-black">
-      <div className="relative grid grid-cols-1 sm:grid-cols-3 border-b border-white/15">
+      {/* One row of three on every screen: stacked on phones they took half a
+          screen each for a single number. */}
+      <div className="relative grid grid-cols-3 border-b border-white/15">
         {/* A rule that draws across the top as the numbers arrive */}
         <span
           aria-hidden="true"

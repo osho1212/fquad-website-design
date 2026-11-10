@@ -165,7 +165,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
               label="A 3D bedroom that moves from a bare shell, to clay massing, to real furniture, to a fully styled room as the design-process stages scroll by"
             />
             <span className="fq-frame-b" aria-hidden="true" />
-            <figcaption className="absolute left-3 right-3 bottom-3 flex justify-between text-[11px] tracking-[0.22em] uppercase text-white/55 pointer-events-none">
+            <figcaption className="absolute left-3 right-3 bottom-3 flex justify-between gap-3 text-[11px] tracking-[0.22em] uppercase text-white/70 pointer-events-none">
               {/* Single-string children: these nodes are rewritten from the
                   frame loop, so React must own exactly one text node each.
                   The live readout only exists where the section pins; on

@@ -74,8 +74,8 @@ export function AwardsSection({ content }: { content?: Record<string, any> }) {
       {awards.map((award, i) => (
         <React.Fragment key={`${keyPrefix}-${i}`}>
           {/* Alternate solid and outlined type so the strip has rhythm */}
-          <span className={i % 2 ? "fq-outline" : undefined}>{award}</span>
-          <span className="text-[#c0c0c0]">{c.separator}</span>
+          <span className={i % 2 ? "fq-outline fq-outline-md" : undefined}>{award}</span>
+          <span className="text-white/60" aria-hidden="true">{c.separator}</span>
         </React.Fragment>
       ))}
     </div>

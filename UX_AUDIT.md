@@ -115,7 +115,7 @@ page's 16px checkbox (its label is the real hit area) and nothing else. The prod
 
 - **System:** `PageShell`, `PageHero`, `Section`, `Footer` (`components/layout`); `lib/site.ts`
   (one source for studio details), `lib/seo.ts`; `app/not-found.tsx`, `app/error.tsx`.
-- **Hero:** new sketch → clay → render film (190 frames, 1440px desktop / 800px phone, WebP,
+- **Hero:** new sketch → clay → render film (189 frames, 1440px desktop / 800px phone, WebP,
   34 MB → 16 MB on disk), ink-on-paper then white-on-render type, F.QUAD cut-out finale with a
   separate portrait composition so the title is never cropped.
 - **Interior-design 3D:** furniture kit (sofa, armchair, bed, lamps, plant, shelving, rug, art) with

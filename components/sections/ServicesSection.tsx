@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { withDefaults } from "@/lib/cms/schema";
-import { InView } from "@/components/motion/InView";
-import { ParallaxField, type ParallaxItem } from "@/components/parallax/ParallaxField";
-import { hasFinePointer } from "@/lib/motion";
+import { scrollToY } from "@/lib/motion";
+import { RoomScene } from "@/components/three/RoomScene";
+import type { SceneVariant } from "@/components/three/RoomSceneImpl";
+import "./ServicesSection.css";
 
 export interface ServiceCard {
   slug: string;
@@ -14,67 +15,56 @@ export interface ServiceCard {
   desc: string;
 }
 
-const SERVICES_ART: ParallaxItem[] = [
-  { art: "armchair", x: "-3%", y: "-4%", w: 300, depth: -0.4, spin: 8, opacity: 0.09 },
-  { art: "sofa", x: "58%", y: "86%", w: 400, depth: 0.5, opacity: 0.11, desktopOnly: true },
-  { art: "pendant", x: "93%", y: "0%", w: 70, depth: 0.8, opacity: 0.22, desktopOnly: true },
-  { art: "cross", x: "5%", y: "92%", w: 30, depth: 0.9, spin: 90, opacity: 0.28 },
-];
+/** Which model tells each practice's story. */
+const MODEL_FOR_SLUG: Record<string, SceneVariant> = {
+  architecture: "residence",
+  "interior-design": "living",
+  "interior-styling": "bedroom",
+  farmhouse: "farmhouse",
+};
+const FALLBACK_ORDER: SceneVariant[] = ["residence", "living", "bedroom", "farmhouse"];
 
-/**
- * A card whose border-light follows the pointer. The coordinates are written
- * to this card's own style only (never a shared parent), so moving across
- * the grid restyles one element, not the whole section.
- */
-function ServiceTile({
-  svc,
-  index,
-  cta,
-}: {
-  svc: ServiceCard;
-  index: number;
-  cta: string;
-}) {
-  const ref = useRef<HTMLAnchorElement>(null);
+const MODEL_NAME: Record<SceneVariant, string> = {
+  residence: "The Residence",
+  living: "The Salon",
+  bedroom: "The Suite",
+  farmhouse: "The Farmhouse",
+  lounge: "Material Library",
+};
 
-  const onMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
-    const el = ref.current;
-    if (!el || !hasFinePointer()) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-    el.style.setProperty("--my", `${e.clientY - r.top}px`);
-  };
+const MODEL_LABEL: Record<SceneVariant, string> = {
+  residence:
+    "A site model of a contemporary two-storey residence turning from a white concept model into real materials, then to dusk as its lights come on one by one",
+  living:
+    "A cut-away living room whose light moves from midday sun to golden hour to a lamplit evening",
+  bedroom:
+    "A bedroom suite built in four stages — line drawing, white model, materials, then styled and lit for the evening",
+  farmhouse:
+    "A weekend farmhouse estate lit from morning to a lantern-lit evening",
+  lounge: "A material library of stone, timber, metal and fabric swatches",
+};
 
-  return (
-    <Link
-      ref={ref}
-      href={`/services/${svc.slug}`}
-      onPointerMove={onMove}
-      className="fq-fade fq-spot group relative block bg-black/60 backdrop-blur-md p-8 sm:p-10 overflow-hidden"
-      style={{ ["--i" as string]: index }}
-    >
-      <div className="flex items-start justify-between">
-        <div className="text-[11px] text-[#c0c0c0] tracking-[0.2em]">{svc.num}</div>
-        <span
-          aria-hidden="true"
-          className="fq-arrow text-white/50 group-hover:text-white text-lg leading-none"
-        >
-          ↗
-        </span>
-      </div>
-      <h3 className="m-0 mt-8 font-semibold text-lg sm:text-xl md:text-2xl tracking-tight text-white transition-transform duration-500 ease-out group-hover:translate-x-1.5">
-        {svc.title}
-      </h3>
-      <p className="m-0 mt-2.5 text-sm sm:text-base leading-relaxed text-white/70 max-w-[46ch]">
-        {svc.desc}
-      </p>
-      <span className="fq-link inline-flex items-center mt-7 text-[11px] tracking-[0.18em] uppercase text-[#c0c0c0] group-hover:text-white transition-colors">
-        {cta}
-      </span>
-    </Link>
-  );
+/** The suite reports no caption of its own; name its stage from progress. */
+function suiteStage(p: number) {
+  return p < 0.25 ? "Line drawing" : p < 0.5 ? "White model" : p < 0.77 ? "Materials" : "Styled & lit";
 }
 
+/**
+ * Each service owns an equal share of the pinned scroll. Within its share
+ * the model plays from 0 to 1, then holds fully lit for the last stretch
+ * so the finished state is seen before the next practice takes over.
+ */
+const PLAY = 0.86;
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * What We Do — one pinned viewport. The services are a live index on the
+ * left; the right is a single 3D canvas whose model and light follow the
+ * scroll: the residence goes from concept to lit dusk, the salon from noon
+ * to lamplight, the suite from sketch to styled, the farmhouse from
+ * morning to lanterns.
+ */
 export function ServicesSection({
   content,
   services = [],
@@ -83,40 +73,202 @@ export function ServicesSection({
   services?: ServiceCard[];
 }) {
   const c = withDefaults("home", "services", content);
+  const sectionRef = useRef<HTMLElement>(null);
+  const captionRef = useRef<HTMLSpanElement>(null);
+  const meterRef = useRef<HTMLSpanElement>(null);
+  const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const segRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
 
-  if (services.length === 0) return null;
+  const n = services.length;
+  const models = useMemo(
+    () => services.map((s, i) => MODEL_FOR_SLUG[s.slug] ?? FALLBACK_ORDER[i % FALLBACK_ORDER.length]),
+    [services]
+  );
+
+  // Which service the scroll is in. The model's own (eased) progress drives
+  // the bars and readouts, via onState below.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || n === 0) return;
+    let raf = 0;
+    const read = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const span = Math.max(1, r.height - window.innerHeight);
+      const P = Math.min(1, Math.max(0, -r.top / span));
+      const i = Math.min(n - 1, Math.floor(P * n));
+      if (i !== activeRef.current) {
+        activeRef.current = i;
+        setActive(i);
+      }
+      // Bars for the services already passed / not yet reached.
+      barRefs.current.forEach((b, k) => {
+        if (b && k !== i) b.style.transform = `scaleX(${k < i ? 1 : 0})`;
+      });
+      segRefs.current.forEach((b, k) => {
+        if (b && k !== i) b.style.transform = `scaleX(${k < i ? 1 : 0})`;
+      });
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(read);
+    };
+    read();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [n]);
+
+  const mapProgress = useCallback(
+    (P: number) => {
+      if (n === 0) return P;
+      const i = Math.min(n - 1, Math.floor(P * n));
+      return (P * n - i) / PLAY;
+    },
+    [n]
+  );
+
+  const jumpTo = (i: number) => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    const span = el.offsetHeight - window.innerHeight;
+    scrollToY(top + (i / n) * span + 4, { duration: 1.2 });
+  };
+
+  if (n === 0) return null;
+
+  const svc = services[active];
+  const model = models[active];
 
   return (
     <section
       id="services"
-      className="relative overflow-hidden pt-8 pb-24 px-6 sm:px-11 bg-transparent"
+      ref={sectionRef}
+      className="wwd relative"
+      style={{ height: `${n * 95 + 100}vh` }}
     >
-      <ParallaxField items={SERVICES_ART} />
-
-      <InView className="relative z-10">
-        <div className="relative flex justify-between items-baseline pt-6 mb-8">
-          <span
-            aria-hidden="true"
-            className="fq-rule absolute top-0 left-0 right-0 h-px bg-white/25"
+      <div className="wwd-stage sticky top-0 h-[100svh] w-full overflow-hidden">
+        {/* The model */}
+        <figure className="wwd-figure m-0">
+          <RoomScene
+            variant={model}
+            trackRef={sectionRef}
+            mapProgress={mapProgress}
+            preload={models.filter((m, i) => i !== 0 && models.indexOf(m) === i)}
+            label={MODEL_LABEL[model]}
+            onState={({ p, label }) => {
+              const local = Math.min(1, Math.max(0, p));
+              const i = activeRef.current;
+              const bar = barRefs.current[i];
+              if (bar) bar.style.transform = `scaleX(${local.toFixed(4)})`;
+              const seg = segRefs.current[i];
+              if (seg) seg.style.transform = `scaleX(${local.toFixed(4)})`;
+              if (meterRef.current) meterRef.current.style.transform = `scaleX(${local.toFixed(4)})`;
+              const text = models[i] === "bedroom" ? suiteStage(local) : label;
+              if (text && captionRef.current && captionRef.current.textContent !== text) {
+                captionRef.current.textContent = text;
+              }
+            }}
+            className="absolute inset-0"
           />
-          <div className="fq-fade text-[11px] tracking-[0.24em] text-white/60 uppercase">
-            {c.eyebrow}
-          </div>
-          <Link
-            href={c.linkHref}
-            className="fq-fade fq-link text-[11px] tracking-[0.18em] text-[#c0c0c0] hover:text-white transition-colors"
-            style={{ ["--i" as string]: 1 }}
-          >
-            {c.linkLabel}
-          </Link>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[1px] bg-white/15 rounded-none overflow-hidden border border-white/15">
-          {services.map((svc, i) => (
-            <ServiceTile key={svc.slug} svc={svc} index={i + 1} cta={c.cardCtaLabel} />
-          ))}
+          {/* HUD */}
+          <div className="wwd-hud" aria-hidden="true">
+            <span className="wwd-corner wwd-corner--tl" />
+            <span className="wwd-corner wwd-corner--tr" />
+            <span className="wwd-corner wwd-corner--bl" />
+            <span className="wwd-corner wwd-corner--br" />
+            <div className="wwd-hud-top">
+              <span>Fig. 03 — {MODEL_NAME[model]}</span>
+              <span className="wwd-hud-coords">17.3850° N · 78.4867° E</span>
+            </div>
+            <div className="wwd-hud-bottom">
+              <span className="wwd-readout">
+                <span className="wwd-readout-label">Light</span>
+                <span className="wwd-meter">
+                  <span ref={meterRef} />
+                </span>
+              </span>
+              <span ref={captionRef} className="wwd-caption" />
+            </div>
+          </div>
+        </figure>
+
+        {/* The words */}
+        <div className="wwd-panel">
+          <div className="wwd-head">
+            <span className="wwd-eyebrow">
+              <i aria-hidden="true" />
+              {c.eyebrow}
+            </span>
+            <Link href={c.linkHref} className="wwd-all fq-link">
+              {c.linkLabel}
+            </Link>
+          </div>
+
+          <div className="wwd-current" aria-live="polite">
+            <div className="wwd-count">
+              <b>{pad2(active + 1)}</b>
+              <span>/ {pad2(n)}</span>
+            </div>
+            <h2 key={`t-${active}`} className="wwd-title">
+              {svc.title}
+            </h2>
+            <p key={`d-${active}`} className="wwd-desc">
+              {svc.desc}
+            </p>
+            <Link key={`l-${active}`} href={`/services/${svc.slug}`} className="wwd-cta">
+              {c.cardCtaLabel}
+            </Link>
+          </div>
+
+          {/* Index: every practice, with its share of the scroll */}
+          <ol className="wwd-index">
+            {services.map((s, i) => (
+              <li key={s.slug}>
+                <button
+                  type="button"
+                  onClick={() => jumpTo(i)}
+                  aria-current={i === active ? "step" : undefined}
+                  className={i === active ? "is-active" : i < active ? "is-done" : undefined}
+                >
+                  <span className="wwd-index-num">{pad2(i + 1)}</span>
+                  <span className="wwd-index-name">{s.title}</span>
+                  <span className="wwd-index-model">{MODEL_NAME[models[i]]}</span>
+                  <span className="wwd-index-bar" aria-hidden="true">
+                    <span
+                      ref={(el) => {
+                        barRefs.current[i] = el;
+                      }}
+                    />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+
+          {/* Phones: four tappable segments instead of the index */}
+          <div className="wwd-segs">
+            {services.map((s, i) => (
+              <button key={s.slug} type="button" onClick={() => jumpTo(i)} aria-label={`Show ${s.title}`}>
+                <span>
+                  <span
+                    ref={(el) => {
+                      segRefs.current[i] = el;
+                    }}
+                  />
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      </InView>
+      </div>
     </section>
   );
 }

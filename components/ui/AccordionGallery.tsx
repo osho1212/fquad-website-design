@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { gsap } from "gsap";
+import { responsive } from "@/lib/img";
 import "./AccordionGallery.css";
 
 export interface AccordionGalleryItem {
@@ -36,14 +37,33 @@ export interface AccordionGalleryProps {
   /**
    * How many cards fit the frame at once. When set, cards take a fixed width
    * and the track scrolls horizontally instead of squeezing every item in.
+   * Pass breakpoints to vary it: `{ base: 1.2, md: 3, lg: 5 }` (md ≥ 768px,
+   * lg ≥ 1024px). Below two slots the track becomes a swipe carousel: every
+   * card the same width, snapping, with its label always shown.
    */
-  visibleCount?: number;
+  visibleCount?: number | VisibleCount;
+  /** `sizes` for the card images, so the browser fetches the right width. */
+  imageSizes?: string;
   /** Repeat the track so horizontal scrolling wraps around endlessly. */
   loop?: boolean;
 }
 
+export interface VisibleCount {
+  base: number;
+  md?: number;
+  lg?: number;
+}
+
 /** Sets rendered when looping: one on screen, one either side to scroll into. */
 const LOOP_SETS = 3;
+
+function slotsFor(v: number | VisibleCount | undefined, viewport: number): number {
+  if (v === undefined) return 1;
+  if (typeof v === "number") return v;
+  if (viewport >= 1024 && v.lg) return v.lg;
+  if (viewport >= 768 && v.md) return v.md;
+  return v.base;
+}
 
 export default function AccordionGallery({
   items = [],
@@ -67,6 +87,7 @@ export default function AccordionGallery({
   className = "",
   visibleCount,
   loop = false,
+  imageSizes,
 }: AccordionGalleryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLElement | null)[]>([]);
@@ -78,6 +99,9 @@ export default function AccordionGallery({
   const mediaSizeRef = useRef(380);
   const cardWRef = useRef(0);
   const wrappingRef = useRef(false);
+  // Fewer than two cards on screen (phones): a plain swipe carousel.
+  const [compact, setCompact] = useState(false);
+  const compactRef = useRef(false);
 
   const vertical = orientation === "vertical";
   const base = items.length;
@@ -115,7 +139,8 @@ export default function AccordionGallery({
 
       // Fixed mode: the active card grows and the rest of ITS set shrink to
       // absorb it, so every set keeps the same width and the loop stays exact.
-      const slots = visibleCount || 1;
+      // A compact (swipe) track keeps every card the same width instead.
+      const flat = compactRef.current;
       const grown = cardW * (1 + r);
       const shrunk =
         base > 1 ? cardW - (grown - cardW) / (base - 1) : cardW;
@@ -136,23 +161,27 @@ export default function AccordionGallery({
         const bar = barRefs.current[i];
         const text = textRefs.current[i];
 
-        const rot = isActive ? 0 : i < active ? tilt : -tilt;
+        const rot = flat || isActive ? 0 : i < active ? tilt : -tilt;
         const rotProp = vertical ? { rotateX: -rot } : { rotateY: rot };
 
+        // The dim lives on the panel: the overlay that reads it is a sibling of
+        // the media span, so setting it on the media never reached it and
+        // every card sat at the 0.35 default.
+        const dim = isActive || flat ? 0.05 : 0.38;
         if (scrollMode) {
           const sameSet = Math.floor(i / base) === activeSet;
-          const w = isActive ? grown : sameSet ? shrunk : cardW;
-          tl.to(panel, { width: w, ...rotProp, duration: dur, ease }, 0);
+          const w = flat ? cardW : isActive ? grown : sameSet ? shrunk : cardW;
+          tl.to(panel, { width: w, ...rotProp, "--ag-dim": dim, duration: dur, ease }, 0);
         } else {
           tl.to(
             panel,
-            { flexGrow: isActive ? grow : 1, ...rotProp, duration: dur, ease },
+            { flexGrow: isActive ? grow : 1, ...rotProp, "--ag-dim": dim, duration: dur, ease },
             0
           );
         }
 
         if (media) {
-          const drift = Math.max(-1.5, Math.min(1.5, active - i));
+          const drift = flat ? 0 : Math.max(-1.5, Math.min(1.5, active - i));
           const shift = drift * parallax * mediaSize * 0.06;
           const gray = grayscale ? (isActive ? 0 : 1) : 0;
           tl.to(
@@ -163,7 +192,6 @@ export default function AccordionGallery({
               x: vertical ? 0 : isActive ? 0 : shift,
               y: vertical ? (isActive ? 0 : shift) : 0,
               "--ag-gray": gray,
-              "--ag-dim": isActive ? 0.1 : 0.45,
               duration: dur,
               ease,
             },
@@ -172,7 +200,8 @@ export default function AccordionGallery({
         }
 
         if (showLabels && bar && text) {
-          if (isActive) {
+          // Touch has no hover to reveal a label, so a compact track shows all.
+          if (isActive || flat) {
             tl.to(
               [bar, text],
               {
@@ -195,7 +224,6 @@ export default function AccordionGallery({
       });
 
       tlRef.current = tl;
-      void slots;
     },
     [
       active,
@@ -212,7 +240,7 @@ export default function AccordionGallery({
       stagger,
       prefersReduced,
       scrollMode,
-      visibleCount,
+      compact,
     ]
   );
 
@@ -225,8 +253,12 @@ export default function AccordionGallery({
       const total = vertical ? rect.height : rect.width;
 
       if (scrollMode) {
-        const slots = Math.max(1, visibleCount || 1);
-        // Exactly `slots` cards plus the gaps between them fill the frame.
+        const slots = Math.max(1, slotsFor(visibleCount, window.innerWidth));
+        const isCompact = slots < 2;
+        compactRef.current = isCompact;
+        setCompact(isCompact);
+        // Exactly `slots` cards plus the gaps between them fill the frame (a
+        // fractional count leaves the next card peeking in from the edge).
         cardWRef.current = Math.max(
           80,
           (rect.width - gap * (slots - 1)) / slots
@@ -343,8 +375,8 @@ export default function AccordionGallery({
       className={`accordion-gallery${
         vertical ? " accordion-gallery--vertical" : ""
       }${scrollMode ? " accordion-gallery--scroll" : ""}${
-        className ? ` ${className}` : ""
-      }`}
+        scrollMode && compact ? " accordion-gallery--compact" : ""
+      }${className ? ` ${className}` : ""}`}
       style={
         {
           "--ag-accent": accentColor,
@@ -398,7 +430,9 @@ export default function AccordionGallery({
                 }}
               >
                 <img
-                  src={item.image}
+                  {...(imageSizes
+                    ? responsive(item.image, imageSizes)
+                    : { src: item.image })}
                   alt={item.alt || item.label || ""}
                   draggable="false"
                   loading="lazy"

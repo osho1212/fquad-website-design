@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { responsive } from '@/lib/img';
 import './elegant-carousel.css';
+
+/** The photo fills about half the card on desktop and its full width below 960px. */
+const IMAGE_SIZES = '(min-width: 961px) 50vw, 92vw';
 
 export interface SlideData {
   title: string;
@@ -273,20 +277,25 @@ export default function ElegantCarousel({
           </div>
         </div>
 
-        {/* Right: Image */}
+        {/* Right: Image. Every face's photo sits in the frame at once and the
+            active one fades up, so changing face never shows an empty frame
+            while the next photo downloads (the single <img> used to swap its
+            src and go blank on every change, and the frame itself faded out
+            for as long as scrolling kept changing the face). */}
         <div className="carousel-image-container">
-          <div
-            className={`carousel-image-frame ${
-              isTransitioning ? 'transitioning' : 'visible'
-            }`}
-          >
-            <img
-              src={currentSlide.imageUrl}
-              alt={currentSlide.title}
-              className="carousel-image"
-              loading="lazy"
-              decoding="async"
-            />
+          <div className="carousel-image-frame visible">
+            {slides.map((slide, i) => (
+              <img
+                key={`${slide.imageUrl}-${i}`}
+                {...responsive(slide.imageUrl, IMAGE_SIZES)}
+                alt={i === currentIndex ? slide.title : ''}
+                aria-hidden={i === currentIndex ? undefined : true}
+                className={`carousel-image${i === currentIndex ? ' is-active' : ''}`}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                draggable={false}
+              />
+            ))}
             <div
               className="carousel-image-overlay"
               style={{

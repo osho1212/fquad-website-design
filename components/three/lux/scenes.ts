@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { swatchSet, type Lux } from "./materials";
 import { decorAt, mainAt } from "./suiteStages";
+import { buildFarmhouse, buildResidence } from "./exteriors";
 
 export { BEDROOM_PIECES, bedroomPlaced } from "./suiteStages";
 import {
@@ -43,7 +44,12 @@ import {
   type Fixture,
 } from "./pieces";
 
-export type SceneVariant = "living" | "bedroom" | "lounge";
+/**
+ * living — Interior Design (the salon); bedroom — Interior Styling (the suite
+ * built in four stages); lounge — the material library; residence —
+ * Architecture; farmhouse — Farmhouses.
+ */
+export type SceneVariant = "living" | "bedroom" | "lounge" | "residence" | "farmhouse";
 
 export interface SceneState {
   p: number;
@@ -68,6 +74,12 @@ export interface Built {
   setTheme: (dark: boolean) => void;
   /** Progress shown to visitors who prefer reduced motion. */
   restP: number;
+  /**
+   * Materials the model switches to later (e.g. real finishes replacing the
+   * white concept model), compiled up front with the rest so the switch
+   * doesn't stall a frame.
+   */
+  precompile?: THREE.Material[];
   dispose: () => void;
 }
 
@@ -941,4 +953,6 @@ export const BUILDERS: Record<SceneVariant, (L: Lux, q: "high" | "low") => Built
   living: buildSalon,
   bedroom: buildSuite,
   lounge: buildLibrary,
+  residence: buildResidence,
+  farmhouse: buildFarmhouse,
 };
