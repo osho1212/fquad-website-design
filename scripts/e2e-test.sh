@@ -20,6 +20,8 @@ RUN="$(date +%s)$RANDOM"   # a fresh set of addresses each run, so earlier runs 
 ip() { echo "X-Real-IP: run$RUN-$1-$2"; }
 code() { curl -s -o "$T/body" -w "%{http_code}" "$@"; }
 get() { curl -s -o "$T/body" "$@"; }
+# "<status> <where it redirects to>", for page requests
+page() { curl -s -o /dev/null -w "%{http_code} %{redirect_url}" "$@"; }
 login() { code -c "$1" -X POST -H "$J" -H "Origin: $B" -H "$(ip 0 $RANDOM)" -d "{\"email\":\"$2\",\"password\":\"$3\"}" "$B/api/admin/login"; }
 field() { node -e 'const j=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log(process.argv[2].split(".").reduce((o,k)=>o?.[k],j)??"")' "$T/body" "$1"; }
 # The emulator only answers storage listings for admin requests ("Bearer owner").
@@ -46,8 +48,15 @@ check "login again with the original" 200 "$(login $T/s $SUPER $PW)"
 echo "--- roles"
 check "ADMIN login" 200 "$(login $T/l $LIM $PW)"
 check "ADMIN reads enquiries" 200 "$(code -b $T/l $B/api/admin/enquiries)"
-check "ADMIN reads page content" 200 "$(code -b $T/l $B/api/admin/cms/home)"
-check "ADMIN reads media" 200 "$(code -b $T/l $B/api/admin/media)"
+check "ADMIN cannot read page content" 403 "$(code -b $T/l $B/api/admin/cms/home)"
+check "ADMIN cannot edit page content" 403 "$(code -b $T/l -X PATCH -H "$J" -d '{"section":"hero","data":{"headline":"X"}}' $B/api/admin/cms/home)"
+check "ADMIN cannot reset page content" 403 "$(code -b $T/l -X DELETE "$B/api/admin/cms/home?section=hero")"
+check "ADMIN cannot read media" 403 "$(code -b $T/l $B/api/admin/media)"
+check "ADMIN cannot add media" 403 "$(code -b $T/l -X POST -H "$J" -d '{"uploadId":"x","filename":"a.jpg"}' $B/api/admin/media)"
+check "ADMIN cannot list media folders" 403 "$(code -b $T/l $B/api/admin/media-folders)"
+check "ADMIN cannot make a media folder" 403 "$(code -b $T/l -X POST -H "$J" -d '{"name":"X"}' $B/api/admin/media-folders)"
+check "ADMIN cannot edit the journal" 403 "$(code -b $T/l $B/api/admin/blog)"
+check "ADMIN cannot list testimonials" 403 "$(code -b $T/l $B/api/admin/testimonials)"
 check "ADMIN cannot list team" 403 "$(code -b $T/l $B/api/admin/team)"
 check "ADMIN cannot read settings" 403 "$(code -b $T/l $B/api/admin/settings)"
 check "ADMIN cannot add an award" 403 "$(code -b $T/l -X POST -H "$J" -d '{"year":2024,"title":"A","body":"B"}' $B/api/admin/awards)"
@@ -57,6 +66,18 @@ check "dashboard page" 200 "$(code -b $T/s $B/admin)"
 check "CMS index page" 200 "$(code -b $T/s $B/admin/cms)"
 check "media page" 200 "$(code -b $T/s $B/admin/media)"
 check "cross-site admin call refused" 403 "$(code -b $T/s -H 'Origin: https://evil.example' $B/api/admin/enquiries)"
+
+echo "--- an ADMIN sees only Enquiries and Account (pages, not just the sidebar)"
+check "ADMIN: enquiries page opens" "200 " "$(page -b $T/l $B/admin/enquiries)"
+check "ADMIN: account page opens" "200 " "$(page -b $T/l $B/admin/account)"
+for closed in "" /cms /cms/home /media /blog /team /testimonials /awards /settings /users; do
+  check "ADMIN: /admin$closed goes to Enquiries" "307 $B/admin/enquiries" "$(page -b $T/l $B/admin$closed)"
+done
+check "ADMIN: nothing but Enquiries and Account in the sidebar" "Enquiries,Account" "$(curl -s -b $T/l $B/admin/enquiries | grep -o 'class="sidebar-link"[^>]*>[^<]*' | sed 's/.*>//' | paste -sd, -)"
+check "SUPERADMIN: sidebar still lists Website Content and Media Library" 2 "$(curl -s -b $T/s $B/admin/enquiries | grep -o '>Website Content<\|>Media Library<' | wc -l | tr -d ' ')"
+check "SUPERADMIN: team page opens" "200 " "$(page -b $T/s $B/admin/team)"
+check "SUPERADMIN: users page opens" "200 " "$(page -b $T/s $B/admin/users)"
+check "signed out: sent to the login" "307 $B/admin/login?from=%2Fadmin%2Fcms" "$(page $B/admin/cms)"
 
 echo "--- links in the editors"
 check "CMS: javascript: refused" 400 "$(code -b $T/s -X PATCH -H "$J" -d '{"section":"hero","data":{"primaryCtaHref":"javascript:alert(1)"}}' $B/api/admin/cms/home)"
@@ -130,7 +151,7 @@ code -b $T/s -X DELETE $B/api/admin/team/$pid >/dev/null
 check "delete once free" 200 "$(code -b $T/s -X DELETE $B/api/admin/media/$mid)"
 check "its files are gone" 404 "$(code $B/uploads/$mid/full.jpg)"
 check "delete of a missing picture" 404 "$(code -b $T/s -X DELETE $B/api/admin/media/$mid)"
-check "ADMIN can upload too" 200 "$(code -b $T/l -X POST -H "$J" -d "{\"contentType\":\"image/png\",\"size\":10}" $B/api/admin/media/upload-url)"
+check "ADMIN cannot upload" 403 "$(code -b $T/l -X POST -H "$J" -d "{\"contentType\":\"image/png\",\"size\":10}" $B/api/admin/media/upload-url)"
 
 echo "--- a plan attached to the Start a Project form"
 printf '%%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%%%EOF\n' > "$T/plan.pdf"

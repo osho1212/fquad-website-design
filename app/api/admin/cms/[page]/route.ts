@@ -12,7 +12,7 @@ import { HREF_HELP, isSafeHref } from '@/lib/forms';
  */
 export async function GET(_req: NextRequest, props: { params: Promise<{ page: string }> }) {
   const params = await props.params;
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   const def = getPageDef(params.page);
@@ -48,7 +48,7 @@ export async function GET(_req: NextRequest, props: { params: Promise<{ page: st
 /** Save one section. The body is `{ section, data }`. */
 export async function PATCH(req: NextRequest, props: { params: Promise<{ page: string }> }) {
   const params = await props.params;
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   const pageDef = getPageDef(params.page);
@@ -107,7 +107,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ page: s
 /** Drop a section's saved row so it falls back to the schema defaults. */
 export async function DELETE(req: NextRequest, props: { params: Promise<{ page: string }> }) {
   const params = await props.params;
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   const pageDef = getPageDef(params.page);

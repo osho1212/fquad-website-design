@@ -3,10 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import LogoutButton from './LogoutButton';
+import { canAccessSection, type AdminSection } from '@/lib/admin-roles';
 
 interface NavItem {
   href: string;
   label: string;
+  /** Which admin section this opens; the role decides whether it is listed. */
+  section: AdminSection;
   /** Also highlight this item on nested routes, e.g. /admin/cms/home. */
   nested?: boolean;
 }
@@ -18,56 +21,36 @@ interface NavGroup {
 
 // Grouped so the sidebar reads as four short lists rather than one long one:
 // what visitors read, who the studio is, what came in, and the settings
-// behind it all.
-const SUPERADMIN_NAV: NavGroup[] = [
+// behind it all. Each role sees only the items it may open
+// (lib/admin-roles.ts): an ADMIN is left with Enquiries and Account.
+const NAV: NavGroup[] = [
   {
     title: 'Overview',
-    items: [{ href: '/admin', label: 'Dashboard' }],
+    items: [{ href: '/admin', label: 'Dashboard', section: 'dashboard' }],
   },
   {
     title: 'Content',
     items: [
-      { href: '/admin/cms', label: 'Website Content', nested: true },
-      { href: '/admin/media', label: 'Media Library' },
-      { href: '/admin/blog', label: 'Journal' },
+      { href: '/admin/cms', label: 'Website Content', section: 'cms', nested: true },
+      { href: '/admin/media', label: 'Media Library', section: 'media' },
+      { href: '/admin/blog', label: 'Journal', section: 'blog' },
     ],
   },
   {
     title: 'People & Proof',
     items: [
-      { href: '/admin/team', label: 'Team' },
-      { href: '/admin/testimonials', label: 'Testimonials' },
-      { href: '/admin/awards', label: 'Awards' },
+      { href: '/admin/team', label: 'Team', section: 'team' },
+      { href: '/admin/testimonials', label: 'Testimonials', section: 'testimonials' },
+      { href: '/admin/awards', label: 'Awards', section: 'awards' },
     ],
   },
   {
     title: 'Studio',
     items: [
-      { href: '/admin/enquiries', label: 'Enquiries' },
-      { href: '/admin/settings', label: 'Settings' },
-      { href: '/admin/users', label: 'Admin Team' },
-      { href: '/admin/account', label: 'Account' },
-    ],
-  },
-];
-
-const ADMIN_NAV: NavGroup[] = [
-  {
-    title: 'Overview',
-    items: [{ href: '/admin', label: 'Dashboard' }],
-  },
-  {
-    title: 'Content',
-    items: [
-      { href: '/admin/cms', label: 'Website Content', nested: true },
-      { href: '/admin/media', label: 'Media Library' },
-    ],
-  },
-  {
-    title: 'Studio',
-    items: [
-      { href: '/admin/enquiries', label: 'Enquiries' },
-      { href: '/admin/account', label: 'Account' },
+      { href: '/admin/enquiries', label: 'Enquiries', section: 'enquiries' },
+      { href: '/admin/settings', label: 'Settings', section: 'settings' },
+      { href: '/admin/users', label: 'Admin Team', section: 'users' },
+      { href: '/admin/account', label: 'Account', section: 'account' },
     ],
   },
 ];
@@ -88,7 +71,12 @@ function isActive(item: NavItem, pathname: string): boolean {
 
 export default function Sidebar({ email, role }: { email: string; role: string }) {
   const pathname = usePathname();
-  const groups = role === 'SUPERADMIN' ? SUPERADMIN_NAV : ADMIN_NAV;
+  const isSuper = role === 'SUPERADMIN';
+  // A group with nothing left in it for this role is dropped, heading and all.
+  const groups = NAV.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => canAccessSection(isSuper ? 'SUPERADMIN' : 'ADMIN', item.section)),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <aside

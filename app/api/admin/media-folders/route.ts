@@ -3,14 +3,14 @@ import { mediaFolders } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   return NextResponse.json({ folders: await mediaFolders.list() });
 }
 
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   let body: any;

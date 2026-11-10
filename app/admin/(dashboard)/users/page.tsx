@@ -13,8 +13,8 @@ interface AdminUser {
 }
 
 const ROLE_HELP: Record<AdminUser['role'], string> = {
-  ADMIN: 'Can edit website content, use the media library and read enquiries.',
-  SUPERADMIN: 'Everything above, plus team, testimonials, awards, journal, settings and this page.',
+  ADMIN: 'Can read and manage enquiries, and change their own password. No access to website content, the media library or anything else.',
+  SUPERADMIN: 'Everything: website content, media library, journal, team, testimonials, awards, settings, enquiries and this page.',
 };
 
 function when(iso: string | null) {
