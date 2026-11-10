@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { BackgroundVideo } from "@/components/ui/background-video";
+import { Backdrop } from "@/components/ui/Backdrop";
 import { themeInitScript } from "@/components/ui/ThemeToggle";
 import { getSiteSettings, mediaUrl } from "@/lib/public-content";
 import { StartProjectProvider } from "@/components/ui/StartProjectModalContext";
@@ -125,6 +125,15 @@ export default async function RootLayout({
         {/* Sets data-theme before first paint to avoid a flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: motionInitScript }} />
+        {/* Headings, the loader and the backdrop all set in Good Times: fetch
+            it with the HTML instead of after the CSS, so it never swaps in late. */}
+        <link
+          rel="preload"
+          href="/assets/good_times/Good%20Times%20Rg.otf"
+          as="font"
+          type="font/otf"
+          crossOrigin="anonymous"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLd(organization) }}
@@ -137,8 +146,8 @@ export default async function RootLayout({
         </a>
 
         <StartProjectProvider>
-          {/* Global Ambient Background Video */}
-          <BackgroundVideo />
+          {/* Site-wide drafting-sheet backdrop (static SVG, no JS) */}
+          <Backdrop />
 
           {/* Smooth scroll, reading-progress hairline and the cursor ring */}
           <SmoothScroll />

@@ -279,6 +279,10 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
 
     const images: (HTMLImageElement | undefined)[] = new Array(film.count);
     const started: boolean[] = new Array(film.count).fill(false);
+    const decoded: boolean[] = new Array(film.count).fill(false);
+    /** Edge colours per frame for the portrait bands (read back once each). */
+    const edges: ([string, string] | undefined)[] = new Array(film.count);
+    let cancelled = false;
     const seq = { frame: 0 };
     let wasRender = false;
     let lastDrawn = -1;
@@ -304,11 +308,11 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       // nearest one that has arrived rather than flashing back to frame 1.
       let shown = frameIdx;
       let img = images[shown];
-      if (!(img && img.complete && img.naturalWidth)) {
+      if (!(img && decoded[shown] && img.naturalWidth)) {
         img = undefined;
         for (let k = frameIdx - 1; k >= 0; k--) {
           const cand = images[k];
-          if (cand?.complete && cand.naturalWidth) {
+          if (cand && decoded[k] && cand.naturalWidth) {
             img = cand;
             shown = k;
             break;
@@ -343,8 +347,12 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
             const dy = upright
               ? Math.round((ch - ih) * 0.45)
               : Math.max(0, Math.round(ch * 0.4 - ih / 2));
-            const top = edgeColour(img, 0);
-            const bottom = edgeColour(img, ih - 2);
+            let edge = edges[shown];
+            if (!edge) {
+              edge = [edgeColour(img, 0), edgeColour(img, ih - 2)];
+              edges[shown] = edge;
+            }
+            const [top, bottom] = edge;
             ctx.fillStyle = top;
             ctx.fillRect(0, 0, cw, dy + 2);
             ctx.fillStyle = bottom;
@@ -415,10 +423,20 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
           window.__fqHero = { loaded: priorityLoaded, total: priorityTotal };
         }
       };
+      // Decode off the main thread before the frame counts as ready. A frame
+      // drawn straight after onload is decoded synchronously inside
+      // drawImage — 10-30 ms of main thread per frame on a phone, which is
+      // what made fast scrubs stutter.
       img.onload = () => {
-        settle();
-        if (idx === 0 || Math.round(seq.frame) === idx) render();
-        else pump();
+        const ready = () => {
+          if (cancelled) return;
+          decoded[idx] = true;
+          settle();
+          if (idx === 0 || Math.round(seq.frame) === idx) render();
+          else pump();
+        };
+        if (typeof img.decode === "function") img.decode().then(ready, ready);
+        else ready();
       };
       // A failed frame must not hold the intro hostage.
       img.onerror = () => {
@@ -446,7 +464,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       if (ok) ext = "avif";
       pump();
       // Try initial draw immediately in case first image is cached
-      if (images[0] && images[0].complete) render();
+      if (images[0] && decoded[0]) render();
     });
 
     // Phase layout across the scroll distance (340vh section − 100vh pinned = 240vh):
@@ -515,12 +533,22 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     let stopDepth: (() => void) | null = null;
     let releasePointer: (() => void) | null = null;
     const wrap = canvasWrapRef.current;
+    let heroVisible = true;
+    const heroIo = new IntersectionObserver(([e]) => {
+      heroVisible = e.isIntersecting;
+    });
+    heroIo.observe(container);
     if (wrap && hasFinePointer() && !prefersReducedMotion()) {
       releasePointer = retainPointer();
+      let lastDepth = "";
       stopDepth = onFrame(() => {
-        wrap.style.transform = `translate3d(${(-pointer.x * 12).toFixed(2)}px, ${(
-          -pointer.y * 9
-        ).toFixed(2)}px, 0) scale(1.035)`;
+        if (!heroVisible) return;
+        const next = `translate3d(${(-pointer.x * 12).toFixed(1)}px, ${(-pointer.y * 9).toFixed(
+          1
+        )}px, 0) scale(1.035)`;
+        if (next === lastDepth) return;
+        lastDepth = next;
+        wrap.style.transform = next;
       });
     }
 
@@ -533,6 +561,8 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
 
     return () => {
       window.removeEventListener("resize", onResize);
+      heroIo.disconnect();
+      cancelled = true;
       formatSettled = true;
       stopDepth?.();
       releasePointer?.();
