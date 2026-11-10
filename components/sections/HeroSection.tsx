@@ -235,8 +235,21 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   const [onRender, setOnRender] = useState(false);
   const { openModal } = useStartProjectModal();
 
+  // Which film is loaded depends on the screen's shape, so it is tracked here:
+  // rotating a phone (or resizing a window across the phone breakpoint) swaps
+  // films instead of cropping the 9:16 portrait film to fill a landscape
+  // screen, which is what made the hero look zoomed in.
+  const [phone, setPhone] = useState<boolean | null>(null);
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px) and (orientation: portrait)");
+    const sync = () => setPhone(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || phone === null) return;
     gsap.registerPlugin(ScrollTrigger);
 
     const canvas = canvasRef.current;
@@ -254,7 +267,6 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       connection?: { saveData?: boolean; effectiveType?: string };
     }).connection;
     const slow = Boolean(conn?.saveData) || /(^|-)(2g|3g)$/.test(conn?.effectiveType ?? "");
-    const phone = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
     const prefix = phone ? "p" : slow ? "m" : "d";
     const film = FILMS[prefix];
     // Flipped to "avif" once the probe confirms support, before any frame is
@@ -521,7 +533,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       tl.kill();
       delete window.__fqHero;
     };
-  }, []);
+  }, [phone]);
 
   return (
     <section id="top" ref={containerRef} className="relative h-[600vh] bg-black">
@@ -569,7 +581,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
             <Magnetic strength={0.22}>
               <a
                 href={c.primaryCtaHref}
-                className="btn-metallic min-h-[44px] text-[11px] sm:text-xs py-2 px-5 sm:px-6 tracking-[0.16em] sm:tracking-[0.2em] uppercase font-semibold"
+                className="btn-secondary fq-hero-btn-secondary min-h-[44px] text-[11px] sm:text-xs py-2 px-5 sm:px-6 tracking-[0.16em] sm:tracking-[0.2em] uppercase font-semibold"
               >
                 {c.primaryCtaLabel}
               </a>
@@ -578,7 +590,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
               <button
                 type="button"
                 onClick={() => openModal()}
-                className="fq-hero-ghost min-h-[44px] text-[11px] tracking-[0.16em] sm:tracking-[0.2em] px-4 py-2 uppercase cursor-pointer"
+                className="btn-primary fq-hero-btn-primary min-h-[44px] text-[11px] sm:text-xs py-2 px-5 sm:px-6 tracking-[0.16em] sm:tracking-[0.2em] uppercase font-semibold"
               >
                 {c.secondaryCtaLabel}
               </button>

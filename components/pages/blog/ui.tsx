@@ -4,11 +4,11 @@ import Link from "next/link";
 /**
  * Action styles shared by the journal, team and awards pages.
  *
- * `.btn-metallic` hard-codes a 10px font in globals.css (declared after the
+ * `.btn-primary` hard-codes a 10px font in globals.css (declared after the
  * Tailwind utilities, so `text-xs` loses to it) — `!text-[11px]` restores the
  * 11px floor, and `min-h-[44px]` lifts it to a comfortable touch target.
  */
-const PRIMARY = "btn-metallic !text-[11px] min-h-[44px] uppercase font-medium";
+const PRIMARY = "btn-primary !text-[11px] min-h-[44px] uppercase font-medium";
 
 const TEXT =
   "inline-flex items-center min-h-[44px] px-1 text-[11px] tracking-[0.2em] uppercase text-white/80 hover:text-white transition-colors";

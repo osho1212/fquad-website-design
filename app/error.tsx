@@ -33,7 +33,7 @@ export default function Error({
         That page didn&apos;t load. It&apos;s usually temporary — try again, or head back to the start.
       </p>
       <div className="mt-9 flex flex-wrap items-center gap-4">
-        <button type="button" onClick={reset} className="btn-metallic text-xs uppercase font-medium cursor-pointer">
+        <button type="button" onClick={reset} className="btn-primary text-xs uppercase font-medium cursor-pointer">
           Try again
         </button>
         <Link

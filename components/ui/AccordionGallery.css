@@ -111,7 +111,6 @@
   transform-origin: center center;
   background: #080808;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.85);
   will-change: flex-grow, transform;
   -webkit-tap-highlight-color: transparent;
   transition: border-color 0.3s ease;
@@ -124,9 +123,7 @@
 .ag-panel:focus-visible,
 .ag-panel:has(.ag-panel__link:focus-visible) {
   border-color: var(--ag-accent);
-  box-shadow:
-    0 0 0 2px var(--ag-accent),
-    0 14px 40px -18px rgba(0, 0, 0, 0.85);
+  box-shadow: 0 0 0 2px var(--ag-accent);
 }
 
 /* Transparent hit area covering the panel, so the whole tile is a real link. */
