@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic';
  * never displayed in the browser, so even a disguised file cannot run as part
  * of the site.
  */
-export async function GET(_req: NextRequest, { params }: { params: { name: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ name: string }> }) {
+  const params = await props.params;
   const denied = await requireAdmin();
   if (denied) return denied;
 

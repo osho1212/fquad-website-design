@@ -33,11 +33,12 @@ export const revalidate = 60;
 // generateMetadata and the page both need the post; cache() shares one query.
 const getPost = cache((slug: string) => getBlogPostBySlug(slug));
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const post = await getPost(params.slug);
   if (!post) {
     return { title: `Journal — ${SITE.name}`, robots: { index: false, follow: false } };
@@ -63,7 +64,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const post = await getPost(params.slug);
   if (!post) notFound();
 

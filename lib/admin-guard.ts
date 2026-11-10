@@ -5,7 +5,7 @@ import { requestHostAllowed } from './forms';
 
 /** The signed-in admin for this request, or null. Route handlers only. */
 export async function getAdminSession(): Promise<SessionPayload | null> {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
   return token ? verifySessionToken(token) : null;
 }
 
@@ -25,7 +25,7 @@ export async function requireAdmin(): Promise<NextResponse | null> {
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  if (!requestHostAllowed(headers())) {
+  if (!requestHostAllowed(await headers())) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   return null;

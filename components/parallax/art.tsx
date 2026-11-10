@@ -305,7 +305,7 @@ function Hatch() {
   );
 }
 
-const MOTIFS: Record<ArtName, () => React.ReactElement> = {
+const MOTIFS: Record<ArtName, () => React.ReactElement<any>> = {
   plan: Plan,
   armchair: Armchair,
   sofa: Sofa,
