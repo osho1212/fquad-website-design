@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { teamMembers } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 import { HREF_HELP, isSafeHref } from '@/lib/forms';
 
@@ -7,11 +7,7 @@ export async function GET() {
   const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
-  const members = await prisma.teamMember.findMany({
-    orderBy: { order: 'asc' },
-    include: { media: { include: { variants: true } } },
-  });
-  return NextResponse.json({ members });
+  return NextResponse.json({ members: await teamMembers.list() });
 }
 
 export async function POST(req: NextRequest) {
@@ -38,20 +34,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `The LinkedIn link ${HREF_HELP}.` }, { status: 400 });
   }
 
-  const maxOrder = await prisma.teamMember.aggregate({ _max: { order: true } });
-  const order = (maxOrder._max.order ?? -1) + 1;
-
-  const member = await prisma.teamMember.create({
-    data: {
-      name: name.trim(),
-      role: role.trim(),
-      bio: bio ? String(bio).trim() : null,
-      linkedIn: linkedIn ? String(linkedIn).trim() : null,
-      mediaId: mediaId || null,
-      featured: typeof featured === 'boolean' ? featured : false,
-      order,
-    },
-    include: { media: { include: { variants: true } } },
+  const member = await teamMembers.create({
+    name: name.trim(),
+    role: role.trim(),
+    bio: bio ? String(bio).trim() : null,
+    linkedIn: linkedIn ? String(linkedIn).trim() : null,
+    mediaId: mediaId || null,
+    featured: typeof featured === 'boolean' ? featured : false,
   });
 
   return NextResponse.json({ member }, { status: 201 });

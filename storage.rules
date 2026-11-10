@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Files are written and read only by the website's server (Admin SDK) and by
+// short-lived signed upload addresses it hands out. Direct client access to the
+// bucket through Firebase's client SDKs is refused.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { teamMembers, NotFoundError } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 import { HREF_HELP, isSafeHref } from '@/lib/forms';
 
@@ -40,13 +40,13 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
   if (featured !== undefined) data.featured = !!featured;
   if (order !== undefined) data.order = Number(order);
 
-  const member = await prisma.teamMember.update({
-    where: { id: params.id },
-    data,
-    include: { media: { include: { variants: true } } },
-  });
-
-  return NextResponse.json({ member });
+  try {
+    const member = await teamMembers.update(params.id, data);
+    return NextResponse.json({ member });
+  } catch (err) {
+    if (err instanceof NotFoundError) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    throw err;
+  }
 }
 
 export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -54,6 +54,6 @@ export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: s
   const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
-  await prisma.teamMember.delete({ where: { id: params.id } });
+  await teamMembers.remove(params.id);
   return NextResponse.json({ success: true });
 }

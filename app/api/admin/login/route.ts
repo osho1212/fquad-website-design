@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { adminUsers } from '@/lib/db';
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
 import { clientIp, requestHostAllowed } from '@/lib/forms';
 import { passwordFingerprint } from '@/lib/session-check';
@@ -39,23 +39,24 @@ export async function POST(req: NextRequest) {
   // account, so neither one machine nor a spread of machines can keep guessing.
   const ipKey = `login:ip:${clientIp(req.headers)}`;
   const accountKey = `login:acct:${email}`;
-  if (isLimited(ipKey, MAX_FAILS_PER_IP, WINDOW_MS) || isLimited(accountKey, MAX_FAILS_PER_ACCOUNT, WINDOW_MS)) {
+  if ((await isLimited(ipKey, MAX_FAILS_PER_IP, WINDOW_MS)) || (await isLimited(accountKey, MAX_FAILS_PER_ACCOUNT, WINDOW_MS))) {
     return NextResponse.json(
       { error: 'Too many failed attempts. Please wait 15 minutes and try again.' },
       { status: 429, headers: { 'Retry-After': '900' } }
     );
   }
 
-  const user = await prisma.adminUser.findUnique({ where: { email } });
+  const user = await adminUsers.findByEmail(email);
   const valid = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
 
   if (!user || !valid) {
-    recordHit(ipKey, WINDOW_MS);
-    recordHit(accountKey, WINDOW_MS);
+    await recordHit(ipKey, WINDOW_MS);
+    await recordHit(accountKey, WINDOW_MS);
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
   }
 
-  clearHits(accountKey);
+  await clearHits(accountKey);
+  await adminUsers.touchLogin(user.id);
 
   const token = await createSessionToken({
     userId: user.id,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { enquiries, NotFoundError } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -19,12 +19,13 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
 
-  const enquiry = await prisma.enquiry.update({
-    where: { id: params.id },
-    data: { status },
-  });
-
-  return NextResponse.json({ enquiry });
+  try {
+    const enquiry = await enquiries.setStatus(params.id, status);
+    return NextResponse.json({ enquiry });
+  } catch (err) {
+    if (err instanceof NotFoundError) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    throw err;
+  }
 }
 
 export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -32,6 +33,6 @@ export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: s
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  await prisma.enquiry.delete({ where: { id: params.id } });
+  await enquiries.remove(params.id);
   return NextResponse.json({ success: true });
 }

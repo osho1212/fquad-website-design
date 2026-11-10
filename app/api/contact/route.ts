@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { enquiries } from '@/lib/db';
 import { getResend, mailFrom, enquiryRecipient } from '@/lib/mail';
 import { clientIp, cleanLine, cleanText, escapeHtml, escapeHtmlMultiline, isEmail, requestHostAllowed } from '@/lib/forms';
 import { isLimited, recordHit } from '@/lib/rate-limit';
@@ -14,13 +14,13 @@ export async function POST(req: NextRequest) {
   }
 
   const limitKey = `form:${clientIp(req.headers)}`;
-  if (isLimited(limitKey, MAX_SUBMISSIONS, WINDOW_MS)) {
+  if (await isLimited(limitKey, MAX_SUBMISSIONS, WINDOW_MS)) {
     return NextResponse.json(
       { error: 'Too many messages from this connection. Please try again in a few minutes.' },
       { status: 429, headers: { 'Retry-After': '600' } }
     );
   }
-  recordHit(limitKey, WINDOW_MS);
+  await recordHit(limitKey, WINDOW_MS);
 
   const declared = Number(req.headers.get('content-length') || 0);
   if (declared > MAX_BODY_BYTES) {
@@ -55,9 +55,7 @@ export async function POST(req: NextRequest) {
 
     // Save the enquiry first — this is the durable record, independent of
     // whether email sending succeeds.
-    await prisma.enquiry.create({
-      data: { name, email, phone, message, whatsapp },
-    });
+    await enquiries.create({ name, email, phone, message, whatsapp });
 
     // Email sending is best-effort — log failures but don't fail the
     // request, since the enquiry is already safely stored.

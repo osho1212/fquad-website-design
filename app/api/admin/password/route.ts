@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { adminUsers } from '@/lib/db';
 import { getAdminSession, requireAdmin } from '@/lib/admin-guard';
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
 import { passwordFingerprint } from '@/lib/session-check';
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   const limitKey = `password:${session.userId}`;
-  if (isLimited(limitKey, MAX_FAILS, WINDOW_MS)) {
+  if (await isLimited(limitKey, MAX_FAILS, WINDOW_MS)) {
     return NextResponse.json(
       { error: 'Too many failed attempts. Please wait 15 minutes and try again.' },
       { status: 429, headers: { 'Retry-After': '900' } }
@@ -42,15 +42,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'The new password must be different from the current one.' }, { status: 400 });
   }
 
-  const user = await prisma.adminUser.findUnique({ where: { id: session.userId } });
-  if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
-    recordHit(limitKey, WINDOW_MS);
+  const user = await adminUsers.findById(session.userId);
+  if (user && !user.passwordHash) {
+    return NextResponse.json({ error: 'Your account signs in with Google, so it has no password to change.' }, { status: 400 });
+  }
+  if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash ?? ''))) {
+    await recordHit(limitKey, WINDOW_MS);
     return NextResponse.json({ error: 'Your current password is not correct.' }, { status: 400 });
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await prisma.adminUser.update({ where: { id: user.id }, data: { passwordHash } });
-  clearHits(limitKey);
+  await adminUsers.setPassword(user.id, passwordHash);
+  await clearHits(limitKey);
 
   // Every other login is now invalid (it was tied to the old password). Give
   // this one a fresh cookie so the person changing it stays signed in.

@@ -31,9 +31,9 @@ check "admin API: a plan file" 307 "$(code "$B/api/admin/enquiry-files/aaaaaaaaa
 check "wrong login is refused" 401 "$(code -X POST -H 'Content-Type: application/json' -d '{"email":"nobody@example.com","password":"not-a-password"}' "$B/api/admin/login")"
 
 echo "forms"
-check "project form: bad email refused" 400 "$(code -X POST -F name=Smoke -F email=not-an-email -F phone=1 "$B/api/start-project")"
-printf '<html><script>1</script></html>' > "$T/x.html"
-check "project form: .html upload refused" 400 "$(code -X POST -F name=Smoke -F email=smoke@example.com -F phone=1 -F "planFile=@$T/x.html" "$B/api/start-project")"
+check "project form: bad email refused" 400 "$(code -X POST -H 'Content-Type: application/json' -d '{"name":"Smoke","email":"not-an-email","phone":"1"}' "$B/api/start-project")"
+check "project form: .html attachment refused" 400 "$(code -X POST -H 'Content-Type: application/json' -d '{"filename":"x.html","size":100}' "$B/api/start-project/upload-url")"
+check "project form: oversize attachment refused" 400 "$(code -X POST -H 'Content-Type: application/json' -d '{"filename":"x.pdf","size":99999999}' "$B/api/start-project/upload-url")"
 
 echo "uploads"
 for u in "/uploads/%2e%2e/package.json" "/uploads/..%2fpackage.json" "/uploads/x/.hidden" "/uploads/x/y.json"; do

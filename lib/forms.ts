@@ -59,9 +59,11 @@ export function isEmail(value: string): boolean {
 type HeaderBag = { get(name: string): string | null };
 
 /**
- * The visitor's address as seen by Nginx. `X-Real-IP` is set by our own proxy
- * (see SERVER_SETUP.md); `X-Forwarded-For` is only trusted from its last entry,
- * because earlier entries are whatever the client chose to send.
+ * The visitor's address. On Vercel, `X-Real-IP` and `X-Forwarded-For` both carry the
+ * real client address and Vercel overwrites anything a visitor sends in them
+ * (https://vercel.com/docs/headers/request-headers). Behind some other proxy the
+ * last `X-Forwarded-For` entry is the one to trust: earlier entries are whatever
+ * the client chose to send.
  */
 export function clientIp(headers: HeaderBag): string {
   const real = headers.get('x-real-ip');

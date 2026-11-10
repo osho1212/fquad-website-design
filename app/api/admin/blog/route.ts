@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { blogPosts } from '@/lib/db';
 import { uniqueSlug } from '@/lib/slugify';
 import { requireAdmin } from '@/lib/admin-guard';
 
@@ -7,11 +7,7 @@ export async function GET() {
   const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
-  const posts = await prisma.blogPost.findMany({
-    orderBy: { order: 'asc' },
-    include: { media: { include: { variants: true } } },
-  });
-  return NextResponse.json({ posts });
+  return NextResponse.json({ posts: await blogPosts.list() });
 }
 
 export async function POST(req: NextRequest) {
@@ -34,26 +30,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Body is required' }, { status: 400 });
   }
 
-  const existing = await prisma.blogPost.findMany({ select: { slug: true } });
-  const slug = uniqueSlug(title, new Set(existing.map((p: any) => p.slug)));
-
-  const maxOrder = await prisma.blogPost.aggregate({ _max: { order: true } });
-  const order = (maxOrder._max.order ?? -1) + 1;
+  const slug = uniqueSlug(title, new Set(await blogPosts.slugs()));
 
   const isPublished = published === true;
   const publishedAt = isPublished ? (body.publishedAt ? new Date(body.publishedAt) : new Date()) : null;
 
-  const post = await prisma.blogPost.create({
-    data: {
-      title: title.trim(),
-      slug,
-      excerpt: excerpt && typeof excerpt === 'string' && excerpt.trim() ? excerpt.trim() : null,
-      body: postBody,
-      mediaId: mediaId && typeof mediaId === 'string' ? mediaId : null,
-      published: isPublished,
-      publishedAt,
-      order,
-    },
+  const post = await blogPosts.create({
+    title: title.trim(),
+    slug,
+    excerpt: excerpt && typeof excerpt === 'string' && excerpt.trim() ? excerpt.trim() : null,
+    body: postBody,
+    mediaId: mediaId && typeof mediaId === 'string' ? mediaId : null,
+    published: isPublished,
+    publishedAt,
   });
 
   return NextResponse.json({ post }, { status: 201 });

@@ -6,7 +6,7 @@
 // Server components only — it touches Prisma.
 
 import { cache } from 'react';
-import { prisma } from '@/lib/prisma';
+import { media as mediaRepo, pageContent } from '@/lib/db';
 import { getPageDef, mergeSection } from './schema';
 import {
   MEDIA_FIELD_TYPES,
@@ -102,10 +102,7 @@ export const getPage = cache(async (page: string): Promise<PageContentMap> => {
 
   let rows: { section: string; data: string }[] = [];
   try {
-    rows = await prisma.pageContent.findMany({
-      where: { page },
-      select: { section: true, data: true },
-    });
+    rows = await pageContent.forPage(page);
   } catch {
     // A missing or unreachable database must not take the site down — the
     // schema defaults are a complete, valid copy of the site as shipped.
@@ -129,10 +126,7 @@ export const getPage = cache(async (page: string): Promise<PageContentMap> => {
   const ids = collectMediaRefs(page, content);
   if (ids.size > 0) {
     try {
-      const media = await prisma.media.findMany({
-        where: { id: { in: Array.from(ids) } },
-        include: { variants: true },
-      });
+      const media = await mediaRepo.getMany(Array.from(ids));
       const urls = new Map<string, string>();
       for (const item of media) {
         urls.set(

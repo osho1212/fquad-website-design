@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
+import { awards as awardsRepo, blogPosts, enquiries, media as mediaRepo, teamMembers, testimonials as testimonialsRepo } from '@/lib/db';
 import { CMS_PAGES } from '@/lib/cms/schema';
 
 export const dynamic = 'force-dynamic';
@@ -17,12 +17,12 @@ const cardStyle: React.CSSProperties = {
 async function counts() {
   try {
     const [media, enquiriesNew, team, testimonials, awards, posts] = await Promise.all([
-      prisma.media.count(),
-      prisma.enquiry.count({ where: { status: 'NEW' } }),
-      prisma.teamMember.count(),
-      prisma.testimonial.count(),
-      prisma.award.count(),
-      prisma.blogPost.count(),
+      mediaRepo.count(),
+      enquiries.countNew(),
+      teamMembers.count(),
+      testimonialsRepo.count(),
+      awardsRepo.count(),
+      blogPosts.count(),
     ]);
     return { media, enquiriesNew, team, testimonials, awards, posts };
   } catch {

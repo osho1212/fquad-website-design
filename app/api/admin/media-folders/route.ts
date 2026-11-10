@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { mediaFolders } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const folders = await prisma.mediaFolder.findMany({ orderBy: { createdAt: 'asc' } });
-  return NextResponse.json({ folders });
+  return NextResponse.json({ folders: await mediaFolders.list() });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,9 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 });
   }
 
-  const folder = await prisma.mediaFolder.create({
-    data: { name: name.trim() },
-  });
+  const folder = await mediaFolders.create(name.trim());
 
   return NextResponse.json({ folder }, { status: 201 });
 }

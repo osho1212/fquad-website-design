@@ -1,19 +1,22 @@
-import path from 'path';
 import { randomBytes } from 'crypto';
 
 /**
  * Plans and drawings that visitors attach to the Start a Project form.
  *
- * They are customer files from the open internet, so they never go in
- * `public/` (where a `.html` or `.svg` would run as part of the site). They
- * are stored under PRIVATE_UPLOAD_DIR, and only a logged-in admin can fetch
- * one, as a download (see app/api/admin/enquiry-files).
+ * They are customer files from the open internet, so they are kept private in
+ * Cloud Storage and only a logged-in admin can fetch one, as a download (see
+ * app/api/admin/enquiry-files).
+ *
+ *   private/pending/<name>   sent by the browser, not yet attached to an enquiry
+ *   private/plans/<name>     checked and attached to an enquiry
+ *
+ * A visitor's file never passes through the app on the way in (Vercel refuses
+ * request bodies over 4.5 MB): the browser sends it straight to storage using a
+ * short-lived address, and the enquiry then names it.
  */
 
-export const PLAN_DIR = path.join(
-  process.env.PRIVATE_UPLOAD_DIR || path.join(process.cwd(), 'private-uploads'),
-  'plans'
-);
+export const PENDING_PREFIX = 'private/pending/';
+export const PLAN_PREFIX = 'private/plans/';
 
 export const MAX_PLAN_BYTES = 30 * 1024 * 1024;
 export const PLAN_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.dwg', '.dxf'] as const;

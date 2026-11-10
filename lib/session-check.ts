@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
-import { prisma } from './prisma';
+import { adminUsers } from './db';
 import { SESSION_COOKIE_NAME, getSessionKey, verifySessionToken } from './auth';
 
 export type AdminRole = 'SUPERADMIN' | 'ADMIN';
@@ -18,9 +18,13 @@ export interface AdminSession {
  * deleting the account) therefore signs out every other session at once,
  * without keeping a list of sessions. The fingerprint is keyed with the
  * session secret, so the hash cannot be worked out from the cookie.
+ *
+ * A teammate who signs in with Google only has no password (null): their
+ * logins end when the account is removed, and a role change applies at once
+ * because the role is read from the account on every request.
  */
-export function passwordFingerprint(passwordHash: string): string {
-  return createHmac('sha256', getSessionKey()).update(passwordHash).digest('base64url').slice(0, 22);
+export function passwordFingerprint(passwordHash: string | null): string {
+  return createHmac('sha256', getSessionKey()).update(passwordHash ?? '').digest('base64url').slice(0, 22);
 }
 
 /** The signed-in admin for this request as the database sees them now, or null. */
@@ -31,10 +35,7 @@ export async function currentAdmin(): Promise<AdminSession | null> {
   // Logins made before this check existed carry no fingerprint: sign in again.
   if (!session || !session.pv) return null;
 
-  const user = await prisma.adminUser.findUnique({
-    where: { id: session.userId },
-    select: { id: true, email: true, role: true, passwordHash: true },
-  });
+  const user = await adminUsers.findById(session.userId);
   if (!user) return null;
 
   const expected = Buffer.from(passwordFingerprint(user.passwordHash));
