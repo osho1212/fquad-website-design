@@ -12,6 +12,7 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "cms:prune": "tsx prisma/prune-legacy-content.ts",
+    "db:migrate": "prisma migrate deploy",
     "db:seed": "npx --yes tsx prisma/seed.ts",
     "admin:password": "node scripts/set-admin-password.mjs",
     "hero:avif": "node scripts/encode-hero-avif.mjs"

@@ -62,6 +62,26 @@ sudo chmod 700 /var/data/fquad /var/data/fquad/private-uploads
 - `/var/data/fquad/media` — the CMS media library
 - `/var/data/fquad/private-uploads` — customers' plans and drawings
 
+**None of these are in git.** `prisma/dev.db` and `public/uploads` used to be committed; they are now
+gitignored, because a `git pull` on the server would otherwise overwrite live content (and live enquiries).
+
+### Getting the existing content onto the server (once)
+
+From the machine that has the current content (the working copy with the studio's edits):
+
+```bash
+scp prisma/dev.db <deploy-user>@<server>:/var/data/fquad/app.db
+rsync -av public/uploads/ <deploy-user>@<server>:/var/data/fquad/media/
+```
+
+No working copy any more? The last committed versions are in git history:
+`git show <last-commit-that-had-it>:prisma/dev.db > app.db` (find the commit with
+`git log --oneline -- prisma/dev.db`), and the same for each folder of `public/uploads`.
+
+**The old database still contains the default admin login** (`admin@fquad.com` / `changeme123`, public in
+git history). Before the site is reachable, set a new password on the server with
+`npm run admin:password` (§4).
+
 ---
 
 ## 4. First-time setup commands
@@ -71,8 +91,26 @@ From the project folder, after `.env` is in place:
 ```bash
 npm ci
 npx prisma generate
-npx prisma db push        # creates the tables from prisma/schema.prisma
+npm run db:migrate       # applies prisma/migrations to the database in DATABASE_URL
+```
+
+**Brand-new, empty database:** create the first admin and the default settings:
+
+```bash
 ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run db:seed
+```
+
+**Database copied from the existing site (§3):** it already has the tables, so tell Prisma the first
+migration is applied (once only), then replace the old default password:
+
+```bash
+npx prisma migrate resolve --applied 0_init
+ADMIN_EMAIL=admin@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run admin:password
+```
+
+The database must be in place **before** the build, because the project pages are generated from it:
+
+```bash
 npm run build
 ```
 
@@ -103,7 +141,7 @@ Redeploy:
 ```bash
 git pull
 npm ci
-npx prisma db push          # only if prisma/schema.prisma changed
+npm run db:migrate          # applies any new migration (does nothing if none)
 npm run build
 pm2 restart fquad
 ```

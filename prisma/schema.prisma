@@ -1,5 +1,6 @@
 // F.QUAD Studio Admin — Database Schema
-// SQLite via Prisma. Run `npx prisma db push` after editing this file.
+// SQLite via Prisma. After editing this file run `npx prisma migrate dev --name <what-changed>`
+// and commit the new folder in prisma/migrations; the server applies it with `npm run db:migrate`.
 
 generator client {
   provider = "prisma-client-js"
