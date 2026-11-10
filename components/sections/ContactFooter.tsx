@@ -90,13 +90,6 @@ export function ContactFooter({
               className="absolute inset-0"
               label="The studio's material library: travertine, marble, oak, walnut, brass, bouclé, velvet and terrazzo samples orbit a leather chair in a lit arched niche; the sample nearest your pointer comes forward"
             />
-            <div
-              aria-hidden="true"
-              className="absolute left-0 right-0 bottom-0 flex justify-between gap-4 text-[11px] tracking-[0.22em] uppercase text-white/55 pointer-events-none"
-            >
-              <span>Selected work</span>
-              <span className="text-right text-white/80">F.QUAD Studio</span>
-            </div>
           </div>
         </InView>
       </div>
