@@ -131,6 +131,9 @@ export function StartProjectForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+    // Read before any await: the event's form is gone afterwards.
+    const hpField = (e.currentTarget as HTMLFormElement).elements.namedItem('fq_hp_url');
+    const honeypot = hpField instanceof HTMLInputElement ? hpField.value : '';
 
     if (!name.trim()) {
       setErrorMessage('Please enter your full name.');
@@ -165,6 +168,7 @@ export function StartProjectForm({
       formData.append('timeline', timeline);
       formData.append('budget', budget);
       formData.append('notes', notes.trim());
+      formData.append('fq_hp_url', honeypot);
 
       if (planFile) {
         formData.append('planFile', planFile);
@@ -234,6 +238,14 @@ export function StartProjectForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-7">
+      {/* Honeypot: invisible and unreachable for people, tempting for form-filling
+          bots. Anything typed here means the submission is automated. */}
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+        <label>
+          Leave this field empty
+          <input type="text" name="fq_hp_url" tabIndex={-1} autoComplete="off" defaultValue="" />
+        </label>
+      </div>
       {errorMessage && (
         <div role="alert" className="p-3.5 bg-red-950/40 border border-red-500/40 text-red-200 text-xs tracking-wide">
           {errorMessage}

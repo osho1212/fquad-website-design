@@ -12,6 +12,10 @@ const MAX_SUBMISSIONS = 5;
 // A 30 MB plan plus the form's text fields.
 const MAX_REQUEST_BYTES = MAX_PLAN_BYTES + 1024 * 1024;
 
+// A submission that filled the hidden honeypot field came from a bot. Answer
+// as if it worked, so the bot learns nothing, but save and send nothing.
+const botSuccess = () => NextResponse.json({ success: true }, { status: 201 });
+
 export async function POST(req: NextRequest) {
   if (!requestHostAllowed(req.headers)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -50,6 +54,7 @@ export async function POST(req: NextRequest) {
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
+      if (cleanText(formData.get('fq_hp_url'), 200)) return botSuccess();
       name = cleanLine(formData.get('name'), 120);
       email = cleanLine(formData.get('email'), 254);
       phone = cleanLine(formData.get('phone'), 40);
@@ -92,6 +97,7 @@ export async function POST(req: NextRequest) {
       } catch {
         return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
       }
+      if (cleanText(body?.fq_hp_url, 200)) return botSuccess();
       name = cleanLine(body?.name, 120);
       email = cleanLine(body?.email, 254);
       phone = cleanLine(body?.phone, 40);

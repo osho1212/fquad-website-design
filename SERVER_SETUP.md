@@ -173,7 +173,10 @@ redirect the other to it; set `NEXT_PUBLIC_SITE_URL` to the main one.
   every admin API handler (`lib/admin-guard.ts`).
 - Sessions last 24 hours. Login allows 5 wrong passwords per account and 10 per
   address per 15 minutes, then blocks for the rest of the window.
-- The contact and project forms allow 5 submissions per address per 10 minutes.
+- The contact and project forms allow 5 submissions per address per 10 minutes,
+  and have a hidden honeypot field: a submission that fills it is treated as a
+  bot and silently dropped. (A captcha such as Cloudflare Turnstile would be a
+  further step; it needs a free Cloudflare account and is not required.)
 - Plans attached to the project form are checked (PDF, JPG, PNG, DWG, DXF only,
   30 MB, contents must match), stored outside the web folder under random names,
   and only downloadable by a signed-in admin from **Admin → Enquiries**.
@@ -206,8 +209,10 @@ DigitalOcean Spaces or Cloudflare R2 with `rclone config`, and set
 ## 9. Monitoring
 
 - [ ] **Uptime:** add a free UptimeRobot or Better Stack monitor on
-      `https://fquad.com/` and `https://fquad.com/admin/login` (both should
-      return 200), alerting the studio by email.
+      `https://fquad.com/api/health` — it answers `200 {"status":"ok"}` only when
+      the app can reach its database (the home page is cached, so it would still
+      load with the database down) — and a second one on `https://fquad.com/`,
+      alerting the studio by email.
 - [ ] **Logs:** `pm2 logs fquad`; `pm2-logrotate` (§5) caps their size.
 - [ ] **Errors (optional):** Sentry (free tier) — `npx @sentry/wizard@latest -i nextjs`
       after creating a project and DSN. Not installed yet.
@@ -219,9 +224,35 @@ DigitalOcean Spaces or Cloudflare R2 with `rclone config`, and set
 
 ## Still open
 
-- [ ] Verify `fquad.com` in Resend (add the SPF, DKIM and DMARC records it
-      shows) and send a test enquiry end to end
+- [ ] Email DNS for fquad.com and a test enquiry (see "Email DNS" below)
 - [ ] Domain / DNS cut-over (Adroit domain transfer pending)
 - [ ] Sentry (optional, §9)
-- [ ] Captcha on the public forms (Cloudflare Turnstile needs a free account;
-      the rate limits are the only bot protection until then)
+
+---
+
+## Email DNS (Resend) — needed before the forms can email reliably
+
+Checked against the live DNS on 10 Nov 2026: `fquad.com` has Google Workspace mail
+(`MX smtp.google.com`) and a DMARC record with **policy `quarantine`**, but **no SPF
+record, no Google DKIM key and no Resend records**. With a `quarantine` policy,
+mail that fails SPF and DKIM goes to spam, so enquiry notifications (and the
+studio's normal mail) can be quarantined until this is fixed.
+
+1. In Resend → **Domains** → add `fquad.com`. It lists the exact records to create:
+   a DKIM `TXT` at `resend._domainkey`, and an SPF `TXT` plus an `MX` on the `send`
+   subdomain. Add them at the DNS host (the DMARC report address points at
+   GoDaddy / `secureserver.net`, so the DNS is probably there) and click **Verify**.
+2. Add an SPF record for the root so the studio's Google mail passes too:
+   `TXT  @  "v=spf1 include:_spf.google.com ~all"`
+3. In Google Admin → Apps → Google Workspace → Gmail → **Authenticate email**,
+   generate the DKIM key, add the `google._domainkey` record it shows, and turn
+   authentication on.
+4. Send a test enquiry from the live site; confirm it arrives in the inbox (not
+   spam) and that Admin → Enquiries shows it. Look at the message's "Show original"
+   to see SPF, DKIM and DMARC all say PASS.
+
+---
+
+## Other open items
+
+- [ ] Pick the main domain (`fquad.com` or `www.fquad.com`) and set `NEXT_PUBLIC_SITE_URL`
