@@ -3,9 +3,26 @@
 import React, { useEffect, useRef, useState } from "react";
 import { withDefaults } from "@/lib/cms/schema";
 import { InView } from "@/components/motion/InView";
-import { RoomScene } from "@/components/three/RoomScene";
-import { BEDROOM_PIECES, bedroomPlaced } from "@/components/three/lux/suiteStages";
+import Magnet, { FRAME_MAGNET } from "@/components/ui/Magnet";
 import { clamp, onFrame, prefersReducedMotion } from "@/lib/motion";
+
+/**
+ * Project photos shown as the process advances. They are spread across however
+ * many steps the CMS defines (one image per step, first to last).
+ */
+const PROCESS_IMAGES = [
+  { src: "/assets/images/b21.jpg", alt: "A living room with a carved ceiling and a tufted sofa" },
+  { src: "/assets/images/b49.jpg", alt: "A blue-panelled living room with an arched mural" },
+  { src: "/assets/images/b23.jpg", alt: "Carved timber and amber-glass doors opening onto a stone floor" },
+  { src: "/assets/images/b61.jpg", alt: "A living room with curtains, a curved sofa and a marble floor" },
+  { src: "/assets/images/a2.jpg", alt: "The finished residence at dusk, its lights on" },
+];
+
+/** The image for step `i` of `n`, spread evenly across the list. */
+function imageForStep(i: number, n: number) {
+  const k = n <= 1 ? 0 : Math.round((i * (PROCESS_IMAGES.length - 1)) / (n - 1));
+  return PROCESS_IMAGES[Math.min(PROCESS_IMAGES.length - 1, k)];
+}
 
 interface Step {
   num: string;
@@ -24,7 +41,6 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
 
   const trackRef = useRef<HTMLElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
-  const piecesRef = useRef<HTMLSpanElement>(null);
   const stageRef = useRef<HTMLSpanElement>(null);
   const [wide, setWide] = useState(false);
   const [active, setActive] = useState(0);
@@ -36,6 +52,24 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+
+  // Without the pin (phones/tablets) the steps stack, so the photo follows
+  // whichever step is crossing the middle of the screen.
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el || wide || steps.length === 0) return;
+    const items = Array.from(el.querySelectorAll<HTMLElement>("[data-step]"));
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.step));
+        }
+      },
+      { rootMargin: "-45% 0px -45% 0px" }
+    );
+    items.forEach((it) => io.observe(it));
+    return () => io.disconnect();
+  }, [wide, steps.length]);
 
   // Drives the step highlight, progress rule and readout from the pinned
   // section's scroll progress. Runs only while the section is on screen.
@@ -61,10 +95,6 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
         }
       }
       if (fillRef.current) fillRef.current.style.transform = `scaleY(${p.toFixed(4)})`;
-      if (piecesRef.current) {
-        const placed = bedroomPlaced(p);
-        piecesRef.current.textContent = `${String(placed).padStart(2, "0")} / ${BEDROOM_PIECES}`;
-      }
     };
 
     const io = new IntersectionObserver(
@@ -130,6 +160,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
               return (
                 <li
                   key={idx}
+                  data-step={idx}
                   aria-current={wide && idx === active ? "step" : undefined}
                   className="relative grid grid-cols-[auto_1fr] gap-x-5 sm:gap-x-7 transition-opacity duration-500 ease-out"
                   style={{ opacity: on ? 1 : 0.32 }}
@@ -154,16 +185,35 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
           </ol>
 
           {/* The tower */}
-          <figure className="fq-frame relative m-0 order-1 lg:order-2 h-[52vh] sm:h-[58vh] lg:h-[min(72vh,680px)]">
-            <RoomScene
-              variant="bedroom"
-              trackRef={wide ? trackRef : undefined}
-              // On phones there is no pin: finish building while the frame is
-              // still near the middle of the screen.
-              range={wide ? undefined : [0.05, 0.5]}
-              className="absolute inset-0"
-              label="A 3D bedroom that moves from a bare shell, to clay massing, to real furniture, to a fully styled room as the design-process stages scroll by"
-            />
+          <Magnet
+            {...FRAME_MAGNET}
+            wrapperClassName="order-1 lg:order-2"
+            style={{ display: "block", width: "100%" }}
+          >
+          <figure className="fq-frame relative m-0 h-[52vh] sm:h-[58vh] lg:h-[min(72vh,680px)]">
+            <div className="absolute inset-0 overflow-hidden bg-[#0a0a0a]">
+              {steps.map((_, idx) => {
+                const img = imageForStep(idx, steps.length);
+                const on = idx === active;
+                return (
+                  <img
+                    key={idx}
+                    src={img.src}
+                    alt={on ? img.alt : ""}
+                    aria-hidden={on ? undefined : true}
+                    draggable={false}
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                      opacity: on ? 1 : 0,
+                      transform: on ? "scale(1)" : "scale(1.07)",
+                      transition: "opacity 800ms ease, transform 1600ms cubic-bezier(0.16, 1, 0.3, 1)",
+                    }}
+                  />
+                );
+              })}
+            </div>
             <span className="fq-frame-b" aria-hidden="true" />
             <figcaption className="absolute left-3 right-3 bottom-3 flex justify-between gap-3 text-[11px] tracking-[0.22em] uppercase text-white/70 pointer-events-none">
               {/* Single-string children: these nodes are rewritten from the
@@ -173,12 +223,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
               {wide ? (
                 <>
                   <span ref={stageRef}>{`Stage 01 / ${String(steps.length).padStart(2, "0")}`}</span>
-                  <span>
-                    Pieces{" "}
-                    <span ref={piecesRef} className="tabular-nums">
-                      {`00 / ${BEDROOM_PIECES}`}
-                    </span>
-                  </span>
+                  <span>Fig. 02 — Process</span>
                 </>
               ) : (
                 <>
@@ -188,6 +233,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
               )}
             </figcaption>
           </figure>
+          </Magnet>
         </div>
       </div>
     </section>
