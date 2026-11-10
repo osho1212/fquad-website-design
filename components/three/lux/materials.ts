@@ -27,13 +27,32 @@ function canvas(w: number, h: number, draw: (g: CanvasRenderingContext2D, w: num
   return c;
 }
 
+/**
+ * Painted canvases, kept for the life of the page. Every scene (and every
+ * remount) used to repaint all fifteen — 70–100ms of main-thread work each
+ * time on a fast desktop, several times that on a phone. The canvases are
+ * plain pixels, so one copy serves any number of WebGL contexts; only the
+ * THREE.Texture wrapping them is per scene.
+ */
+const painted = new Map<string, HTMLCanvasElement>();
+function once(key: string, paint: () => HTMLCanvasElement): HTMLCanvasElement {
+  let c = painted.get(key);
+  if (!c) {
+    c = paint();
+    painted.set(key, c);
+  }
+  return c;
+}
+
+let anisotropy = 8;
+
 function texture(
   c: HTMLCanvasElement,
   { srgb = true, repeat }: { srgb?: boolean; repeat?: [number, number] } = {}
 ) {
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
+  t.anisotropy = anisotropy;
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   if (repeat) t.repeat.set(repeat[0], repeat[1]);
   return t;
@@ -343,28 +362,68 @@ export interface Lux {
   dispose: () => void;
 }
 
-export function makeLux(): Lux {
+/**
+ * Paints the shared canvases ahead of time (call from an idle callback) so
+ * the first scene to mount finds them ready.
+ */
+export function warmLuxCanvases(): void {
+  luxCanvases();
+}
+
+function luxCanvases() {
+  return {
+    oakSmoked: once("oakSmoked", () => herringbone("smoked")),
+    oakWashed: once("oakWashed", () => herringbone("washed")),
+    trav: once("trav", travertine),
+    nero: once("nero", () => marble("nero")),
+    cala: once("cala", () => marble("calacatta")),
+    plaster: once("plaster", () => limewash("#e6ded2")),
+    plasterDeep: once("plasterDeep", () => limewash("#cfc3b2")),
+    boucle: once("boucle", () => speckle(3, 5200, 2.2)),
+    pile: once("pile", () => speckle(9, 9000, 1)),
+    rug: once("rug", rug),
+    art: once("art", () => painting(4)),
+    art2: once("art2", () => painting(19)),
+    terr: once("terr", terrazzo),
+    glow: once("glow", () => radial("rgba(255,214,160,1)", "rgba(255,190,120,0)")),
+    shadow: once("shadow", () => radial("rgba(0,0,0,0.55)", "rgba(0,0,0,0)")),
+  };
+}
+
+/**
+ * `quality: "low"` (phones, low-core machines) keeps every finish but drops
+ * the two costliest shader paths — clearcoat and sheen — which roughly
+ * halves shader compile time and fragment cost; at phone size the lacquer
+ * and velvet sheen are barely visible anyway.
+ */
+export function makeLux(quality: "high" | "low" = "high"): Lux {
   const textures: THREE.Texture[] = [];
   const keep = <T extends THREE.Texture>(t: T) => (textures.push(t), t);
+  const lite = quality === "low";
+  anisotropy = lite ? 4 : 8;
+  const cv = luxCanvases();
 
-  const oakSmokedMap = keep(texture(herringbone("smoked")));
-  const oakWashedMap = keep(texture(herringbone("washed")));
-  const travMap = keep(texture(travertine()));
-  const neroMap = keep(texture(marble("nero")));
-  const calaMap = keep(texture(marble("calacatta")));
-  const plasterMap = keep(texture(limewash("#e6ded2"), { repeat: [0.35, 0.35] }));
-  const plasterDeepMap = keep(texture(limewash("#cfc3b2"), { repeat: [0.4, 0.4] }));
-  const boucleBump = keep(texture(speckle(3, 5200, 2.2), { srgb: false, repeat: [5, 5] }));
-  const pileBump = keep(texture(speckle(9, 9000, 1), { srgb: false, repeat: [6, 6] }));
-  const rugMap = keep(texture(rug()));
-  const artMap = keep(texture(painting(4)));
-  const art2Map = keep(texture(painting(19)));
-  const terrMap = keep(texture(terrazzo()));
-  const glowTex = keep(texture(radial("rgba(255,214,160,1)", "rgba(255,190,120,0)")));
-  const shadowTex = keep(texture(radial("rgba(0,0,0,0.55)", "rgba(0,0,0,0)")));
+  const oakSmokedMap = keep(texture(cv.oakSmoked));
+  const oakWashedMap = keep(texture(cv.oakWashed));
+  const travMap = keep(texture(cv.trav));
+  const neroMap = keep(texture(cv.nero));
+  const calaMap = keep(texture(cv.cala));
+  const plasterMap = keep(texture(cv.plaster, { repeat: [0.35, 0.35] }));
+  const plasterDeepMap = keep(texture(cv.plasterDeep, { repeat: [0.4, 0.4] }));
+  const boucleBump = keep(texture(cv.boucle, { srgb: false, repeat: [5, 5] }));
+  const pileBump = keep(texture(cv.pile, { srgb: false, repeat: [6, 6] }));
+  const rugMap = keep(texture(cv.rug));
+  const artMap = keep(texture(cv.art));
+  const art2Map = keep(texture(cv.art2));
+  const terrMap = keep(texture(cv.terr));
+  const glowTex = keep(texture(cv.glow));
+  const shadowTex = keep(texture(cv.shadow));
   glowTex.wrapS = glowTex.wrapT = shadowTex.wrapS = shadowTex.wrapT = THREE.ClampToEdgeWrapping;
 
-  const phys = (p: THREE.MeshPhysicalMaterialParameters) => new THREE.MeshPhysicalMaterial(p);
+  const phys = (p: THREE.MeshPhysicalMaterialParameters) =>
+    new THREE.MeshPhysicalMaterial(
+      lite ? { ...p, clearcoat: 0, sheen: 0, roughness: Math.max(p.roughness ?? 0.5, 0.18) } : p
+    );
   const std = (p: THREE.MeshStandardMaterialParameters) => new THREE.MeshStandardMaterial(p);
   const velvet = (color: number, sheen: number) =>
     phys({

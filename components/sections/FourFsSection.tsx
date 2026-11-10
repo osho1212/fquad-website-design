@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import ElegantCarousel, { SlideData } from "../ui/elegant-carousel";
+import { FourFacesStage, type FaceSlide } from "../ui/FourFacesStage";
 import { withDefaults } from "@/lib/cms/schema";
 import { scrollToY } from "@/lib/motion";
 
@@ -13,17 +13,28 @@ interface FaceContent {
 }
 
 /**
- * The carousel styles the leading letter of each face separately, so the
- * stored title is split into its first character and the remainder here
- * rather than being edited as two fields in the CMS.
+ * The studio's line for each face, used when the CMS face has no body copy
+ * of its own (the CMS stores a title, subtitle, accent and image).
  */
-function toSlide(face: FaceContent): SlideData {
+const FACE_COPY: Record<string, string> = {
+  FUNCTIONAL:
+    "Every design should serve a purpose. Our spaces are planned to be efficient, comfortable and intuitive, with a strong identity of their own.",
+  FUTURISTIC:
+    "Design should look forward. Modern materials, sustainable systems and smart planning keep a space relevant for decades.",
+  FRIENDLY:
+    "Architecture is for people. Warmth, light and natural connection make places where people feel welcome and at ease.",
+  FLEXIBLE:
+    "Spaces evolve as lives change. Our layouts adapt, moving between work, entertaining and quiet with ease.",
+  "F.QUAD":
+    "Function, foresight, warmth and flexibility, converging into purposeful, enduring spaces.",
+};
+
+function toSlide(face: FaceContent): FaceSlide {
   const title = face.title ?? "";
   return {
     title,
-    fPrefix: title.slice(0, 1),
-    suffix: title.slice(1),
     subtitle: face.subtitle,
+    description: FACE_COPY[title.trim().toUpperCase()],
     accent: face.accent,
     imageUrl: face.image,
   };
@@ -146,31 +157,17 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
       ref={containerRef}
       className="relative h-[480vh] bg-transparent text-white"
     >
-      {/* Pinned Full-Screen Viewport */}
-      <div className="sticky top-0 h-screen w-full flex flex-col justify-center items-center px-4 sm:px-8 md:px-12 py-5 overflow-hidden">
-        {/* Section Top Header Pill Bar */}
-        <div className="w-full flex justify-between items-center mb-3 px-1">
-          <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-none bg-accent animate-pulse" />
-            <span className="text-[11px] tracking-[0.24em] text-white/70 uppercase font-medium">
-              {c.eyebrow}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-[11px] tracking-[0.2em] text-accent uppercase font-medium">
-            <span>{c.hint}</span>
-            <span className="text-white/40">↓</span>
-          </div>
-        </div>
-
-        {/* Full-Screen Elegant Carousel */}
-        <div className="w-full flex-1 flex flex-col justify-center min-h-0">
-          <ElegantCarousel
-            slides={slides}
-            controlledIndex={activeIndex}
-            controlledProgress={slideProgress}
-            onNavigate={handleNavigate}
-          />
-        </div>
+      {/* Pinned full-bleed stage: the photograph is the backdrop, the words
+          and the index sit on it. */}
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
+        <FourFacesStage
+          slides={slides}
+          index={activeIndex}
+          progress={slideProgress}
+          eyebrow={c.eyebrow}
+          hint={c.hint}
+          onNavigate={handleNavigate}
+        />
       </div>
     </section>
   );

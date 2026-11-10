@@ -14,12 +14,18 @@ import { Magnetic } from "@/components/motion/Reveal";
  * clay model to finished render (public/assets/hero, exported from the studio
  * video). `d-` frames are 1440px wide for desktop, `m-` 800px for phones.
  */
-const FRAME_COUNT = 190;
-/** Frames the preloader waits on — the opening of the scrub, not all 190. */
+const FRAME_COUNT = 189;
+/**
+ * Bumped whenever the frames are replaced. They are cached for a week
+ * (next.config.js), so a new film needs new URLs or returning visitors would
+ * see old and new frames mixed. The poster class on the stage repeats it.
+ */
+const FILM_VERSION = "2";
+/** Frames the preloader waits on — the opening of the scrub, not all 189. */
 const PRIORITY_FRAMES = 20;
 /** First frame of the clay model / of the finished render. */
-const MODEL_FROM_INDEX = 24;
-const RENDER_FROM_INDEX = 58;
+const MODEL_FROM_INDEX = 22;
+const RENDER_FROM_INDEX = 56;
 const PHASES = ["Sketch", "Model", "Render"] as const;
 
 /**
@@ -306,7 +312,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
 
     // Just-in-time loading: a few requests in flight at a time, always the
     // unloaded frame closest to where the visitor is scrolling (forward
-    // first). The opening frames load immediately; nothing queues 190
+    // first). The opening frames load immediately; nothing queues 189
     // downloads ahead of the page's other assets.
     // Only a window around the playhead is ever requested: a visitor who
     // reads the headline and leaves downloads ~a third of the film, not all
@@ -350,7 +356,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
         pump();
       };
       img.decoding = "async";
-      img.src = `/assets/hero/${prefix}-${pad3(idx + 1)}.${ext}`;
+      img.src = `/assets/hero/${prefix}-${pad3(idx + 1)}.${ext}?v=${FILM_VERSION}`;
       images[idx] = img;
     };
 
@@ -455,7 +461,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   return (
     <section id="top" ref={containerRef} className="relative h-[600vh] bg-black">
       <div
-        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp')] bg-cover bg-center flex flex-col justify-center items-center${
+        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
         }`}
       >
@@ -589,7 +595,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
           style={{ opacity: 0, display: "none" }}
           className="absolute bottom-10 z-30 pointer-events-none flex flex-col items-center gap-2 text-white/60 text-[11px] tracking-[0.24em] uppercase"
         >
-          <span className="text-accent font-medium">{c.discoverLabel}</span>
+          <span className="text-white/80 font-medium">{c.discoverLabel}</span>
           <div className="w-[1px] h-6 bg-gradient-to-b from-white to-transparent animate-bounce" />
         </div>
       </div>

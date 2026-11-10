@@ -209,9 +209,11 @@
   font-size: clamp(1rem, 1.3vw, 1.35rem);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+  min-width: 0;
   opacity: 0;
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.9);
 }
@@ -227,36 +229,53 @@
   font-weight: 300;
 }
 
+/* Phones. The flex accordion (no visibleCount) stacks into a column. The
+   fixed-width slider stays a horizontal track: a full-height stack of every
+   project ran four screens long, so instead it becomes a swipe carousel —
+   one card and a peek of the next, snapping, labels always on (touch has no
+   hover to reveal them). */
 @media (max-width: 768px) {
-  .accordion-gallery {
+  .accordion-gallery:not(.accordion-gallery--scroll) {
     flex-direction: column;
     perspective: none;
     height: auto !important;
   }
-  .ag-panel {
+  .accordion-gallery:not(.accordion-gallery--scroll) .ag-panel {
     min-height: 110px;
     height: 110px;
     transform: none !important;
   }
-  .ag-panel--active {
+  .accordion-gallery:not(.accordion-gallery--scroll) .ag-panel--active {
     min-height: 240px;
     height: 240px;
   }
-  .accordion-gallery .ag-panel__media {
+  .accordion-gallery:not(.accordion-gallery--scroll) .ag-panel__media {
     width: 100%;
     height: var(--ag-media-size);
   }
-  /* Stack instead of scrolling; override the inline widths GSAP applies. */
-  .accordion-gallery--scroll {
-    overflow-x: hidden;
+  .ag-panel__label {
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
   }
-  .accordion-gallery--scroll .ag-panel {
-    width: auto !important;
-    flex: 0 0 auto;
-  }
-  .ag-shell {
-    height: auto !important;
-  }
+}
+
+.accordion-gallery--compact {
+  perspective: none;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.accordion-gallery--compact .ag-panel {
+  scroll-snap-align: start;
+  transform: none !important;
+}
+.accordion-gallery--compact .ag-panel__media {
+  width: 100%;
+}
+.accordion-gallery--compact .ag-panel__bar,
+.accordion-gallery--compact .ag-panel__text {
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

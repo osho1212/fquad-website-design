@@ -40,7 +40,9 @@ export function Cursor() {
         label.textContent = text;
       }
       ring.dataset.mode = text ? "label" : interactive ? "link" : "idle";
-      targetScale = text ? 4.2 : interactive ? 1.9 : 1;
+      // A labelled target swaps the ring for a real-size badge (sized in CSS),
+      // so its text is crisp rather than an 8px label blown up 4×.
+      targetScale = text ? 1 : interactive ? 1.9 : 1;
     };
 
     const onMove = (e: PointerEvent) => {
@@ -60,10 +62,21 @@ export function Cursor() {
     };
     const onDown = () => (targetScale *= 0.82);
     const onUp = () => setState(document.elementFromPoint(tx, ty));
+    // Scrolling moves the page under a still pointer; re-check what it is
+    // over, or a label ("View project") lingers on whatever scrolls in next.
+    let scrollRaf = 0;
+    const onScroll = () => {
+      if (!visible || scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        setState(document.elementFromPoint(tx, ty));
+      });
+    };
 
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
 
     const stop = onFrame((_, dt) => {
@@ -80,6 +93,8 @@ export function Cursor() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(scrollRaf);
       document.documentElement.removeEventListener("pointerleave", onLeave);
     };
   }, [hidden]);

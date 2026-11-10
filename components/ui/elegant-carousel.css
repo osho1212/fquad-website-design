@@ -244,12 +244,30 @@
   transform: scale(1);
 }
 
+/* All five photos are stacked in the frame; the active one fades up. */
 .carousel-image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center center;
   display: block;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.carousel-image.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-image {
+    transition: none;
+    transform: none;
+  }
 }
 
 .carousel-image-overlay {
@@ -342,38 +360,85 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Responsive */
+/* Tablets and phones.
+   The card is a flex ROW, so the old `grid-template-columns: 1fr` here did
+   nothing: the text column kept its 300px minimum and squeezed the photo
+   into a thin strip. Stack instead — the photo on top taking whatever height
+   is left in the pinned viewport, the words under it. */
 @media (max-width: 960px) {
   .carousel-wrapper {
+    flex: 1 1 auto;
     height: auto;
-    min-height: 520px;
-    padding: 1.75rem 1.25rem 1.25rem;
+    min-height: 0;
+    max-height: none;
+    padding: 1rem 1rem 0.75rem;
   }
   .carousel-inner {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 1rem;
   }
   .carousel-image-container {
-    min-height: 240px;
-    max-height: 300px;
-    justify-content: center;
+    order: -1;
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 180px;
+  }
+  .carousel-image-frame {
+    height: 100%;
+    max-height: none;
+  }
+  .carousel-content {
+    flex: 0 0 auto;
+    height: auto;
+    min-width: 0;
+    max-width: none;
+  }
+  .carousel-content-inner {
+    gap: 0.6rem;
+  }
+  .carousel-nav-arrows {
+    margin-top: 0.25rem;
   }
   .carousel-progress-bar {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    margin-top: 0.75rem;
+    padding-top: 0.25rem;
+    gap: 8px;
+  }
+  /* The face's name is already the headline; on a narrow card the five
+     labels only wrapped into three rows. The bars stay, as 44px-tall taps. */
+  .carousel-progress-item {
+    padding: 14px 0 12px;
+  }
+  .carousel-progress-label {
+    display: none;
   }
 }
 
 @media (max-width: 640px) {
-  .carousel-progress-bar {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
   .carousel-f-anchor {
-    font-size: clamp(2.8rem, 12vw, 4.4rem);
+    font-size: clamp(2.6rem, 13vw, 3.6rem);
   }
   .carousel-suffix-text {
-    font-size: clamp(1.4rem, 6vw, 2.2rem);
+    font-size: clamp(1.25rem, 6.4vw, 1.9rem);
+  }
+  .carousel-subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    line-height: 1.5;
+  }
+  .carousel-arrow-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Short phones (SE-class): keep the photo, drop the arrow row — swiping
+   and the progress bars still change face. */
+@media (max-width: 640px) and (max-height: 700px) {
+  .carousel-nav-arrows {
+    display: none;
   }
 }
 

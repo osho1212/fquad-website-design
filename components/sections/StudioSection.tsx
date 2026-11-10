@@ -78,8 +78,9 @@ export function StudioSection({ content }: { content?: Record<string, any> }) {
             label="A cut-away luxury living room — curved bouclé sofa, travertine table, brass ring chandelier, walnut reeded wall and an arched window — whose light moves from midday sun to golden hour to a lamplit evening as the page scrolls"
           />
           <span className="fq-frame-b" aria-hidden="true" />
-          <figcaption className="absolute left-3 bottom-3 right-3 flex justify-between text-[11px] tracking-[0.22em] uppercase text-white/50 pointer-events-none">
-            <span>Fig. 01 — The Salon</span>
+          {/* Below the model on phones, where a two-line caption covered it. */}
+          <figcaption className="relative mt-2 px-1 pb-1 sm:p-0 sm:m-0 sm:absolute sm:left-3 sm:bottom-3 sm:right-3 flex justify-between gap-3 text-[11px] tracking-[0.22em] uppercase text-white/70 pointer-events-none">
+            <span>Fig. 01 — Interior Design</span>
             <span>
               Scroll · <span ref={clockRef} className="tabular-nums">12:00</span>
             </span>
