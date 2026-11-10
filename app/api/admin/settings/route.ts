@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { isSafeHref } from '@/lib/forms';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   const settings = await prisma.siteSettings.findUnique({
@@ -14,7 +15,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   let body: any;
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest) {
     mapLat, mapLng, metaTitle, metaDescription, ogImageId,
   } = body;
 
-  if (typeof instagramUrl === 'string' && instagramUrl.trim() && !/^https?:\/\//i.test(instagramUrl.trim())) {
+  if (typeof instagramUrl === 'string' && instagramUrl.trim() && (!/^https?:\/\//i.test(instagramUrl.trim()) || !isSafeHref(instagramUrl))) {
     return NextResponse.json({ error: 'The Instagram link must start with https://' }, { status: 400 });
   }
 

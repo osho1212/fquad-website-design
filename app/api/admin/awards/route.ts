@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   const awards = await prisma.award.findMany({
@@ -13,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   let body: any;

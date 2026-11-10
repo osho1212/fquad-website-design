@@ -35,6 +35,23 @@ export function cleanLine(value: unknown, max: number): string {
     .trim();
 }
 
+/**
+ * True for a link that is safe to put in an href: empty, a page of this site
+ * ("/contact"), an in-page anchor ("#work"), or http(s), mailto: and tel:
+ * addresses. Rejects javascript:, data: and the like.
+ */
+export function isSafeHref(value: string): boolean {
+  const v = value.trim();
+  if (v === '') return true;
+  if (/[\u0000-\u001F\u007F]/.test(v)) return false;
+  if (v.startsWith('/')) return !v.startsWith('//') && !v.startsWith('/\\');
+  if (v.startsWith('#')) return true;
+  return /^(https?:\/\/|mailto:|tel:)/i.test(v);
+}
+
+export const HREF_HELP =
+  'must be a web address (https://…), an email link (mailto:), a phone link (tel:) or a page of this site (/page)';
+
 export function isEmail(value: string): boolean {
   return value.length <= 254 && /^[^\s@<>"',;:()[\]\\]+@[^\s@<>"',;:()[\]\\]+\.[^\s@<>"',;:()[\]\\]{2,}$/.test(value);
 }

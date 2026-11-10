@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-guard';
+import { HREF_HELP, isSafeHref } from '@/lib/forms';
 
 export async function GET() {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   const members = await prisma.teamMember.findMany({
@@ -14,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   let body: any;
@@ -31,6 +32,10 @@ export async function POST(req: NextRequest) {
   }
   if (!role || typeof role !== 'string' || !role.trim()) {
     return NextResponse.json({ error: 'Role is required' }, { status: 400 });
+  }
+
+  if (linkedIn && !isSafeHref(String(linkedIn))) {
+    return NextResponse.json({ error: `The LinkedIn link ${HREF_HELP}.` }, { status: 400 });
   }
 
   const maxOrder = await prisma.teamMember.aggregate({ _max: { order: true } });

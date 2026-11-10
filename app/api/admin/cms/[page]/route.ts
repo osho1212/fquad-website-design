@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getPageDef, getSectionDef, mergeSection } from '@/lib/cms/schema';
 import { requireAdmin } from '@/lib/admin-guard';
+import { HREF_HELP, isSafeHref } from '@/lib/forms';
 
 /**
  * Returns the page's content with schema defaults already merged in, plus the
@@ -84,6 +85,14 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ page: s
   for (const field of sectionDef.fields) {
     if (Object.prototype.hasOwnProperty.call(data, field.key)) {
       clean[field.key] = (data as Record<string, unknown>)[field.key];
+    }
+  }
+
+  // Link fields end up in href attributes on the public site.
+  for (const field of sectionDef.fields) {
+    const value = clean[field.key];
+    if (field.type === 'url' && typeof value === 'string' && !isSafeHref(value)) {
+      return NextResponse.json({ error: `"${field.label}" ${HREF_HELP}.` }, { status: 400 });
     }
   }
 

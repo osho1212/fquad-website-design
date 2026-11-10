@@ -1,7 +1,5 @@
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { currentAdmin } from '@/lib/session-check';
 import Sidebar from './components/Sidebar';
 
 export default async function DashboardLayout({
@@ -9,20 +7,15 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
-  const session = token ? await verifySessionToken(token) : null;
+  // The session must still match the account as it is now: a changed password
+  // or a deleted account ends it. The role comes from the same lookup.
+  const session = await currentAdmin();
 
   if (!session) {
     redirect('/admin/login');
   }
 
-  // Fetch the user's role from the database
-  const user = await prisma.adminUser.findUnique({
-    where: { id: session.userId },
-    select: { role: true },
-  });
-
-  const role = user?.role || 'ADMIN';
+  const role = session.role;
 
   return (
     <div

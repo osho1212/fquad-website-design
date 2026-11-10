@@ -37,6 +37,13 @@ export const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours, in seconds
 export interface SessionPayload {
   userId: string;
   email: string;
+  /** Fingerprint of the password this login was made with (see lib/session-check.ts). */
+  pv?: string;
+}
+
+/** The signing key, for the node-side session check. Throws in production if unset. */
+export function getSessionKey(): Uint8Array {
+  return getSecret();
 }
 
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
@@ -55,7 +62,11 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   try {
     const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] });
     if (typeof payload.userId === 'string' && typeof payload.email === 'string') {
-      return { userId: payload.userId, email: payload.email };
+      return {
+        userId: payload.userId,
+        email: payload.email,
+        ...(typeof payload.pv === 'string' ? { pv: payload.pv } : {}),
+      };
     }
     return null;
   } catch {

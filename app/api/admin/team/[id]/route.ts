@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-guard';
+import { HREF_HELP, isSafeHref } from '@/lib/forms';
 
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   let body: any;
@@ -31,6 +32,9 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     data.role = role.trim();
   }
   if (bio !== undefined) data.bio = bio ? String(bio).trim() : null;
+  if (linkedIn && !isSafeHref(String(linkedIn))) {
+    return NextResponse.json({ error: `The LinkedIn link ${HREF_HELP}.` }, { status: 400 });
+  }
   if (linkedIn !== undefined) data.linkedIn = linkedIn ? String(linkedIn).trim() : null;
   if (mediaId !== undefined) data.mediaId = mediaId || null;
   if (featured !== undefined) data.featured = !!featured;
@@ -47,7 +51,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
 
 export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   await prisma.teamMember.delete({ where: { id: params.id } });
