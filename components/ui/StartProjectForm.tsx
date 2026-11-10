@@ -599,6 +599,17 @@ export function StartProjectForm({
         <p className="text-center text-[11px] text-white/40 tracking-wider mt-3 uppercase">
           CONFIDENTIAL &amp; SECURE · DIRECT REVIEW BY FOUNDING PARTNERS
         </p>
+        <p className="text-center text-xs text-white/50 leading-relaxed mt-3">
+          By submitting, you agree to our{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white">
+            Terms
+          </a>{' '}
+          and consent to us using your details, as described in our{' '}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white">
+            Privacy Policy
+          </a>
+          , to respond to your enquiry.
+        </p>
       </div>
     </form>
   );
