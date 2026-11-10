@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # End-to-end checks against a running site that uses the Firebase EMULATORS.
 # Covers what the smoke test cannot (it needs to sign in): sessions, roles,
-# link checks, plan and image uploads, rate limits.
+# link checks, plan and image uploads, rate limits, Google sign-in and the admin team.
 #
 #   npm run emulators            (one terminal)
 #   npm run dev                  (another, with the emulator variables set)
@@ -181,6 +181,92 @@ check "plan uploads: limited too" 429 "$(for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
 for i in 1 2 3 4 5; do code -H "$(ip 3 3)" -X POST -H "$J" -d '{"email":"victim@example.com","password":"wrong-guess"}' $B/api/admin/login >/dev/null; done
 check "login: 6th wrong guess blocked" 429 "$(code -H "$(ip 3 4)" -X POST -H "$J" -d '{"email":"victim@example.com","password":"wrong-guess"}' $B/api/admin/login)"
 check "login: the right password still works from elsewhere" 200 "$(login $T/z $SUPER $PW)"
+
+echo "--- Google sign-in and the admin team (Auth emulator)"
+AUTH="${FIREBASE_AUTH_EMULATOR_HOST:-127.0.0.1:9099}"
+jsonfield() { node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s)[process.argv[1]]||"")}catch{console.log("")}})' "$1"; }
+# An ID token from the Auth emulator for a sign-in with Google (the emulator accepts an unsigned Google token).
+google_token() {
+  local jwt
+  jwt="$(node -e 'const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");const e=process.argv[1];console.log(b({alg:"none",typ:"JWT"})+"."+b({iss:"https://accounts.google.com",aud:"fake",sub:"g-"+e,email:e,email_verified:process.argv[2]==="true",name:"Test "+e.split("@")[0]})+".")' "$1" "$2")"
+  curl -s -X POST -H "$J" -d "{\"postBody\":\"id_token=$jwt&providerId=google.com\",\"requestUri\":\"http://localhost\",\"returnIdpCredential\":true,\"returnSecureToken\":true}" "http://$AUTH/identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=fake" | jsonfield idToken
+}
+# An ID token for an ordinary email-and-password Firebase account, which must not be accepted.
+password_token() {
+  curl -s -X POST -H "$J" -d "{\"email\":\"$1\",\"password\":\"Passw0rd-test-1\",\"returnSecureToken\":true}" "http://$AUTH/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake" | jsonfield idToken
+}
+gsignin() { code -c "$1" -X POST -H "$J" -H "Origin: $B" -H "$(ip 4 $3)" -d "{\"idToken\":\"$2\"}" "$B/api/admin/login/google"; }
+userfield() { node -e 'const j=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));const u=j.users.find(u=>u.email===process.argv[2]);console.log(u?(u[process.argv[3]]??""):"")' "$T/body" "$1" "$2"; }
+
+MATE="e2e-mate-$RUN@example.com"; STRANGER="e2e-stranger-$RUN@example.com"; UNV="e2e-unverified-$RUN@example.com"; PWACCT="e2e-pw-$RUN@example.com"
+tk="$(google_token $STRANGER true)"
+check "the Auth emulator issued a Google token" 1 "$([ ${#tk} -gt 100 ] && echo 1 || echo 0)"
+check "Google: an address that is not on the list is refused" 403 "$(gsignin $T/g1 "$tk" 1)"
+check "...and no session was created" 307 "$(code -b $T/g1 $B/api/admin/enquiries)"
+check "Google: a made-up token is refused" 401 "$(gsignin $T/g2 "$(printf 'x%.0s' $(seq 1 200))" 2)"
+check "Google: a missing token is refused" 400 "$(code -X POST -H "$J" -H "Origin: $B" -d '{}' $B/api/admin/login/google)"
+check "Google: a cross-site call is refused" 403 "$(code -X POST -H "$J" -H 'Origin: https://evil.example' -d "{\"idToken\":\"$tk\"}" $B/api/admin/login/google)"
+pt="$(password_token $PWACCT)"
+check "Google: an email-and-password Firebase account is refused" 401 "$(gsignin $T/g3 "$pt" 3)"
+
+echo "--- admin team: who can sign in"
+check "SUPERADMIN lists admin users" 200 "$(code -b $T/s $B/api/admin/users)"
+check "...no password hash is ever shown" 0 "$(grep -c passwordHash $T/body || true)"
+check "ADMIN cannot list admin users" 403 "$(code -b $T/l $B/api/admin/users)"
+check "ADMIN cannot add an admin user" 403 "$(code -b $T/l -X POST -H "$J" -d "{\"email\":\"$MATE\"}" $B/api/admin/users)"
+check "anonymous cannot list admin users" 307 "$(code $B/api/admin/users)"
+check "add: not an email" 400 "$(code -b $T/s -X POST -H "$J" -d '{"email":"not-an-email"}' $B/api/admin/users)"
+check "add: unknown role" 400 "$(code -b $T/s -X POST -H "$J" -d "{\"email\":\"$MATE\",\"role\":\"OWNER\"}" $B/api/admin/users)"
+check "add: cross-site call refused" 403 "$(code -b $T/s -X POST -H "$J" -H 'Origin: https://evil.example' -d "{\"email\":\"$MATE\"}" $B/api/admin/users)"
+check "add a teammate" 201 "$(code -b $T/s -X POST -H "$J" -d "{\"email\":\"$MATE\",\"name\":\"Mate\",\"role\":\"ADMIN\"}" $B/api/admin/users)"
+mid="$(field user.id)"
+check "...with no password" false "$(field user.hasPassword)"
+check "add: the same email again" 409 "$(code -b $T/s -X POST -H "$J" -d "{\"email\":\"$MATE\"}" $B/api/admin/users)"
+check "add: the same email in capitals" 409 "$(code -b $T/s -X POST -H "$J" -d "{\"email\":\"$(echo $MATE | tr a-z A-Z)\"}" $B/api/admin/users)"
+
+mt="$(google_token $MATE true)"
+check "Google: the teammate signs in" 200 "$(gsignin $T/m "$mt" 5)"
+check "the teammate reads enquiries" 200 "$(code -b $T/m $B/api/admin/enquiries)"
+check "the teammate (ADMIN) cannot list the website team" 403 "$(code -b $T/m $B/api/admin/team)"
+check "the teammate cannot manage admin users" 403 "$(code -b $T/m $B/api/admin/users)"
+check "no password sign-in for a Google-only account" 401 "$(login $T/x2 $MATE 'Passw0rd-test-1!')"
+check "a Google-only account cannot set a password" 400 "$(code -b $T/m -X POST -H "$J" -H "Origin: $B" -d '{"currentPassword":"x","newPassword":"A-new-long-password-1"}' $B/api/admin/password)"
+check "the Account page explains Google sign-in" 1 "$(get -b $T/m $B/admin/account; grep -c 'sign in with Google as' $T/body | sed 's/^[2-9]/1/')"
+code -b $T/s $B/api/admin/users >/dev/null
+check "the last sign-in is recorded" 1 "$([ -n "$(userfield $MATE lastLoginAt)" ] && echo 1 || echo 0)"
+check "the name is kept" Mate "$(userfield $MATE name)"
+
+echo "--- admin team: roles and removal"
+check "promote to SUPERADMIN" 200 "$(code -b $T/s -X PATCH -H "$J" -d '{"role":"SUPERADMIN"}' $B/api/admin/users/$mid)"
+check "...takes effect on their next request" 200 "$(code -b $T/m $B/api/admin/team)"
+check "unknown role refused" 400 "$(code -b $T/s -X PATCH -H "$J" -d '{"role":"OWNER"}' $B/api/admin/users/$mid)"
+check "empty change refused" 400 "$(code -b $T/s -X PATCH -H "$J" -d '{}' $B/api/admin/users/$mid)"
+check "demote back to ADMIN" 200 "$(code -b $T/s -X PATCH -H "$J" -d '{"role":"ADMIN"}' $B/api/admin/users/$mid)"
+check "...takes effect on their next request" 403 "$(code -b $T/m $B/api/admin/team)"
+code -b $T/s $B/api/admin/users >/dev/null; sid="$(userfield $SUPER id)"
+check "the only SUPERADMIN cannot be demoted" 400 "$(code -b $T/s -X PATCH -H "$J" -d '{"role":"ADMIN"}' $B/api/admin/users/$sid)"
+check "you cannot remove your own access" 400 "$(code -b $T/s -X DELETE $B/api/admin/users/$sid)"
+check "an unknown account is not found" 404 "$(code -b $T/s -X DELETE $B/api/admin/users/a_doesnotexist)"
+check "ADMIN cannot remove anyone" 403 "$(code -b $T/l -X DELETE $B/api/admin/users/$mid)"
+check "remove the teammate" 200 "$(code -b $T/s -X DELETE $B/api/admin/users/$mid)"
+check "...their open session ends at once" 401 "$(code -b $T/m $B/api/admin/enquiries)"
+check "...and Google no longer lets them in" 403 "$(gsignin $T/m2 "$(google_token $MATE true)" 6)"
+
+code -b $T/s -X POST -H "$J" -d "{\"email\":\"$UNV\"}" $B/api/admin/users >/dev/null; uid="$(field user.id)"
+check "Google: an unverified email is refused even when listed" 401 "$(gsignin $T/g4 "$(google_token $UNV false)" 7)"
+code -b $T/s -X DELETE $B/api/admin/users/$uid >/dev/null
+
+GR="$(ip 4 90)"; last=""
+for i in $(seq 1 11); do last="$(code -X POST -H "$J" -H "Origin: $B" -H "$GR" -d "{\"idToken\":\"$(printf 'x%.0s' $(seq 1 200))\"}" $B/api/admin/login/google)"; done
+check "Google: repeated failures from one address are blocked" 429 "$last"
+
+check "Admin Team page" 200 "$(code -b $T/s $B/admin/users)"
+if [ -n "${NEXT_PUBLIC_FIREBASE_API_KEY:-}" ]; then
+  # The login form is drawn in the browser, so look for the button in the page's built script.
+  get $B/admin/login
+  loginjs="$(grep -o 'static/chunks/app/admin/login/page-[A-Za-z0-9_-]*.js' $T/body | sort -u | head -1)"
+  check "the login page's script includes the Google button" 1 "$(curl -s "$B/_next/$loginjs" | grep -c 'CONTINUE WITH GOOGLE' | sed 's/^[2-9]/1/')"
+fi
 
 echo "--- health"
 check "health" 200 "$(code $B/api/health)"

@@ -1,4 +1,5 @@
 import { cert, getApp, getApps, initializeApp, type App } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
@@ -80,4 +81,9 @@ export function firestore(): Firestore {
 
 export function bucket() {
   return getStorage(app()).bucket();
+}
+
+/** Firebase Authentication, used only to check the Google ID token at sign-in. */
+export function adminAuth() {
+  return getAuth(app());
 }

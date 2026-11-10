@@ -3,7 +3,7 @@
 Website and content system for **F.QUAD Studio**, an architecture, interior design, interior styling and farmhouse practice in Hyderabad, India.
 
 - **Public site:** a scroll-driven home page (a hero film, featured projects, a 3D "What We Do" stage), studio, services, projects, team, awards, testimonials, journal and contact pages, plus Privacy and Terms.
-- **Admin (`/admin`):** edit every page's text and images, manage the media library, projects, team, testimonials, awards and the journal, change site settings, and read enquiries from the contact and Start a Project forms.
+- **Admin (`/admin`):** edit every page's text and images, manage the media library, projects, team, testimonials, awards and the journal, change site settings, and read enquiries from the contact and Start a Project forms. Sign in with a password or with Google; a Superadmin adds teammates under **Admin Team** (see [DEPLOY.md](DEPLOY.md) part F).
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind · Firebase (Firestore for data, Cloud Storage for pictures and plans) · GSAP, Lenis and three.js for motion · Resend for email · hosted on Vercel.
 
@@ -30,8 +30,8 @@ To start with the studio's real content instead of an empty site, import the old
 | `npm run dev` | Development server on port 3002 |
 | `npm run build` / `npm start` | Production build and server (port 3002) |
 | `npm run typecheck` | Generates route types, then runs the TypeScript compiler |
-| `npm run emulators` | Local Firestore and Cloud Storage emulators |
-| `npm run db:seed` | Creates the first admin and the default site settings |
+| `npm run emulators` | Local Firestore, Cloud Storage and Authentication (Google sign-in) emulators |
+| `npm run db:seed` | Creates the first admin (password, or Google-only with just `ADMIN_EMAIL`) and the default site settings |
 | `npm run db:import` | Imports the old SQLite database and pictures into Firebase |
 | `npm run admin:password` | Creates an admin or resets a password |
 | `npm run hero:avif` | Re-encodes the hero film's frames to AVIF |

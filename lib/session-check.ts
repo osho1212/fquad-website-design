@@ -18,9 +18,13 @@ export interface AdminSession {
  * deleting the account) therefore signs out every other session at once,
  * without keeping a list of sessions. The fingerprint is keyed with the
  * session secret, so the hash cannot be worked out from the cookie.
+ *
+ * A teammate who signs in with Google only has no password (null): their
+ * logins end when the account is removed, and a role change applies at once
+ * because the role is read from the account on every request.
  */
-export function passwordFingerprint(passwordHash: string): string {
-  return createHmac('sha256', getSessionKey()).update(passwordHash).digest('base64url').slice(0, 22);
+export function passwordFingerprint(passwordHash: string | null): string {
+  return createHmac('sha256', getSessionKey()).update(passwordHash ?? '').digest('base64url').slice(0, 22);
 }
 
 /** The signed-in admin for this request as the database sees them now, or null. */

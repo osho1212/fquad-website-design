@@ -15,10 +15,11 @@
     "admin:password": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/set-admin-password.mjs",
     "hero:avif": "node scripts/encode-hero-avif.mjs",
     "db:import": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/import-sqlite.mjs",
-    "emulators": "firebase emulators:start --only firestore,storage --project demo-fquad --import=.firebase-data --export-on-exit"
+    "emulators": "firebase emulators:start --only firestore,storage,auth --project demo-fquad --import=.firebase-data --export-on-exit"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "firebase": "^13.2.0",
     "firebase-admin": "^14.5.0",
     "gsap": "^3.12.7",
     "jose": "^6.2.9",

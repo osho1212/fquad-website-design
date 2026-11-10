@@ -43,7 +43,10 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await adminUsers.findById(session.userId);
-  if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
+  if (user && !user.passwordHash) {
+    return NextResponse.json({ error: 'Your account signs in with Google, so it has no password to change.' }, { status: 400 });
+  }
+  if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash ?? ''))) {
     await recordHit(limitKey, WINDOW_MS);
     return NextResponse.json({ error: 'Your current password is not correct.' }, { status: 400 });
   }

@@ -1,9 +1,23 @@
-
 'use client';
 
 import { Suspense } from 'react';
 import { useState, FormEvent, CSSProperties } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+// The Google button shows only when the Firebase web settings were provided at
+// build time (see .env.example). Without them the page is the password form alone.
+const GOOGLE_ENABLED = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+
+function GoogleMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </svg>
+  );
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -12,6 +26,15 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  function signedIn() {
+    const requested = searchParams.get('from') || '';
+    // Same-site admin paths only — never an outside address or a javascript: link.
+    const safe = /^\/admin(\/[A-Za-z0-9\-_./]*)?$/.test(requested) && !requested.includes('..');
+    router.push(safe ? requested : '/admin');
+    router.refresh();
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,11 +49,7 @@ function LoginForm() {
       });
 
       if (res.ok) {
-        const requested = searchParams.get('from') || '';
-        // Same-site admin paths only — never an outside address or a javascript: link.
-        const safe = /^\/admin(\/[A-Za-z0-9\-_./]*)?$/.test(requested) && !requested.includes('..');
-        router.push(safe ? requested : '/admin');
-        router.refresh();
+        signedIn();
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || 'Invalid email or password.');
@@ -42,40 +61,87 @@ function LoginForm() {
     }
   }
 
+  async function handleGoogle() {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      // Loaded on demand so the password form stays light.
+      const { googleIdToken, GoogleSignInCancelled } = await import('@/lib/firebase-client');
+      let idToken: string;
+      try {
+        idToken = await googleIdToken();
+      } catch (err) {
+        if (err instanceof GoogleSignInCancelled) return;
+        throw err;
+      }
+      const res = await fetch('/api/admin/login/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      if (res.ok) {
+        signedIn();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Google sign-in failed.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
   return (
     <main className="admin-root" style={styles.page}>
-      <form onSubmit={handleSubmit} style={styles.card}>
+      <div style={styles.card}>
         <div style={styles.logo}>F.QUAD</div>
         <p style={styles.subtitle}>STUDIO ADMIN</p>
 
-        <label style={styles.label} htmlFor="email">EMAIL</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
-          autoComplete="username"
-          required
-        />
+        {GOOGLE_ENABLED && (
+          <>
+            <button type="button" onClick={handleGoogle} disabled={googleLoading || loading} style={styles.googleButton}>
+              <GoogleMark />
+              {googleLoading ? 'OPENING GOOGLE…' : 'CONTINUE WITH GOOGLE'}
+            </button>
+            <div style={styles.divider} aria-hidden="true">
+              <span style={styles.dividerLine} />
+              <span style={styles.dividerText}>OR WITH A PASSWORD</span>
+              <span style={styles.dividerLine} />
+            </div>
+          </>
+        )}
 
-        <label style={styles.label} htmlFor="password">PASSWORD</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-          autoComplete="current-password"
-          required
-        />
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <label style={{ ...styles.label, marginTop: 0 }} htmlFor="email">EMAIL</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+            autoComplete="username"
+            required
+          />
 
-        {error && <p style={styles.error}>{error}</p>}
+          <label style={styles.label} htmlFor="password">PASSWORD</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+            autoComplete="current-password"
+            required
+          />
 
-        <button type="submit" disabled={loading} style={styles.button}>
-          {loading ? 'SIGNING IN…' : 'SIGN IN'}
-        </button>
-      </form>
+          {error && <p role="alert" style={styles.error}>{error}</p>}
+
+          <button type="submit" disabled={loading || googleLoading} style={styles.button}>
+            {loading ? 'SIGNING IN…' : 'SIGN IN'}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }
@@ -106,6 +172,10 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
   },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
   logo: {
     fontSize: 24,
     fontWeight: 700,
@@ -118,6 +188,39 @@ const styles: Record<string, CSSProperties> = {
     color: '#7A7870',
     letterSpacing: '0.18em',
     marginBottom: 28,
+  },
+  googleButton: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    padding: '12px 10px',
+    background: '#fff',
+    color: '#0D0D0D',
+    border: '1px solid #DEDBD4',
+    borderRadius: 2,
+    fontSize: 11,
+    letterSpacing: '0.08em',
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
+  divider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    margin: '22px 0 6px',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    background: '#DEDBD4',
+  },
+  dividerText: {
+    fontSize: 10,
+    letterSpacing: '0.1em',
+    whiteSpace: 'nowrap',
+    color: '#9C9890',
   },
   label: {
     fontSize: 12,

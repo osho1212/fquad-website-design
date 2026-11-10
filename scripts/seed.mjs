@@ -4,6 +4,10 @@
  *
  *   ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-unique-12+-character-password' npm run db:seed
  *
+ * or, for an account that signs in with Google only (no password at all):
+ *
+ *   ADMIN_EMAIL=you@gmail.com npm run db:seed
+ *
  * There is deliberately no default password: this account controls the whole
  * site. To bring over an existing site's content instead, see `npm run db:import`.
  */
@@ -13,9 +17,18 @@ import { adminId, checkPassword, connect } from './_firebase.mjs';
 const email = (process.env.ADMIN_EMAIL || 'admin@fquad.com').toLowerCase().trim();
 const password = process.env.ADMIN_PASSWORD || '';
 
-if (!checkPassword(password)) {
+const googleOnly = !password;
+
+if (googleOnly && !process.env.ADMIN_EMAIL) {
   console.error(
-    'Set ADMIN_PASSWORD to a unique password of at least 12 characters before seeding.\n' +
+    'Set ADMIN_EMAIL to the Google address that should sign in (no password is created),\n' +
+      'or set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) for a password account.'
+  );
+  process.exit(1);
+}
+if (!googleOnly && !checkPassword(password)) {
+  console.error(
+    'ADMIN_PASSWORD must be a unique password of at least 12 characters.\n' +
       'There is deliberately no default: this account controls the whole site.'
   );
   process.exit(1);
@@ -30,13 +43,14 @@ if ((await adminRef.get()).exists) {
   const now = new Date();
   await adminRef.create({
     email,
-    passwordHash: await bcrypt.hash(password, 12),
+    passwordHash: googleOnly ? null : await bcrypt.hash(password, 12),
     name: 'F.QUAD Admin',
     role: 'SUPERADMIN',
+    lastLoginAt: null,
     createdAt: now,
     updatedAt: now,
   });
-  console.log(`Created admin user: ${email}`);
+  console.log(googleOnly ? `Created admin user (signs in with Google only): ${email}` : `Created admin user: ${email}`);
 }
 
 const settingsRef = db.collection('siteSettings').doc('default');

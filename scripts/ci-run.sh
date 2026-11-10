@@ -3,10 +3,15 @@
 # Storage emulators and exports their addresses): build the site, start it, then
 # run the smoke test and the end-to-end test against it.
 #
-#   npx firebase emulators:exec --only firestore,storage --project demo-fquad "bash scripts/ci-run.sh"
+#   npx firebase emulators:exec --only firestore,storage,auth --project demo-fquad "bash scripts/ci-run.sh"
 set -euo pipefail
 
 export NODE_ENV=production
+# The login page's "Continue with Google" button is built in only when these are set;
+# they point the browser at the local Auth emulator (public values, not secrets).
+export NEXT_PUBLIC_FIREBASE_API_KEY="${NEXT_PUBLIC_FIREBASE_API_KEY:-fake-api-key}"
+export NEXT_PUBLIC_FIREBASE_PROJECT_ID="${NEXT_PUBLIC_FIREBASE_PROJECT_ID:-demo-fquad}"
+export NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST="${NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST:-127.0.0.1:9099}"
 export SESSION_SECRET="${SESSION_SECRET:-ci-only-secret-0123456789-abcdefghijklmnopqrstuvwxyz}"
 PORT="${PORT:-3002}"
 

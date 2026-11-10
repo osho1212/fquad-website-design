@@ -350,9 +350,12 @@ export const blogPosts = {
 
 type AdminFields = {
   email: string;
-  passwordHash: string;
+  /** null for a teammate who signs in with Google only (there is no password to guess). */
+  passwordHash: string | null;
   name: string | null;
   role: string;
+  /** Absent on accounts made before this was recorded. */
+  lastLoginAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -364,14 +367,31 @@ const adminId = (email: string) => 'a_' + createHash('sha256').update(email.toLo
 export const adminUsers = {
   findByEmail: (email: string) => adminTable.get(adminId(email)),
   findById: (id: string) => adminTable.get(id),
-  async create(data: { email: string; passwordHash: string; name?: string | null; role?: string }) {
+  /** Everyone who can sign in, oldest first. */
+  async all() {
+    return (await adminTable.all()).sort((a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0));
+  },
+  /** Leave `passwordHash` out for a teammate who will sign in with Google. */
+  async create(data: { email: string; passwordHash?: string | null; name?: string | null; role?: string }) {
     const email = data.email.toLowerCase().trim();
     const now = new Date();
     return adminTable.create(
-      { email, passwordHash: data.passwordHash, name: data.name ?? null, role: data.role ?? 'ADMIN', createdAt: now, updatedAt: now },
+      {
+        email,
+        passwordHash: data.passwordHash ?? null,
+        name: data.name ?? null,
+        role: data.role ?? 'ADMIN',
+        lastLoginAt: null,
+        createdAt: now,
+        updatedAt: now,
+      },
       adminId(email)
     );
   },
   setPassword: (id: string, passwordHash: string) => adminTable.update(id, { passwordHash, updatedAt: new Date() }),
+  update: (id: string, patch: { name?: string | null; role?: string }) => adminTable.update(id, { ...patch, updatedAt: new Date() }),
+  /** Records a sign-in; fills in the name from Google only if there is none yet. */
+  touchLogin: (id: string, name?: string | null) => adminTable.update(id, { lastLoginAt: new Date(), ...(name ? { name } : {}) }),
+  remove: (id: string) => adminTable.remove(id),
   idFor: adminId,
 };

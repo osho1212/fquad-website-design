@@ -37,7 +37,7 @@ jobs:
         run: npm run typecheck
 
       - name: Build, serve and test against the Firebase emulators
-        run: npx firebase emulators:exec --only firestore,storage --project demo-fquad "bash scripts/ci-run.sh"
+        run: npx firebase emulators:exec --only firestore,storage,auth --project demo-fquad "bash scripts/ci-run.sh"
 
       - name: Server log (on failure)
         if: failure()

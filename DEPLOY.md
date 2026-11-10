@@ -11,7 +11,7 @@ Where things live:
 
 Nothing is stored on Vercel itself, which is what makes it work: Vercel runs short-lived functions with no permanent disk.
 
-Do the parts in order: **A** Firebase, **B** your existing content, **C** Vercel, **D** check it works, then **E** email DNS.
+Do the parts in order: **A** Firebase, **B** your existing content, **C** Vercel, **D** check it works, then **E** email DNS. **F** (Google sign-in and adding teammates) is optional and can be done any time after C.
 
 ---
 
@@ -26,6 +26,8 @@ Do the parts in order: **A** Firebase, **B** your existing content, **C** Vercel
 4. **Create Cloud Storage.** *Build → Storage → Get started.* Use the same location. Note the **bucket name** it shows (for example `fquad-prod.firebasestorage.app`): it becomes `FIREBASE_STORAGE_BUCKET`.
 
 5. **Make a server key.** *Project settings (gear) → Service accounts → Generate new private key.* A JSON file downloads. **Keep it secret and never commit it**: it can read and change everything in the project.
+
+   **If it says "Key creation is not allowed…"**, your Google Workspace organization blocks service-account keys (a security default for newer organizations). Someone with the *Organization Policy Administrator* role can allow it for this one project only: Google Cloud console → *IAM & Admin → Organization Policies* → **Disable service account key creation** (`iam.disableServiceAccountKeyCreation`) → choose the Firebase project → *Manage policy* → *Override parent's policy* → set enforcement **Off** → *Set policy*. Then generate the key. Keep the exception to the one project, and replace the key if it is ever exposed.
 
 6. **Apply four settings with Google's command-line tool.** The easiest way is [Cloud Shell](https://console.cloud.google.com/) (the `>_` button at the top right of the Google Cloud console, signed in with the same Google account, project selected). Upload `firebase/storage-cors.json` and `firebase/storage-lifecycle.json` from this repo (Cloud Shell menu ⋮ → *Upload*), open `storage-cors.json` and make sure the `origin` list has your real domain, then run, replacing `BUCKET` with the bucket name from step 4:
 
@@ -45,7 +47,7 @@ Do the parts in order: **A** Firebase, **B** your existing content, **C** Vercel
 
    References: [CORS](https://docs.cloud.google.com/storage/docs/using-cors), [lifecycle rules](https://docs.cloud.google.com/storage/docs/managing-lifecycles), [TTL](https://docs.cloud.google.com/firestore/docs/ttl), [backups](https://docs.cloud.google.com/firestore/docs/backups).
 
-   *Why the CORS rule:* Vercel's functions refuse request bodies over 4.5 MB, so photos and plans never pass through the site. The site gives the browser a short-lived address and the browser sends the file to Cloud Storage directly; that needs the bucket to allow your domain.
+   *Why the CORS rule:* Vercel's functions refuse request bodies over 4.5 MB, so photos and plans never pass through the site. The site gives the browser a short-lived address and the browser sends the file to Cloud Storage directly; that needs the bucket to allow your domain. Cloud Storage does not support wildcard sub-domains, so a Vercel preview address (which changes per branch) works for uploads only if you add its exact address to the `origin` list.
 
 7. **Security rules.** The rules in this repo (`firestore.rules`, `storage.rules`) refuse every direct request, which is what you want because only the website's server talks to Firebase. A project created in production mode already has the same lock; nothing more to do.
 
@@ -127,6 +129,41 @@ Needed before the forms can email reliably. A live DNS check on 10 Nov 2026 foun
 2. Add an [SPF record](https://support.google.com/a/answer/33786) for the root so the studio's Google mail passes too: `TXT  @  "v=spf1 include:_spf.google.com ~all"`.
 3. In Google Admin → Apps → Google Workspace → Gmail → **Authenticate email**, generate the [DKIM key](https://support.google.com/a/answer/180504), add the `google._domainkey` record it shows, and turn authentication on.
 4. Send a test enquiry; confirm it lands in the inbox (not spam). In Gmail, *Show original* should say SPF, DKIM and DMARC all **PASS**.
+
+---
+
+## F. Google sign-in and admin teammates (optional)
+
+The admin login can offer **Continue with Google** next to the password form. A teammate you add signs in with their Google account and never gets a password. It uses Firebase Authentication; the site only ever checks the Google sign-in on its server and then keeps its own session, as for a password sign-in.
+
+1. **Register a web app** for the project (once). This only produces the public settings the login button needs:
+
+   ```bash
+   firebase apps:create web "FQUAD Admin" --project <project-id>
+   firebase apps:sdkconfig web <app-id> --project <project-id>
+   ```
+
+   (`apps:create` prints the app id.) From the config it prints you need three values: `apiKey`, `authDomain` and `projectId`. They are public by design: they say which project to talk to and do not unlock anything.
+
+2. **Turn on Google sign-in.** Firebase console → *Build → Authentication → Get started → Sign-in method → Google → Enable*, pick a support email, *Save*. (This step is only possible in the console.)
+
+3. **Allow your domains.** *Authentication → Settings → Authorized domains → Add domain*: `fquad.com`, `www.fquad.com`, and your Vercel address (`<project>.vercel.app`) if you want to try it on a preview. `localhost` is already there. A domain missing from this list gives "Google sign-in is not enabled for this web address".
+
+4. **Give Vercel the three values** (*Settings → Environment Variables*): `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, for Production (and Preview if you test there). They are read **when the site is built**, so redeploy afterwards. Without them the login page simply shows the password form.
+
+5. **Create the first admin** (once). For a Google-only account, no password:
+
+   ```bash
+   ADMIN_EMAIL=you@gmail.com npm run db:seed
+   ```
+
+   Use the exact address of the Google account you will sign in with. (Setting `ADMIN_PASSWORD` too makes an account that can use either.)
+
+6. **Add teammates.** Sign in, then *Admin Team → Add teammate*: their Google email, an optional name, and a role (*Admin* edits content, the media library and enquiries; *Superadmin* also manages team, testimonials, awards, journal, settings and this page). Tell them to open `/admin/login` and choose **Continue with Google**. Changing a role or removing someone takes effect on their next request. The page refuses to remove your own access or the last Superadmin.
+
+   (*Team*, in the sidebar, is the people shown on the website; *Admin Team* is the people who can sign in.)
+
+**Good to know:** the address on the Google account must match the one you added, letter for letter apart from capitals (a Gmail address with or without dots is a different address to this check). A person whose address is not on the list sees a message naming the address they used, so a typo is easy to spot.
 
 ---
 

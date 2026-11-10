@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   await clearHits(accountKey);
+  await adminUsers.touchLogin(user.id);
 
   const token = await createSessionToken({
     userId: user.id,
