@@ -12,12 +12,11 @@ if (ffprobeStatic?.path) {
   ffmpeg.setFfprobePath(ffprobeStatic.path);
 }
 
-// Where files live on disk, and the URL prefix used to serve them.
-// Dev default: public/uploads, served automatically by Next at /uploads/*
-// Production: point MEDIA_DIR at a persistent path and have Nginx serve
-// MEDIA_URL_PREFIX from it (see SERVER_SETUP.md).
-export const MEDIA_DIR = process.env.MEDIA_DIR || path.join(process.cwd(), 'public', 'uploads');
-export const MEDIA_URL_PREFIX = process.env.MEDIA_URL_PREFIX || '/uploads';
+// Where files live on disk, and the URL prefix used to serve them (see
+// lib/media-dir.ts). Production: point MEDIA_DIR at a persistent folder; the app
+// serves it at /uploads (app/uploads), and Nginx may do so too for speed.
+import { MEDIA_DIR, MEDIA_URL_PREFIX } from './media-dir';
+export { MEDIA_DIR, MEDIA_URL_PREFIX };
 
 export interface VariantResult {
   label: string;
