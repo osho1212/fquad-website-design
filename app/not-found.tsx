@@ -24,7 +24,7 @@ export default function NotFound() {
         intro="The page you're after has moved, or never existed. Let's get you back to somewhere with furniture in it."
         art="living"
       >
-        <Link href="/" className="btn-metallic text-xs uppercase font-medium">
+        <Link href="/" className="btn-primary text-xs uppercase font-medium">
           Back to home
         </Link>
         <Link href="/past-projects" className={link}>

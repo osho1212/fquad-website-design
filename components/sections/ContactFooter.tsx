@@ -77,7 +77,7 @@ export function ContactFooter({
                 <button
                   type="button"
                   onClick={() => openModal()}
-                  className="btn-metallic text-xs uppercase font-medium cursor-pointer"
+                  className="btn-primary text-xs uppercase font-medium cursor-pointer"
                 >
                   {cta.ctaLabel}
                 </button>

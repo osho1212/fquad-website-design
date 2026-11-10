@@ -11,11 +11,11 @@ const INVITE_ART: ParallaxItem[] = [
   { art: "cross", x: "95%", y: "88%", w: 28, depth: 1, spin: -90, opacity: 0.2 },
 ];
 
-// `.btn-metallic` pins its own 10px type, so the 11px floor needs `!`.
+// `.btn-primary` pins its own 10px type, so the 11px floor needs `!`.
 const OUTLINE_BTN =
   "inline-flex min-h-[44px] items-center justify-center px-6 text-[11px] tracking-[0.18em] uppercase font-medium text-white border border-white/35 hover:border-white transition-colors";
 const PRIMARY_BTN =
-  "btn-metallic !text-[11px] min-h-[44px] uppercase font-medium cursor-pointer";
+  "btn-primary !text-[11px] min-h-[44px] uppercase font-medium cursor-pointer";
 
 /**
  * The page's way forward, shown whether or not any testimonials exist: share

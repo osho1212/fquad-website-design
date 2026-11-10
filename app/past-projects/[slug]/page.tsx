@@ -240,7 +240,7 @@ export default async function PastProjectDetailPage(
             <button
               type="button"
               data-start-project="true"
-              className="btn-metallic text-xs uppercase font-medium cursor-pointer"
+              className="btn-primary text-xs uppercase font-medium cursor-pointer"
             >
               {labels.ctaSecondaryLabel}
             </button>

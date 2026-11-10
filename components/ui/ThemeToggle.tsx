@@ -13,7 +13,7 @@ export const THEME_STORAGE_KEY = "fq-theme";
  */
 export const themeInitScript = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t!=='light'&&t!=='dark'){t='light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
 
-export function ThemeToggle({ className = "" }: { className?: string }) {
+export function ThemeToggle({ className = "w-8 h-8" }: { className?: string }) {
   // Start undefined so the button renders inert until we know the real theme.
   const [theme, setTheme] = useState<Theme | null>(null);
 
@@ -44,12 +44,12 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-label={label}
       title={label}
       aria-pressed={isLight}
-      className={`inline-flex items-center justify-center w-8 h-8 border border-white/20 hover:border-white bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-all duration-300 rounded-none shrink-0 ${className}`}
+      className={`fq-tap inline-flex items-center justify-center border border-white/20 hover:border-white fq-surface-fill text-white/80 hover:text-white transition-all duration-300 rounded-none shrink-0 ${className}`}
     >
       {/* Sun for "go light", moon for "go dark" */}
       {isLight ? (
         <svg
-          className="w-4 h-4"
+          className="w-4 h-4 max-lg:w-[18px] max-lg:h-[18px]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -61,7 +61,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         </svg>
       ) : (
         <svg
-          className="w-4 h-4"
+          className="w-4 h-4 max-lg:w-[18px] max-lg:h-[18px]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

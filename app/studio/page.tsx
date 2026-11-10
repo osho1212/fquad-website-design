@@ -239,7 +239,7 @@ export default async function StudioPage() {
             <button
               type="button"
               data-start-project="true"
-              className="btn-metallic text-xs uppercase font-medium cursor-pointer"
+              className="btn-primary text-xs uppercase font-medium cursor-pointer"
             >
               {cta.secondaryLabel}
             </button>

@@ -225,14 +225,14 @@ export function StartProjectForm({
             href={`https://wa.me/919876543210?text=Hi%20F.QUAD%20Studio,%20I%20just%20submitted%20a%20project%20brief%20for%20${encodeURIComponent(name)}.`}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-6 py-3 border border-white/30 hover:border-white text-white text-[11px] tracking-[0.2em] uppercase font-medium transition-colors"
+            className="btn-secondary text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium"
           >
             CHAT ON WHATSAPP →
           </a>
           {onClose ? (
             <button
               onClick={onClose}
-              className="btn-metallic text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium"
+              className="btn-primary text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium"
             >
               CLOSE WINDOW
             </button>
@@ -240,7 +240,7 @@ export function StartProjectForm({
             <button
               type="button"
               onClick={() => setIsSuccess(false)}
-              className="btn-metallic text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium cursor-pointer"
+              className="btn-primary text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium cursor-pointer"
             >
               SUBMIT ANOTHER →
             </button>
@@ -351,7 +351,7 @@ export function StartProjectForm({
                 onClick={() => setProjectType(type)}
                 className={`text-[11px] px-3.5 py-2.5 min-h-[40px] border rounded-none transition-all uppercase tracking-wider ${
                   isSelected
-                    ? 'bg-white text-black font-semibold border-white shadow-lg'
+                    ? 'bg-white text-black font-semibold border-white'
                     : 'bg-white/[0.02] text-white/75 border-white/20 hover:border-white/50 hover:text-white'
                 }`}
               >
@@ -602,7 +602,7 @@ export function StartProjectForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn-metallic w-full py-4 text-xs font-medium tracking-[0.2em] uppercase flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          className="btn-primary w-full py-4 text-xs font-medium tracking-[0.2em] uppercase flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
           {isSubmitting ? (
             <span>TRANSMITTING BRIEF...</span>
