@@ -150,7 +150,7 @@ The admin login can offer **Continue with Google** next to the password form. A 
 
 3. **Allow your domains.** *Authentication → Settings → Authorized domains → Add domain*: `fquadstudio.com`, `www.fquadstudio.com`, and your Vercel address (`<project>.vercel.app`) if you want to try it on a preview. `localhost` is already there. A domain missing from this list gives "Google sign-in is not enabled for this web address".
 
-4. **Give Vercel the web API key** (*Settings → Environment Variables*): `NEXT_PUBLIC_FIREBASE_API_KEY`, with **Production** ticked (and Preview if you test there). Only the key is needed; the project id and auth domain are worked out from `FIREBASE_SERVICE_ACCOUNT`. The login page reads it as it is served, so **redeploy** afterwards (no rebuild needed). Without it the login page simply shows the password form. If the button is missing after a redeploy, the key is not set for Production or is spelled differently.
+4. **Nothing to give Vercel.** The site finds the web app's public API key itself, using the service account it already has (`FIREBASE_SERVICE_ACCOUNT`), when the login page is served; the project id and auth domain follow from it. The button appears once step 1 has registered a web app and step 2 has switched Google on. (To override the key, set `NEXT_PUBLIC_FIREBASE_API_KEY` for Production and redeploy.) If it still does not show, the web app was not registered (step 1) or the service account cannot read it.
 
 5. **Create the first admin** (once). For a Google-only account, no password:
 

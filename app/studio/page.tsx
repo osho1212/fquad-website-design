@@ -3,6 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHero } from "@/components/layout/PageHero";
+import { FoundersBanner } from "@/components/pages/about/FoundersBanner";
 import { pageMetadata } from "@/lib/seo";
 import { getPage } from "@/lib/cms/content";
 import { toLines } from "@/lib/cms/schema";
@@ -26,13 +27,6 @@ interface Principle {
   num: string;
   title: string;
   desc: string;
-}
-
-interface Founder {
-  name: string;
-  role: string;
-  portrait: string;
-  bio: string;
 }
 
 export default async function StudioPage() {
@@ -150,39 +144,7 @@ export default async function StudioPage() {
           {founders.eyebrow}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">
-          {(founders.people as Founder[]).map((person, i) => (
-            <article key={i} className={i % 2 === 1 ? "md:mt-12" : undefined}>
-              {person.portrait ? (
-                <figure className="m-0 w-4/5 aspect-[4/5] overflow-hidden rounded-none bg-zinc-900 border border-white/15">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={person.portrait}
-                    alt={person.name}
-                    className="w-full h-full object-cover block"
-                  />
-                </figure>
-              ) : (
-                <div className="w-4/5 aspect-[4/5] rounded-none bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0_8px,transparent_8px_16px)] border border-white/15 flex items-center justify-center p-6 text-center">
-                  <span className="text-[11px] tracking-[0.2em] text-white/40 uppercase leading-relaxed">
-                    FOUNDER PORTRAIT
-                    <br />
-                    {person.name}
-                  </span>
-                </div>
-              )}
-              <h3 className="m-0 mt-8 font-normal uppercase text-3xl sm:text-4xl text-white">
-                {person.name}
-              </h3>
-              <div className="text-[11px] tracking-[0.2em] text-[#a9a9a9] mt-2.5 uppercase">
-                {person.role}
-              </div>
-              <p className="mt-5 text-sm sm:text-base leading-relaxed text-white/70 max-w-[46ch]">
-                {person.bio}
-              </p>
-            </article>
-          ))}
-        </div>
+        <FoundersBanner photo={founders.groupPhoto} photoAlt={founders.groupPhotoAlt} people={founders.people} />
       </section>
 
       {/* Recognition */}

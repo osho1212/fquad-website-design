@@ -9,7 +9,7 @@ import { getPage } from "@/lib/cms/content";
 import { pageMetadata } from "@/lib/seo";
 import { Stats, type StatItem } from "@/components/pages/about/Stats";
 import { Pillars, type Pillar } from "@/components/pages/about/Pillars";
-import { FounderCard, type Founder } from "@/components/pages/about/FounderCard";
+import { FoundersBanner, type Founder } from "@/components/pages/about/FoundersBanner";
 
 export const revalidate = 60;
 
@@ -195,32 +195,7 @@ export default async function AboutPage() {
       {/* ── Founders ─────────────────────────────────────────────────────── */}
       {people.length > 0 && (
         <Section id="founders" eyebrow={founders.eyebrow} className="scroll-mt-24">
-          {founders.groupPhoto && (
-            <figure className="fq-fade m-0 mb-14 max-w-[1300px] sm:mb-20">
-              <div className="fq-frame w-full p-2.5">
-                <div className="relative aspect-[3/2] overflow-hidden bg-zinc-900">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={founders.groupPhoto}
-                    srcSet={`${String(founders.groupPhoto).replace("-1800.webp", "-900.webp")} 900w, ${founders.groupPhoto} 1800w`}
-                    sizes="(min-width: 1300px) 1280px, 100vw"
-                    alt={founders.groupPhotoAlt || "The founders of F.QUAD Studio"}
-                    width={1800}
-                    height={1200}
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 block h-full w-full object-cover object-[50%_30%]"
-                  />
-                </div>
-                <span className="fq-frame-b" aria-hidden="true" />
-              </div>
-            </figure>
-          )}
-          <div className="grid max-w-[1300px] grid-cols-1 gap-x-16 gap-y-16 lg:grid-cols-2">
-            {people.map((person, i) => (
-              <FounderCard key={`${person.name}-${i}`} person={person} index={i} />
-            ))}
-          </div>
+          <FoundersBanner photo={founders.groupPhoto} photoAlt={founders.groupPhotoAlt} people={people} />
         </Section>
       )}
 

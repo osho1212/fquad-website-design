@@ -49,6 +49,14 @@ check "admin is noindex" 1 "$(curl -sI -m 30 "$B/admin/login" | grep -ci '^x-rob
 check "share image on /studio" 1 "$(curl -s -m 30 "$B/studio" | grep -c 'property="og:image"')"
 check "robots.txt hides /admin" 1 "$(curl -s -m 30 "$B/robots.txt" | grep -ci 'disallow: /admin')"
 
+echo "founders banner (one shared photo and description, no empty portrait placeholders)"
+for p in /about /studio; do
+  page="$(curl -s -m 30 "$B$p")"
+  check "$p shows both founders' names" 2 "$(echo "$page" | grep -oE 'Amit Shah|Ashmi Shah' | sort -u | wc -l | tr -d ' ')"
+  check "$p shows the joint founders photo" 1 "$(echo "$page" | grep -c 'founders/amit-ashmi-1800.webp' | sed 's/^[2-9]/1/')"
+  check "$p has no portrait placeholders" 0 "$(echo "$page" | grep -ciE 'FOUNDER PORTRAIT|fq-outline select-none font-display text-6xl')"
+done
+
 echo
 echo "passed $pass, failed $fail"
 rm -rf "$T"

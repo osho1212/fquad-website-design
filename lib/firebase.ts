@@ -97,5 +97,12 @@ export function firebaseProjectId(): string {
   );
 }
 
+/** A short-lived access token for the Firebase service account, or null when none is configured (the emulators). */
+export async function serviceAccountAccessToken(): Promise<string | null> {
+  if (!credentials()) return null;
+  const token = await app().options.credential?.getAccessToken();
+  return token?.access_token ?? null;
+}
+
 /** True when sign-in tokens come from the local Auth emulator (unsigned). Never in production. */
 export const usingAuthEmulator = () => usingEmulator() && Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST);
