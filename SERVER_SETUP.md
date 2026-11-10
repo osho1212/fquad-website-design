@@ -36,7 +36,7 @@ agreement. The file is gitignored — create it on the server, never commit it.
 | `NEXT_PUBLIC_SITE_URL` | **yes** | the live address, e.g. `https://fquad.com`. Without it the sitemap, canonical links and share cards say `localhost` |
 | `RESEND_API_KEY` | yes | emails for the contact and project forms |
 | `MAIL_FROM`, `ENQUIRY_TO` | no | defaults: `F.QUAD Studio <contact@fquad.com>` and `admin@fquad.com`. The sender domain must be verified in Resend (SPF + DKIM) |
-| `MEDIA_DIR`, `MEDIA_URL_PREFIX` | recommended | `/var/data/fquad/media` and `/uploads` — Nginx serves it (§6) |
+| `MEDIA_DIR`, `MEDIA_URL_PREFIX` | recommended | `/var/data/fquad/media` and `/uploads` — the app serves it at `/uploads`; Nginx may too (§6) |
 | `PRIVATE_UPLOAD_DIR` | recommended | `/var/data/fquad/private-uploads` — plans attached to the project form; only an admin can download them |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | first run only | used by `npm run db:seed`; there is no default password; remove after |
 
@@ -127,7 +127,9 @@ server {
 
     client_max_body_size 32m;            # project plans are up to 30 MB
 
-    # CMS media, straight from disk (matches MEDIA_DIR)
+    # CMS media, straight from disk (matches MEDIA_DIR). Optional speed-up: the app
+    # itself serves /uploads from MEDIA_DIR (the image optimiser reads it that way),
+    # so the site is correct without this block; it just spares Node the file reads.
     location /uploads/ {
         alias /var/data/fquad/media/;
         access_log off;
