@@ -1,3 +1,4 @@
+import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,7 +56,7 @@ export default async function ServiceDetailPage(
   const labels = content.detail;
   const index = services.findIndex((s) => s.slug === service.slug);
   const next = services[(index + 1) % services.length];
-  const email = settings?.email || "admin@fquad.com";
+  const email = settings?.email || SITE.fallback.email;
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
 
   return (

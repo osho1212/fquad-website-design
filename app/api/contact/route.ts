@@ -60,11 +60,12 @@ export async function POST(req: NextRequest) {
     // Email sending is best-effort — log failures but don't fail the
     // request, since the enquiry is already safely stored.
     const resend = getResend();
-    if (resend) {
+    const notifyTo = enquiryRecipient();
+    if (resend && notifyTo) {
       try {
         await resend.emails.send({
           from: mailFrom(),
-          to: enquiryRecipient(),
+          to: notifyTo,
           replyTo: email,
           subject: `New Enquiry: ${name}`,
           html: `<h2>${escapeHtml(name)}</h2><p><strong>Email:</strong> ${escapeHtml(email)}</p><p><strong>Phone:</strong> ${escapeHtml(phone)}</p><p><strong>Contact via:</strong> ${whatsapp ? 'WhatsApp' : 'Email'}</p><p><strong>Message:</strong></p><p>${escapeHtmlMultiline(message)}</p>`,
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
         console.error('Email send failed (enquiry was still saved):', emailError);
       }
     } else {
-      console.warn('RESEND_API_KEY not configured. Email notification skipped (enquiry saved to database).');
+      console.warn('RESEND_API_KEY or ENQUIRY_TO not configured. Email notification skipped (enquiry saved to database).');
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

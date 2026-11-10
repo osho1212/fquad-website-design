@@ -122,11 +122,12 @@ export async function POST(req: NextRequest) {
 
     // Optional notification email via Resend
     const resend = getResend();
-    if (resend) {
+    const notifyTo = enquiryRecipient();
+    if (resend && notifyTo) {
       try {
         await resend.emails.send({
           from: mailFrom(),
-          to: enquiryRecipient(),
+          to: notifyTo,
           replyTo: email,
           subject: `New Project Brief: ${name} — ${projectType || 'Architecture'} (${location || 'General'})`,
           html: `

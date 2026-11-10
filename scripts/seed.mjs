@@ -2,7 +2,7 @@
  * First-time setup of a new, empty Firebase project: creates the first admin
  * and the default site settings. Safe to run again (it never overwrites).
  *
- *   ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-unique-12+-character-password' npm run db:seed
+ *   ADMIN_EMAIL=you@fquadstudio.com ADMIN_PASSWORD='a-unique-12+-character-password' npm run db:seed
  *
  * or, for an account that signs in with Google only (no password at all):
  *
@@ -14,12 +14,13 @@
 import bcrypt from 'bcryptjs';
 import { adminId, checkPassword, connect } from './_firebase.mjs';
 
-const email = (process.env.ADMIN_EMAIL || 'admin@fquad.com').toLowerCase().trim();
+const email = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
 const password = process.env.ADMIN_PASSWORD || '';
 
 const googleOnly = !password;
 
-if (googleOnly && !process.env.ADMIN_EMAIL) {
+// No guessed address: the account controls the whole site.
+if (!email) {
   console.error(
     'Set ADMIN_EMAIL to the Google address that should sign in (no password is created),\n' +
       'or set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) for a password account.'
@@ -58,7 +59,7 @@ if ((await settingsRef.get()).exists) {
   console.log('Site settings already exist');
 } else {
   await settingsRef.set({
-    email: 'admin@fquad.com',
+    email: 'contact@fquadstudio.com',
     phone: null,
     whatsapp: null,
     address: 'Hyderabad, Telangana, India',

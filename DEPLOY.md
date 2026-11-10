@@ -72,7 +72,7 @@ This copies the old SQLite database and its pictures into Firebase. Do it on a c
 4. Create the admin account with a new password (the old one still used the default):
 
    ```bash
-   ADMIN_EMAIL=admin@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run db:seed
+   ADMIN_EMAIL=admin@fquadstudio.com ADMIN_PASSWORD='a-long-unique-password' npm run db:seed
    ```
 
    (`--skip-admin` above left the old account behind on purpose.)
@@ -94,8 +94,8 @@ To start with an empty site instead, skip steps 2 and 3 and just seed.
    | `FIREBASE_SERVICE_ACCOUNT` | the whole JSON file from step A5 |
    | `FIREBASE_STORAGE_BUCKET` | the bucket name from step A4 |
    | `SESSION_SECRET` | 32+ random characters: `openssl rand -base64 48` |
-   | `NEXT_PUBLIC_SITE_URL` | `https://fquad.com` (or the `www` form you choose) |
-   | `RESEND_API_KEY`, `MAIL_FROM`, `ENQUIRY_TO` | from [Resend](https://resend.com/api-keys) |
+   | `NEXT_PUBLIC_SITE_URL` | `https://fquadstudio.com` (or the `www` form you choose; spell it exactly like the domain you attach below) |
+   | `RESEND_API_KEY`, `MAIL_FROM`, `ENQUIRY_TO` | from [Resend](https://resend.com/api-keys). `ENQUIRY_TO` has **no default**: without it nothing is emailed (enquiries are still saved and shown in Admin → Enquiries), so set it to a mailbox that exists |
    | `GOOGLE_SITE_VERIFICATION` | optional, from Search Console |
 
    Add the Firebase variables to **Production only**. A preview deployment without them still shows the site with its shipped copy, but cannot reach your real data, so a test pull request can never change it.
@@ -104,7 +104,7 @@ To start with an empty site instead, skip steps 2 and 3 and just seed.
 
 5. **Deploy**, then open `https://<your-project>.vercel.app/api/health`: it should say `{"status":"ok"}`. (Vercel's default protection hides the `.vercel.app` addresses behind a Vercel login; the real domain in the next step is public, but check *Settings → Deployment Protection* so Production is not protected.)
 
-6. **Domain.** *Project → Settings → Domains* → add `fquad.com` and `www.fquad.com`, pick one as the main address and redirect the other to it. Vercel shows the exact DNS records to create at your DNS provider ([guide](https://vercel.com/docs/domains/set-up-custom-domain)). **Leave the MX records alone**: they carry your email. HTTPS is set up automatically.
+6. **Domain.** *Project → Settings → Domains* → add `fquadstudio.com` and `www.fquadstudio.com`, pick one as the main address and redirect the other to it. Vercel shows the exact DNS records to create at your DNS provider ([guide](https://vercel.com/docs/domains/set-up-custom-domain)). **Leave the MX records alone**: they carry your email. HTTPS is set up automatically.
 
    If you change the domain later, update `NEXT_PUBLIC_SITE_URL` and the `origin` list in the bucket's CORS rule (step A6).
 
@@ -112,23 +112,24 @@ To start with an empty site instead, skip steps 2 and 3 and just seed.
 
 ## D. Check it works
 
-- `bash scripts/smoke-test.sh https://fquad.com` — about 40 quick checks: pages, the admin closed to visitors, forms, headers, health.
+- `bash scripts/smoke-test.sh https://fquadstudio.com` — about 40 quick checks: pages, the admin closed to visitors, forms, headers, health.
 - Sign in at `/admin/login`.
 - **Admin → Media Library:** upload a photo, open it, delete it.
 - **Contact → Start a Project:** send a test brief **with a plan attached**, then find it in **Admin → Enquiries** and download the plan.
 - Check the notification email arrived (after part E).
-- Add an uptime monitor ([UptimeRobot](https://uptimerobot.com/)) on `https://fquad.com/api/health`; it answers 200 only when Firestore is reachable.
+- Add an uptime monitor ([UptimeRobot](https://uptimerobot.com/)) on `https://fquadstudio.com/api/health`; it answers 200 only when Firestore is reachable.
 
 ---
 
 ## E. Email DNS (Resend)
 
-Needed before the forms can email reliably. A live DNS check on 10 Nov 2026 found that `fquad.com` has Google Workspace mail (`MX smtp.google.com`) and a DMARC record with **policy `quarantine`**, but **no SPF record, no Google DKIM key and no Resend records**. With a `quarantine` policy, mail that fails SPF and DKIM goes to spam, so enquiry notifications (and the studio's normal mail) can be quarantined until this is fixed.
+Needed before the forms can email reliably. A live DNS check on 11 Nov 2026 found that `fquadstudio.com` has **no mail records at all** (no MX, no SPF, no DKIM) and a DMARC record with **policy `quarantine`**. That is the GoDaddy default: its report address is `onsecureserver.net`, so the DNS is probably at GoDaddy. With `quarantine`, mail from the domain that fails SPF and DKIM goes to spam, so enquiry notifications would be quarantined until this is fixed.
 
-1. In [Resend → Domains](https://resend.com/domains) add `fquad.com`. It lists the exact records to create: a DKIM `TXT` at `resend._domainkey`, and an SPF `TXT` plus an `MX` on the `send` subdomain ([how it works](https://resend.com/docs/dashboard/domains/introduction)). Add them at your DNS provider (the DMARC report address points at GoDaddy / `secureserver.net`, so the DNS is probably there) and click **Verify**.
-2. Add an [SPF record](https://support.google.com/a/answer/33786) for the root so the studio's Google mail passes too: `TXT  @  "v=spf1 include:_spf.google.com ~all"`.
-3. In Google Admin → Apps → Google Workspace → Gmail → **Authenticate email**, generate the [DKIM key](https://support.google.com/a/answer/180504), add the `google._domainkey` record it shows, and turn authentication on.
-4. Send a test enquiry; confirm it lands in the inbox (not spam). In Gmail, *Show original* should say SPF, DKIM and DMARC all **PASS**.
+The domain also has no mailbox yet, so set `ENQUIRY_TO` to an address that exists (for example a Google Workspace or Gmail address). The site has no default and emails nothing without it.
+
+1. In [Resend → Domains](https://resend.com/domains) add `fquadstudio.com`. It lists the exact records to create: a DKIM `TXT` at `resend._domainkey`, and an SPF `TXT` plus an `MX` on the `send` subdomain ([how it works](https://resend.com/docs/dashboard/domains/introduction)). Add them at your DNS provider and click **Verify**.
+2. If the studio later sets up mailboxes on this domain (for example Google Workspace), also add that provider's MX records, **one** SPF record that includes it (for Google: `TXT  @  "v=spf1 include:_spf.google.com ~all"`, [guide](https://support.google.com/a/answer/33786)), and turn on its DKIM ([Google's guide](https://support.google.com/a/answer/180504)). Never publish two SPF records; merge them into one.
+3. Send a test enquiry; confirm it lands in the inbox (not spam). In Gmail, *Show original* should say SPF, DKIM and DMARC all **PASS**.
 
 ---
 
@@ -147,7 +148,7 @@ The admin login can offer **Continue with Google** next to the password form. A 
 
 2. **Turn on Google sign-in.** Firebase console → *Build → Authentication → Get started → Sign-in method → Google → Enable*, pick a support email, *Save*. (This step is only possible in the console.)
 
-3. **Allow your domains.** *Authentication → Settings → Authorized domains → Add domain*: `fquad.com`, `www.fquad.com`, and your Vercel address (`<project>.vercel.app`) if you want to try it on a preview. `localhost` is already there. A domain missing from this list gives "Google sign-in is not enabled for this web address".
+3. **Allow your domains.** *Authentication → Settings → Authorized domains → Add domain*: `fquadstudio.com`, `www.fquadstudio.com`, and your Vercel address (`<project>.vercel.app`) if you want to try it on a preview. `localhost` is already there. A domain missing from this list gives "Google sign-in is not enabled for this web address".
 
 4. **Give Vercel the three values** (*Settings → Environment Variables*): `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, for Production (and Preview if you test there). They are read **when the site is built**, so redeploy afterwards. Without them the login page simply shows the password form.
 

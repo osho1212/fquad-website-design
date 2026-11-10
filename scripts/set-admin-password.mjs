@@ -2,7 +2,7 @@
  * Sets (or creates) an admin account's password from the command line. Use it
  * to create the first admin on a new project, or to recover a lost password.
  *
- *   ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run admin:password
+ *   ADMIN_EMAIL=you@fquadstudio.com ADMIN_PASSWORD='a-long-unique-password' npm run admin:password
  *
  * The password is read from the environment so it never appears in shell
  * history as a command argument, but do clear your history afterwards.

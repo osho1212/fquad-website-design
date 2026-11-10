@@ -1,8 +1,8 @@
 /**
  * Single source for the studio's identity and fallback contact details.
- * Several pages used to hard-code their own copies (and disagreed — one said
- * admin@fquad.com, another admin@fquad.co). Editors change the live values in
- * Admin → Settings; these are only what shows when the database has none.
+ * Several pages used to hard-code their own copies (and disagreed on the
+ * address). Editors change the live values in Admin → Settings; these are only
+ * what shows when the database has none.
  */
 export const SITE = {
   name: "F.QUAD Studio",
@@ -16,7 +16,7 @@ export const SITE = {
   country: "IN",
   geo: { lat: 17.385, lng: 78.4867 },
   fallback: {
-    email: "admin@fquad.com",
+    email: "contact@fquadstudio.com",
     whatsapp: "+919876543210",
     address: "Hyderabad, Telangana, India",
     instagramUrl: "https://instagram.com/fquadstudio",

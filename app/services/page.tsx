@@ -1,3 +1,4 @@
+import { SITE } from "@/lib/site";
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -46,7 +47,7 @@ export default async function ServicesPage() {
   const types = content.project_types;
   const cta = content.cta;
 
-  const email = settings?.email || "admin@fquad.com";
+  const email = settings?.email || SITE.fallback.email;
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
   const waDigits = (settings?.whatsapp || SOCIAL_FALLBACKS.whatsapp).replace(/[^0-9]/g, "");
   const typeList: string[] = types.items ?? [];
