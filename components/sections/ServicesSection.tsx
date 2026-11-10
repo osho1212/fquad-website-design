@@ -2,9 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { withDefaults } from "@/lib/cms/schema";
+import { defaultsFor, withDefaults } from "@/lib/cms/schema";
 import { prefersReducedMotion } from "@/lib/motion";
-import { PhotoScene, type PhotoVariant } from "@/components/ui/PhotoScene";
+import { PhotoScene, type PhotoVariant, type ScenePhoto } from "@/components/ui/PhotoScene";
 import "./ServicesSection.css";
 
 export interface ServiceCard {
@@ -22,6 +22,22 @@ const MODEL_FOR_SLUG: Record<string, PhotoVariant> = {
   farmhouse: "farmhouse",
 };
 const FALLBACK_ORDER: PhotoVariant[] = ["residence", "skylounge", "atelier", "farmhouse"];
+
+/** Which What We Do field (lib/cms/pages/home.ts) holds each practice's photograph. */
+const IMAGE_FIELD: Record<PhotoVariant, string> = {
+  residence: "imageArchitecture",
+  skylounge: "imageInteriorDesign",
+  atelier: "imageInteriorStyling",
+  farmhouse: "imageFarmhouse",
+};
+
+/** What the photographs that ship with the site show, for screen readers. */
+const BUILT_IN_ALT: Record<PhotoVariant, string> = {
+  residence: "A modern villa at dusk, its entrance and circular courtyard lit",
+  skylounge: "A marble-floored living room beneath a softly glowing cove ceiling",
+  atelier: "A styled daybed layered with cushions, plants and brass accents",
+  farmhouse: "A rooftop terrace with white peacock chairs above open countryside",
+};
 
 const MODEL_NAME: Record<PhotoVariant, string> = {
   residence: "The Residence",
@@ -75,6 +91,21 @@ export function ServicesSection({
   );
   const modelsRef = useRef(models);
   modelsRef.current = models;
+
+  // The four photographs: whatever the editor chose in the CMS, else the ones
+  // that ship with the site (the field is empty, or its picture was deleted).
+  const shipped = defaultsFor("home", "services");
+  const photos = {} as Record<PhotoVariant, ScenePhoto>;
+  (Object.keys(IMAGE_FIELD) as PhotoVariant[]).forEach((v) => {
+    const key = IMAGE_FIELD[v];
+    const chosen = typeof c[key] === "string" ? c[key].trim() : "";
+    const custom = chosen !== "" && chosen !== shipped[key];
+    const title = services.find((_, i) => models[i] === v)?.title;
+    photos[v] = {
+      src: chosen || String(shipped[key]),
+      alt: custom ? `${title ?? "Our work"}: a project photograph` : BUILT_IN_ALT[v],
+    };
+  });
 
   const resetBars = (i: number) => {
     barRefs.current.forEach((el, k) => el && (el.style.transform = `scaleX(${k < i ? 1 : 0})`));
@@ -144,6 +175,7 @@ export function ServicesSection({
         <figure className="wwd-figure m-0">
           <PhotoScene
             variant={model}
+            images={photos}
             progressRef={progress}
             preload={models}
             onState={({ p, variant }) => {

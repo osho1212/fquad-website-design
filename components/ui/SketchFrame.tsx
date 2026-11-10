@@ -2,14 +2,18 @@
 
 import React, { useEffect, useId, useRef } from "react";
 import { clamp, onFrame, prefersReducedMotion } from "@/lib/motion";
+import { ModernImage } from "@/components/ui/ModernImage";
+import { bestSingleSource } from "@/lib/photo-sources";
 
 export interface SketchFrameImage {
   /** The finished photograph. */
   src: string;
-  /** The loose first sketch (see scripts/make-sketches.mjs). */
-  rough: string;
-  /** The finished pencil drawing: fine lines and hatched shading. */
-  pencil: string;
+  /** The loose first sketch (see scripts/make-sketches.mjs). Absent for a
+   *  photo uploaded through the CMS: it is then drawn as a graphite print of
+   *  itself instead (see .fq-sketch-layer--photo). */
+  rough?: string;
+  /** The finished pencil drawing: fine lines and hatched shading. Same as above. */
+  pencil?: string;
   alt: string;
 }
 
@@ -20,6 +24,17 @@ export const sketchImage = (name: string, alt: string): SketchFrameImage => ({
   pencil: `/assets/images/sketch/${name}-pencil.webp`,
   alt,
 });
+
+/**
+ * The frame image for any photo address. A shipped photo in
+ * public/assets/images has its rough and pencil layers beside it; anything
+ * else (a CMS upload, an outside address) has none and falls back to a
+ * graphite print of the photo.
+ */
+export const sketchImageFromSrc = (src: string, alt: string): SketchFrameImage => {
+  const shipped = /^\/assets\/images\/([A-Za-z0-9_-]+)\.jpg$/.exec(src);
+  return shipped ? sketchImage(shipped[1], alt) : { src, alt };
+};
 
 /** Linear 0→1 between `a` and `b`. */
 const lin = (a: number, b: number, t: number) => clamp((t - a) / (b - a));
@@ -86,14 +101,21 @@ function SketchLayer({
   href,
   id,
   d,
+  photo = false,
 }: {
   kind: "rough" | "pencil";
   href: string;
   id: string;
   d: string;
+  /** `href` is the photo itself, not pencil artwork: tone it like graphite. */
+  photo?: boolean;
 }) {
   return (
-    <svg className={`fq-sketch-layer fq-sketch-layer--${kind}`} aria-hidden="true" focusable="false">
+    <svg
+      className={`fq-sketch-layer fq-sketch-layer--${kind}${photo ? " fq-sketch-layer--photo" : ""}`}
+      aria-hidden="true"
+      focusable="false"
+    >
       <defs>
         <mask
           id={id}
@@ -228,7 +250,7 @@ export function SketchFrame({
             aria-hidden={on ? undefined : true}
           >
             <div className="fq-sketch-stack">
-              <img
+              <ModernImage
                 src={img.src}
                 alt={on ? img.alt : ""}
                 draggable={false}
@@ -238,8 +260,20 @@ export function SketchFrame({
               />
               {near && (
                 <>
-                  <SketchLayer kind="pencil" href={img.pencil} id={`${uid}-p${i}`} d={PENCIL_PATH} />
-                  <SketchLayer kind="rough" href={img.rough} id={`${uid}-r${i}`} d={ROUGH_PATH} />
+                  <SketchLayer
+                    kind="pencil"
+                    href={img.pencil ?? bestSingleSource(img.src)}
+                    photo={!img.pencil}
+                    id={`${uid}-p${i}`}
+                    d={PENCIL_PATH}
+                  />
+                  <SketchLayer
+                    kind="rough"
+                    href={img.rough ?? bestSingleSource(img.src)}
+                    photo={!img.rough}
+                    id={`${uid}-r${i}`}
+                    d={ROUGH_PATH}
+                  />
                 </>
               )}
             </div>

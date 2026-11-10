@@ -1,12 +1,21 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { ModernImage } from "@/components/ui/ModernImage";
 
 /** The four photographs the What We Do section cycles through, one per practice. */
 export type PhotoVariant = "residence" | "farmhouse" | "skylounge" | "atelier";
 
+/** One photograph: where it is and what it shows. */
+export interface ScenePhoto {
+  src: string;
+  alt: string;
+}
+
 export interface PhotoSceneProps {
   variant: PhotoVariant;
+  /** The photograph for every practice. They come from the CMS (Homepage → What We Do). */
+  images: Record<PhotoVariant, ScenePhoto>;
   className?: string;
   /** Element whose scroll progress drives the meter (a tall pinned section). */
   trackRef?: React.RefObject<HTMLElement | null>;
@@ -29,19 +38,12 @@ export interface PhotoSceneProps {
  * (components/three/RoomScene.tsx).
  */
 
-/** Which project photo stands in for each practice. */
-const PROJECT_IMAGES: Record<PhotoVariant, { src: string; alt: string }> = {
-  residence: { src: "/assets/images/a1.jpg", alt: "A two-storey residence set in its garden" },
-  farmhouse: { src: "/assets/images/a2.jpg", alt: "The same residence at dusk, its lights coming on" },
-  skylounge: { src: "/assets/images/b49.jpg", alt: "A blue-panelled living room with an arched mural" },
-  atelier: { src: "/assets/images/b25.jpg", alt: "A styled living room layered with textiles and a kilim rug" },
-};
-
 const POSITIONED = /\b(absolute|fixed|relative|sticky)\b/;
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 
 export function PhotoScene({
   variant,
+  images,
   className,
   trackRef,
   range,
@@ -115,14 +117,14 @@ export function PhotoScene({
     <div
       ref={rootRef}
       role="img"
-      aria-label={PROJECT_IMAGES[variant].alt}
+      aria-label={images[variant].alt}
       className={`${POSITIONED.test(cls) ? cls : `relative ${cls}`} overflow-hidden bg-[#0a0a0a]`}
     >
       <div ref={zoomRef} className="absolute inset-0 will-change-transform">
         {shown.map((v) => (
-          <img
+          <ModernImage
             key={v}
-            src={PROJECT_IMAGES[v].src}
+            src={images[v].src}
             alt=""
             draggable={false}
             loading={v === variant ? "eager" : "lazy"}

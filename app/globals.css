@@ -1374,6 +1374,15 @@ html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
 .fq-sketch-layer--rough {
   opacity: var(--rough, 0);
 }
+/* A photo with no pencil artwork of its own (one uploaded in the CMS) is drawn
+   on as a graphite print of itself: grey, high-contrast, lightened for the
+   rough pass so the two read as a first sketch and a finished drawing. */
+.fq-sketch-layer--photo image {
+  filter: grayscale(1) contrast(1.55) brightness(1.1);
+}
+.fq-sketch-layer--photo.fq-sketch-layer--rough image {
+  filter: grayscale(1) contrast(1.15) brightness(1.4);
+}
 /* The scribble masks. Each path has pathLength=1, so one dash offset draws
    it on whatever its real length (the same convention as [data-draw]).
    Widths are fractions of the frame: a little over twice the path's step, so
