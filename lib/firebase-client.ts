@@ -8,23 +8,26 @@ import { GoogleAuthProvider, connectAuthEmulator, getAuth, inMemoryPersistence, 
  * account chooser and hand back an ID token; the site checks that token on the
  * server and keeps its own session, so nothing is left signed in here.
  *
- * These three values are public by design (they identify the Firebase project,
- * they do not unlock it). They are read when the site is built.
+ * The settings are public by design (they identify the Firebase project, they
+ * do not unlock it). The server passes them to the login page each time it is
+ * served (see lib/google-signin-config.ts), so adding or changing them never
+ * needs the site to be rebuilt.
  */
-const config = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-};
+export interface GoogleSignInConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  /** Only for local development with the Auth emulator. */
+  emulatorHost?: string;
+}
 
 let emulatorConnected = false;
 
-function auth() {
-  const app = getApps().length ? getApp() : initializeApp(config);
+function auth(config: GoogleSignInConfig) {
+  const app = getApps().length ? getApp() : initializeApp({ apiKey: config.apiKey, authDomain: config.authDomain, projectId: config.projectId });
   const instance = getAuth(app);
-  const emulator = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST;
-  if (emulator && !emulatorConnected) {
-    connectAuthEmulator(instance, `http://${emulator}`, { disableWarnings: true });
+  if (config.emulatorHost && !emulatorConnected) {
+    connectAuthEmulator(instance, `http://${config.emulatorHost}`, { disableWarnings: true });
     emulatorConnected = true;
   }
   return instance;
@@ -33,8 +36,8 @@ function auth() {
 export class GoogleSignInCancelled extends Error {}
 
 /** Opens Google's account chooser and returns a fresh ID token for the chosen account. */
-export async function googleIdToken(): Promise<string> {
-  const instance = auth();
+export async function googleIdToken(config: GoogleSignInConfig): Promise<string> {
+  const instance = auth(config);
   await setPersistence(instance, inMemoryPersistence);
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });

@@ -262,10 +262,13 @@ check "Google: repeated failures from one address are blocked" 429 "$last"
 
 check "Admin Team page" 200 "$(code -b $T/s $B/admin/users)"
 if [ -n "${NEXT_PUBLIC_FIREBASE_API_KEY:-}" ]; then
-  # The login form is drawn in the browser, so look for the button in the page's built script.
+  # The server hands the Google sign-in settings to the login page as it serves it (not at
+  # build time), so they are in the page itself, and the project id was worked out
+  # from the Firebase settings the site already has.
   get $B/admin/login
-  loginjs="$(grep -o 'static/chunks/app/admin/login/page-[A-Za-z0-9_-]*.js' $T/body | sort -u | head -1)"
-  check "the login page's script includes the Google button" 1 "$(curl -s "$B/_next/$loginjs" | grep -c 'CONTINUE WITH GOOGLE' | sed 's/^[2-9]/1/')"
+  check "the login page carries the Google sign-in settings" 1 "$(grep -c "$NEXT_PUBLIC_FIREBASE_API_KEY" $T/body | sed 's/^[2-9]/1/')"
+  check "...and the project it belongs to" 1 "$(grep -c 'demo-fquad' $T/body | sed 's/^[2-9]/1/')"
+  check "...and the Google button itself is in the page script" 1 "$(grep -o 'static/chunks/app/admin/login/page-[A-Za-z0-9_-]*.js' $T/body | sort -u | head -1 | xargs -I{} curl -s "$B/_next/{}" | grep -c 'CONTINUE WITH GOOGLE' | sed 's/^[2-9]/1/')"
 fi
 
 echo "--- health"
