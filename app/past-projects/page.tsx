@@ -1,3 +1,4 @@
+import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
@@ -33,7 +34,7 @@ export default async function PastProjectsPage() {
   const cta = content.cta;
   const groups: { id: ProjectCategory; label: string }[] = groupSettings.items ?? [];
 
-  const email = settings?.email || "admin@fquad.com";
+  const email = settings?.email || SITE.fallback.email;
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
 
   return (

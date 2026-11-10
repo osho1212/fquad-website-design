@@ -1,3 +1,4 @@
+import { SITE } from "@/lib/site";
 import React from "react";
 import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
@@ -49,7 +50,7 @@ export default async function StudioPage() {
   const recognition = studio.recognition;
   const cta = studio.cta;
 
-  const email = settings?.email || "admin@fquad.com";
+  const email = settings?.email || SITE.fallback.email;
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
 
   return (

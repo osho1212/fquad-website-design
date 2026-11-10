@@ -1,3 +1,4 @@
+import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -57,7 +58,7 @@ export default async function PastProjectDetailPage(
   const prev = index > 0 ? projects[index - 1] : null;
   const next = index < projects.length - 1 ? projects[index + 1] : null;
 
-  const email = settings?.email || "admin@fquad.com";
+  const email = settings?.email || SITE.fallback.email;
   const address = settings?.address || "HYDERABAD, TELANGANA, INDIA";
 
   const heroFacts = [

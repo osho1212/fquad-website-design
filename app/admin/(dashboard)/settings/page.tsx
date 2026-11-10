@@ -116,7 +116,7 @@ export default function SettingsPage() {
 
       <SectionBlock title="Contact Info">
         <Field label="EMAIL">
-          <input style={inputStyle} value={settings.email} onChange={(e) => update('email', e.target.value)} placeholder="admin@fquad.com" />
+          <input style={inputStyle} value={settings.email} onChange={(e) => update('email', e.target.value)} placeholder="contact@fquadstudio.com" />
         </Field>
         <Field label="PHONE">
           <input style={inputStyle} value={settings.phone} onChange={(e) => update('phone', e.target.value)} placeholder="+91 98765 43210" />

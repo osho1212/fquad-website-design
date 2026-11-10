@@ -16,9 +16,15 @@ export function getResend(): Resend | null {
  * (SPF + DKIM records), or Resend rejects every send.
  */
 export function mailFrom(): string {
-  return process.env.MAIL_FROM || 'F.QUAD Studio <contact@fquad.com>';
+  return process.env.MAIL_FROM || 'F.QUAD Studio <contact@fquadstudio.com>';
 }
 
-export function enquiryRecipient(): string {
-  return process.env.ENQUIRY_TO || 'admin@fquad.com';
+/**
+ * Where new enquiries are emailed. There is deliberately no default: enquiries
+ * contain visitors' names, phone numbers and plans, so without ENQUIRY_TO
+ * nothing is emailed (the enquiry is still saved and shown in Admin →
+ * Enquiries) rather than guessing an address that may belong to someone else.
+ */
+export function enquiryRecipient(): string | null {
+  return process.env.ENQUIRY_TO?.trim() || null;
 }

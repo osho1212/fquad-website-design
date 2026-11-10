@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://fquad.com", "https://www.fquad.com", "http://localhost:3002"],
+    "origin": ["https://fquadstudio.com", "https://www.fquadstudio.com", "https://fquad-website-design.vercel.app", "http://localhost:3002"],
     "method": ["PUT", "POST"],
     "responseHeader": ["Content-Type", "x-goog-content-length-range"],
     "maxAgeSeconds": 3600
