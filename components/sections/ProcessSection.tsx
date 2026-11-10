@@ -38,17 +38,20 @@ function stepImage(step: Step, idx: number): SketchFrameImage {
 }
 
 /**
- * "How we work": on desktop the section pins and, step by step, each step's
+ * "How we work": the section pins and, step by step, each step's
  * photo is drawn in pencil as you scroll (a rough sketch, then the finished
- * drawing, then colour). On smaller screens it relaxes to a stacked list with
- * the frame above, which is drawn as it crosses the screen.
+ * drawing, then colour). On desktop all four steps sit beside the frame with a
+ * vertical progress spine; on phones the active step crossfades beneath the
+ * pinned frame with a horizontal progress rule so the whole stage fits 100svh.
  */
 export function ProcessSection({ content }: { content?: Record<string, any> }) {
   const c = withDefaults("home", "process", content);
   const steps: Step[] = c.steps ?? [];
 
   const trackRef = useRef<HTMLElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
+  const mobileFillRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLSpanElement>(null);
   const figureRef = useRef<HTMLElement>(null);
   /** The active step's own progress (0–1), written by the frame loop below. */
@@ -64,35 +67,17 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  // Without the pin (phones/tablets) the steps stack, so the photo follows
-  // whichever step is crossing the middle of the screen.
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el || wide || steps.length === 0) return;
-    const items = Array.from(el.querySelectorAll<HTMLElement>("[data-step]"));
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.step));
-        }
-      },
-      { rootMargin: "-45% 0px -45% 0px" }
-    );
-    items.forEach((it) => io.observe(it));
-    return () => io.disconnect();
-  }, [wide, steps.length]);
-
   // Drives the step highlight, progress rule and readout from the pinned
   // section's scroll progress. Runs only while the section is on screen.
   useEffect(() => {
     const el = trackRef.current;
-    if (!el || !wide || steps.length === 0) return;
+    if (!el || steps.length === 0) return;
 
     let stop: (() => void) | null = null;
     let lastIdx = -1;
 
     const run = () => {
-      const vh = window.innerHeight;
+      const vh = stickyRef.current?.clientHeight || window.innerHeight;
       const r = el.getBoundingClientRect();
       const p = clamp(-r.top / Math.max(1, r.height - vh));
       const idx = Math.min(steps.length - 1, Math.floor(p * steps.length));
@@ -106,6 +91,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
         }
       }
       if (fillRef.current) fillRef.current.style.transform = `scaleY(${p.toFixed(4)})`;
+      if (mobileFillRef.current) mobileFillRef.current.style.transform = `scaleX(${p.toFixed(4)})`;
 
       // The active step's own progress drives its sketch → photo. Step 01 gets
       // a lead-in: its rough sketch (the first quarter) is drawn while the
@@ -131,7 +117,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
       io.disconnect();
       stop?.();
     };
-  }, [wide, steps.length]);
+  }, [steps.length]);
 
   const reduced = typeof window !== "undefined" && prefersReducedMotion();
 
@@ -139,10 +125,13 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
     <section
       id="process"
       ref={trackRef}
-      className="relative px-6 sm:px-11 pb-24 md:pb-0 md:h-[420vh] bg-transparent"
+      className="relative px-6 sm:px-11 h-[380vh] md:h-[420vh] bg-transparent"
     >
-      <div className="md:sticky md:top-0 md:h-screen flex flex-col md:py-12">
-        <InView className="relative flex justify-between items-baseline pt-6 mb-10 md:mb-6 shrink-0">
+      <div
+        ref={stickyRef}
+        className="sticky top-0 h-[100svh] md:h-screen flex flex-col py-6 sm:py-8 md:py-12 overflow-hidden"
+      >
+        <InView className="relative flex justify-between items-baseline pt-4 md:pt-6 mb-4 sm:mb-6 md:mb-6 shrink-0">
           <span
             aria-hidden="true"
             className="fq-rule absolute top-0 left-0 right-0 h-px bg-white/25"
@@ -158,9 +147,20 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
           </div>
         </InView>
 
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_1.05fr] gap-10 md:gap-10 lg:gap-16 items-center">
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_1.05fr] grid-rows-[1fr_auto] md:grid-rows-1 gap-5 sm:gap-7 md:gap-10 lg:gap-16 items-center">
           {/* Steps */}
-          <ol className="relative m-0 p-0 list-none order-2 md:order-1 flex flex-col gap-9 md:gap-0 md:justify-between md:h-[min(62vh,560px)]">
+          <ol className="relative m-0 p-0 list-none order-2 md:order-1 grid md:flex md:flex-col md:gap-0 md:justify-between md:h-[min(62vh,560px)] pt-3 md:pt-0">
+            {/* progress rule (mobile) */}
+            <span
+              aria-hidden="true"
+              className="md:hidden absolute left-0 right-0 top-0 h-px bg-white/15"
+            />
+            <div
+              ref={mobileFillRef}
+              aria-hidden="true"
+              className="md:hidden absolute left-0 right-0 top-0 h-px bg-white origin-left"
+              style={{ transform: "scaleX(0)" }}
+            />
             {/* progress spine (desktop) */}
             <span
               aria-hidden="true"
@@ -174,14 +174,17 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
             />
 
             {steps.map((step, idx) => {
-              const on = !wide || reduced || idx === active;
+              const isCurrent = idx === active;
+              const opacity = wide ? (reduced || isCurrent ? 1 : 0.32) : isCurrent ? 1 : 0;
               return (
                 <li
                   key={idx}
                   data-step={idx}
-                  aria-current={wide && idx === active ? "step" : undefined}
-                  className="relative grid grid-cols-[auto_1fr] gap-x-5 sm:gap-x-7 transition-opacity duration-500 ease-out"
-                  style={{ opacity: on ? 1 : 0.32 }}
+                  aria-current={isCurrent ? "step" : undefined}
+                  className={`relative max-md:[grid-area:1/1] grid grid-cols-[auto_1fr] gap-x-5 sm:gap-x-7 transition-opacity duration-500 ease-out${
+                    !wide && !isCurrent ? " pointer-events-none" : ""
+                  }`}
+                  style={{ opacity }}
                 >
                   <span
                     className="font-light text-4xl sm:text-5xl lg:text-6xl leading-[0.9] tracking-tighter tabular-nums fq-outline"
@@ -193,7 +196,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
                     <h3 className="m-0 text-[11px] tracking-[0.22em] text-[#c0c0c0] uppercase font-semibold">
                       {step.title}
                     </h3>
-                    <p className="m-0 mt-2.5 text-xs sm:text-[13px] leading-relaxed text-white/65 max-w-[44ch]">
+                    <p className="m-0 mt-2 sm:mt-2.5 text-xs sm:text-[13px] leading-relaxed text-white/65 max-w-[44ch]">
                       {step.desc}
                     </p>
                   </div>
@@ -205,14 +208,12 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
           {/* The tower */}
           <figure
             ref={figureRef}
-            className="fq-frame relative m-0 order-1 md:order-2 h-[52vh] sm:h-[58vh] md:h-[min(72vh,680px)]"
+            className="fq-frame relative m-0 order-1 md:order-2 w-full h-full min-h-[200px] max-h-[50svh] sm:max-h-[55svh] md:max-h-none md:h-[min(72vh,680px)]"
           >
             <SketchFrame
               images={steps.map(stepImage)}
               active={active}
-              // Pinned (desktop): per-step progress. Phones: the frame's own
-              // pass through the screen.
-              progressRef={wide ? stepProgress : undefined}
+              progressRef={stepProgress}
               onProgress={(_t, color) =>
                 figureRef.current?.style.setProperty("--sketch-color", color.toFixed(3))
               }
@@ -221,20 +222,9 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
             <span className="fq-frame-b" aria-hidden="true" />
             <figcaption className="fq-sketch-caption absolute left-3 right-3 bottom-3 flex justify-between gap-3 text-[11px] tracking-[0.22em] uppercase pointer-events-none">
               {/* Single-string children: these nodes are rewritten from the
-                  frame loop, so React must own exactly one text node each.
-                  The live readout only exists where the section pins; on
-                  phones it would show stale numbers, so it's a plain label. */}
-              {wide ? (
-                <>
-                  <span ref={stageRef}>{`Stage 01 / ${String(steps.length).padStart(2, "0")}`}</span>
-                  <span>Fig. 02 — Process</span>
-                </>
-              ) : (
-                <>
-                  <span>Fig. 02 — Process</span>
-                  <span>Scroll to build</span>
-                </>
-              )}
+                  frame loop, so React must own exactly one text node each. */}
+              <span ref={stageRef}>{`Stage 01 / ${String(steps.length).padStart(2, "0")}`}</span>
+              <span>Fig. 02 — Process</span>
             </figcaption>
           </figure>
         </div>

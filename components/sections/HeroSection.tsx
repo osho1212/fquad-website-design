@@ -349,8 +349,8 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
         // below take the frame's own edge colours, feathered in, so it reads
         // as one image. The landscape film keeps covering any landscape
         // screen; it sits above the headline on a portrait one.
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+        const vw = canvas.clientWidth || window.innerWidth;
+        const vh = canvas.clientHeight || window.innerHeight;
         const upright = ih > iw;
         const portrait = upright ? vw / vh < iw / ih - 0.01 : vw / vh < 1;
         const cw = iw;
@@ -608,7 +608,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   return (
     <section id="top" ref={containerRef} className="relative h-[340vh] bg-black">
       <div
-        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
+        className={`fq-hero-stage sticky top-0 h-[100svh] w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
         }`}
       >

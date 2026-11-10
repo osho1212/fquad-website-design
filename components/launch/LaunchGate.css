@@ -43,7 +43,7 @@ html[data-launch='locked'] .fq-lg,
 /* Hold the page still underneath, and keep the gate the only thing clickable. */
 html[data-launch='locked'],
 html[data-launch='locked'] body {
-  overflow: hidden !important;
+  overflow: clip !important;
 }
 html[data-launch='locked'] .fq-page,
 html[data-launch='arriving'] .fq-page {
@@ -756,7 +756,7 @@ html[data-launch='arriving'] .fq-page {
   100% {
     opacity: 1;
     transform: none;
-    filter: blur(0) brightness(1);
+    filter: none;
   }
 }
 

@@ -53,6 +53,7 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
   );
 
   const containerRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [slideProgress, setSlideProgress] = useState(0);
   // Autoplay only runs while the section is pinned and filling the viewport.
@@ -79,8 +80,8 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
       const el = containerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const pinned = rect.top <= 0 && rect.bottom >= vh;
+      const vh = stageRef.current?.clientHeight || window.innerHeight;
+      const pinned = rect.top <= 1 && rect.bottom >= vh - 1;
       if (pinned !== lastPinned) {
         lastPinned = pinned;
         setIsPinned(pinned);
@@ -112,10 +113,12 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
     measure();
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, [numSlides]);
 
@@ -124,7 +127,8 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
       const el = containerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const totalScrollable = el.offsetHeight - window.innerHeight;
+      const vh = stageRef.current?.clientHeight || window.innerHeight;
+      const totalScrollable = el.offsetHeight - vh;
       const currentScrollY = window.scrollY || window.pageYOffset;
       const sectionTop = currentScrollY + rect.top;
 
@@ -184,7 +188,7 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
     >
       {/* Pinned full-bleed stage: the photograph is the backdrop, the words
           and the index sit on it. */}
-      <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
+      <div ref={stageRef} className="sticky top-0 h-[100svh] w-full overflow-hidden">
         <FourFacesStage
           slides={slides}
           index={activeIndex}
