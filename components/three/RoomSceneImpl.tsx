@@ -48,7 +48,7 @@ export interface RoomSceneProps {
    * Progress set by the caller (0–1), e.g. from a timer, instead of scroll.
    * Takes precedence over trackRef and range.
    */
-  progressRef?: React.RefObject<number>;
+  progressRef?: React.RefObject<number | null>;
 }
 
 let areaLightsReady = false;

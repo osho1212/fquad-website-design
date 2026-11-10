@@ -9,7 +9,8 @@ import { requireAdmin } from '@/lib/admin-guard';
  * list of sections that have a saved row, so the editor can show which
  * sections have been customised and offer "reset to default" only on those.
  */
-export async function GET(_req: NextRequest, { params }: { params: { page: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ page: string }> }) {
+  const params = await props.params;
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -47,7 +48,8 @@ export async function GET(_req: NextRequest, { params }: { params: { page: strin
 }
 
 /** Save one section. The body is `{ section, data }`. */
-export async function PATCH(req: NextRequest, { params }: { params: { page: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ page: string }> }) {
+  const params = await props.params;
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -101,7 +103,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { page: stri
 }
 
 /** Drop a section's saved row so it falls back to the schema defaults. */
-export async function DELETE(req: NextRequest, { params }: { params: { page: string } }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ page: string }> }) {
+  const params = await props.params;
   const denied = await requireAdmin();
   if (denied) return denied;
 

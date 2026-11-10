@@ -20,11 +20,12 @@ export function generateStaticParams() {
   return defaultServices().map((s) => ({ slug: s.slug }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const service = await getService(params.slug);
   if (!service) return pageMetadata({ title: "Services", description: "Our services.", path: "/services", noIndex: true });
   return pageMetadata({
@@ -34,11 +35,12 @@ export async function generateMetadata({
   });
 }
 
-export default async function ServiceDetailPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function ServiceDetailPage(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+) {
+  const params = await props.params;
   const [services, content, global, settings] = await Promise.all([
     getServices(),
     getPage("services"),

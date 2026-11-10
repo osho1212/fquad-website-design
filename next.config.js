@@ -3,9 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
-  experimental: {
-    serverComponentsExternalPackages: ['ffmpeg-static', 'ffprobe-static', 'fluent-ffmpeg', 'sharp'],
-  },
+  // Packages with native binaries stay out of the server bundle.
+  serverExternalPackages: ['ffmpeg-static', 'ffprobe-static', 'fluent-ffmpeg', 'sharp'],
   images: {
     unoptimized: false,
     formats: ['image/avif', 'image/webp'],

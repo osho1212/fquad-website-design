@@ -20,11 +20,12 @@ export function generateStaticParams() {
   return defaultPastProjects().map((p) => ({ slug: p.slug }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const project = await getPastProject(params.slug);
   if (!project) return pageMetadata({ title: "Projects", description: "Our projects.", path: "/past-projects", noIndex: true });
   return pageMetadata({
@@ -35,11 +36,12 @@ export async function generateMetadata({
   });
 }
 
-export default async function PastProjectDetailPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function PastProjectDetailPage(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+) {
+  const params = await props.params;
   const [projects, content, global, settings] = await Promise.all([
     getPastProjects(),
     getPage("past_projects"),
