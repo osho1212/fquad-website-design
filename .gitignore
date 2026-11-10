@@ -23,8 +23,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# env files hold secrets and never go in git — only the .example templates do
+.env
+.env.*
+!.env.example
+
+# files customers upload through the Start a Project form (private, admin-only)
+/private-uploads/
 
 # vercel
 .vercel

@@ -26,8 +26,10 @@ function LoginForm() {
       });
 
       if (res.ok) {
-        const from = searchParams.get('from') || '/admin';
-        router.push(from);
+        const requested = searchParams.get('from') || '';
+        // Same-site admin paths only — never an outside address or a javascript: link.
+        const safe = /^\/admin(\/[A-Za-z0-9\-_./]*)?$/.test(requested) && !requested.includes('..');
+        router.push(safe ? requested : '/admin');
         router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));

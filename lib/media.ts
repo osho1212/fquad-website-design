@@ -202,7 +202,7 @@ export async function processVideo(inputPath: string, mediaId: string): Promise<
   await ensureMediaDir(mediaId);
 
   const metadata = await new Promise<FfprobeData>((resolve, reject) => {
-    ffmpeg.ffprobe(inputPath, (err, data) => {
+    ffmpeg.ffprobe(inputPath, ['-protocol_whitelist', 'file'], (err, data) => {
       if (err) reject(err);
       else resolve(data as unknown as FfprobeData);
     });
@@ -217,7 +217,7 @@ export async function processVideo(inputPath: string, mediaId: string): Promise<
   const outputPath = diskPathFor(mediaId, 'compressed.mp4');
 
   await new Promise<void>((resolve, reject) => {
-    const cmd = ffmpeg(inputPath);
+    const cmd = ffmpeg(inputPath).inputOptions(['-protocol_whitelist', 'file']);
     cmd.on('error', reject);
     cmd.on('end', () => resolve());
 
@@ -233,7 +233,7 @@ export async function processVideo(inputPath: string, mediaId: string): Promise<
 
   const posterDir = path.join(MEDIA_DIR, mediaId);
   await new Promise<void>((resolve, reject) => {
-    const cmd = ffmpeg(inputPath);
+    const cmd = ffmpeg(inputPath).inputOptions(['-protocol_whitelist', 'file']);
     cmd.on('error', reject);
     cmd.on('end', () => resolve());
 

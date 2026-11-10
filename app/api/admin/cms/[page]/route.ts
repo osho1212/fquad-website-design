@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getPageDef, getSectionDef, mergeSection } from '@/lib/cms/schema';
+import { requireAdmin } from '@/lib/admin-guard';
 
 /**
  * Returns the page's content with schema defaults already merged in, plus the
@@ -9,6 +10,9 @@ import { getPageDef, getSectionDef, mergeSection } from '@/lib/cms/schema';
  * sections have been customised and offer "reset to default" only on those.
  */
 export async function GET(_req: NextRequest, { params }: { params: { page: string } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const def = getPageDef(params.page);
   if (!def) {
     return NextResponse.json({ error: 'Unknown page' }, { status: 404 });
@@ -44,6 +48,9 @@ export async function GET(_req: NextRequest, { params }: { params: { page: strin
 
 /** Save one section. The body is `{ section, data }`. */
 export async function PATCH(req: NextRequest, { params }: { params: { page: string } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const pageDef = getPageDef(params.page);
   if (!pageDef) {
     return NextResponse.json({ error: 'Unknown page' }, { status: 404 });
@@ -95,6 +102,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { page: stri
 
 /** Drop a section's saved row so it falls back to the schema defaults. */
 export async function DELETE(req: NextRequest, { params }: { params: { page: string } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const pageDef = getPageDef(params.page);
   if (!pageDef) {
     return NextResponse.json({ error: 'Unknown page' }, { status: 404 });

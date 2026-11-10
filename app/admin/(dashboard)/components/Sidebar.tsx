@@ -45,6 +45,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
     items: [
       { href: '/admin/enquiries', label: 'Enquiries' },
       { href: '/admin/settings', label: 'Settings' },
+      { href: '/admin/account', label: 'Account' },
     ],
   },
 ];
@@ -63,7 +64,10 @@ const ADMIN_NAV: NavGroup[] = [
   },
   {
     title: 'Studio',
-    items: [{ href: '/admin/enquiries', label: 'Enquiries' }],
+    items: [
+      { href: '/admin/enquiries', label: 'Enquiries' },
+      { href: '/admin/account', label: 'Account' },
+    ],
   },
 ];
 

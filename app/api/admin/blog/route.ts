@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { uniqueSlug } from '@/lib/slugify';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const posts = await prisma.blogPost.findMany({
     orderBy: { order: 'asc' },
     include: { media: { include: { variants: true } } },
@@ -11,6 +15,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   let body: any;
   try {
     body = await req.json();

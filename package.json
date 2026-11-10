@@ -2,6 +2,9 @@
   "name": "fquad-website",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <23"
+  },
   "scripts": {
     "dev": "next dev -p 3002",
     "build": "next build",
@@ -9,6 +12,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "cms:prune": "tsx prisma/prune-legacy-content.ts",
+    "db:seed": "npx --yes tsx prisma/seed.ts",
+    "admin:password": "node scripts/set-admin-password.mjs",
     "hero:avif": "node scripts/encode-hero-avif.mjs"
   },
   "dependencies": {

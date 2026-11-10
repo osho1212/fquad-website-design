@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const folders = await prisma.mediaFolder.findMany({ orderBy: { createdAt: 'asc' } });
   return NextResponse.json({ folders });
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   let body: any;
   try {
     body = await req.json();
