@@ -52,6 +52,11 @@ export interface AccordionGalleryProps {
   grow?: boolean;
   /** Repeat the track so horizontal scrolling wraps around endlessly. */
   loop?: boolean;
+  /**
+   * Drive the open panel from outside (e.g. scroll progress). Hover and
+   * focus still open panels; the next change of this value takes over again.
+   */
+  activeIndex?: number;
 }
 
 export interface VisibleCount {
@@ -95,6 +100,7 @@ export default function AccordionGallery({
   loop = false,
   imageSizes,
   grow: growActive = true,
+  activeIndex,
 }: AccordionGalleryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLElement | null)[]>([]);
@@ -129,6 +135,12 @@ export default function AccordionGallery({
     // Start in the middle set so there is room to scroll both ways.
     return looping ? base + clamped : clamped;
   });
+
+  useEffect(() => {
+    if (activeIndex === undefined || base === 0) return;
+    const i = Math.min(Math.max(activeIndex, 0), base - 1);
+    setActive(looping ? base + i : i);
+  }, [activeIndex, base, looping]);
 
   const prefersReduced =
     typeof window !== "undefined" && window.matchMedia

@@ -21,7 +21,18 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
  * it eases back in scale and its photo drifts the other way, which gives the
  * strip depth without any JS-driven scrolling (the swipe itself stays native).
  */
-export function ProjectSwipe({ items }: { items: ProjectSwipeItem[] }) {
+export function ProjectSwipe({
+  items,
+  drivenBy,
+}: {
+  items: ProjectSwipeItem[];
+  /**
+   * A tall pinned element: vertical progress through it slides the track
+   * sideways, so scrolling the page walks through the projects. Swiping
+   * still works; the next page scroll takes over again.
+   */
+  drivenBy?: React.RefObject<HTMLElement | null>;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const total = items.length;
@@ -70,6 +81,31 @@ export function ProjectSwipe({ items }: { items: ProjectSwipeItem[] }) {
     };
   }, [items]);
 
+  useEffect(() => {
+    const track = trackRef.current;
+    const el = drivenBy?.current;
+    if (!track || !el) return;
+    let raf = 0;
+    const drive = () => {
+      raf = 0;
+      const max = track.scrollWidth - track.clientWidth;
+      if (max <= 0) return;
+      const r = el.getBoundingClientRect();
+      const span = Math.max(1, r.height - window.innerHeight);
+      const p = Math.min(1, Math.max(0, -r.top / span));
+      track.scrollLeft = p * max;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(drive);
+    };
+    drive();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [drivenBy, items]);
+
   const go = (dir: 1 | -1) => {
     const track = trackRef.current;
     const card = track?.querySelector<HTMLElement>(".ps-card");
@@ -78,7 +114,12 @@ export function ProjectSwipe({ items }: { items: ProjectSwipeItem[] }) {
   };
 
   return (
-    <div className="ps" role="region" aria-roledescription="carousel" aria-label="Featured projects">
+    <div
+      className={`ps${drivenBy ? " ps--driven" : ""}`}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Featured projects"
+    >
       <div ref={trackRef} className="ps-track">
         {items.map((item, i) => (
           <a
