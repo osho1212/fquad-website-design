@@ -13,7 +13,7 @@ check() { if [ "$2" = "$3" ]; then echo "ok    $1"; pass=$((pass+1)); else echo 
 code() { curl -s -o "$T/body" -m 30 -w "%{http_code}" "$@"; }
 
 echo "pages"
-for p in / /studio /services /services/architecture /past-projects /contact /team /testimonials /about /awards /blog /sitemap.xml /robots.txt /manifest.webmanifest; do
+for p in / /studio /services /services/architecture /past-projects /contact /team /testimonials /about /awards /blog /sitemap.xml /robots.txt /manifest.webmanifest /privacy /terms /favicon.ico /icon-192.png /apple-icon.png; do
   check "GET $p" 200 "$(code "$B$p")"
 done
 check "unknown page is a real 404" 404 "$(code "$B/no-such-page-xyz")"
