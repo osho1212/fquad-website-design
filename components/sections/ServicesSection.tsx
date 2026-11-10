@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { withDefaults } from "@/lib/cms/schema";
-import { scrollToY } from "@/lib/motion";
+import { prefersReducedMotion } from "@/lib/motion";
 import { RoomScene } from "@/components/three/RoomScene";
 import type { SceneVariant } from "@/components/three/RoomSceneImpl";
 import "./ServicesSection.css";
@@ -56,20 +56,20 @@ function suiteStage(p: number) {
 }
 
 /**
- * Each service owns an equal share of the pinned scroll. Within its share
- * the model plays from 0 to 1, then holds fully lit for the last stretch
- * so the finished state is seen before the next practice takes over.
+ * Each practice plays its model's story over PLAY_MS (concept to dusk, noon
+ * to lamplight, sketch to styled, morning to lanterns), holds the finished,
+ * fully lit state for HOLD_MS, then hands over to the next.
  */
-const PLAY = 0.86;
+const PLAY_MS = 7000;
+const HOLD_MS = 1800;
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /**
- * What We Do — one pinned viewport. The services are a live index on the
- * left; the right is a single 3D canvas whose model and light follow the
- * scroll: the residence goes from concept to lit dusk, the salon from noon
- * to lamplight, the suite from sketch to styled, the farmhouse from
- * morning to lanterns.
+ * What We Do — one viewport. The services are a live index on the left; the
+ * right is a single 3D canvas that runs through the four practices on its
+ * own clock (only while the section is on screen). Choosing a practice in
+ * the index jumps to it.
  */
 export function ServicesSection({
   content,
@@ -86,65 +86,70 @@ export function ServicesSection({
   const segRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const [active, setActive] = useState(0);
   const activeRef = useRef(0);
+  /** The model's progress, 0–1, driven by the clock below. */
+  const progress = useRef(0);
+  /** Which model the canvas is actually showing (reported per frame). */
+  const shownRef = useRef<SceneVariant | undefined>(undefined);
+  const restartRef = useRef(false);
 
   const n = services.length;
   const models = useMemo(
     () => services.map((s, i) => MODEL_FOR_SLUG[s.slug] ?? FALLBACK_ORDER[i % FALLBACK_ORDER.length]),
     [services]
   );
+  const modelsRef = useRef(models);
+  modelsRef.current = models;
 
-  // Which service the scroll is in. The model's own (eased) progress drives
-  // the bars and readouts, via onState below.
+  const resetBars = (i: number) => {
+    barRefs.current.forEach((el, k) => el && (el.style.transform = `scaleX(${k < i ? 1 : 0})`));
+    segRefs.current.forEach((el, k) => el && (el.style.transform = `scaleX(${k < i ? 1 : 0})`));
+  };
+
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || n === 0) return;
+    const reduced = prefersReducedMotion();
+    let visible = false;
+    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { threshold: 0.3 });
+    io.observe(el);
     let raf = 0;
-    const read = () => {
-      raf = 0;
-      const r = el.getBoundingClientRect();
-      const span = Math.max(1, r.height - window.innerHeight);
-      const P = Math.min(1, Math.max(0, -r.top / span));
-      const i = Math.min(n - 1, Math.floor(P * n));
-      if (i !== activeRef.current) {
-        activeRef.current = i;
-        setActive(i);
+    let last = performance.now();
+    let elapsed = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const dt = Math.min(100, now - last);
+      last = now;
+      if (restartRef.current) {
+        restartRef.current = false;
+        elapsed = 0;
       }
-      // Bars for the services already passed / not yet reached.
-      barRefs.current.forEach((b, k) => {
-        if (b && k !== i) b.style.transform = `scaleX(${k < i ? 1 : 0})`;
-      });
-      segRefs.current.forEach((b, k) => {
-        if (b && k !== i) b.style.transform = `scaleX(${k < i ? 1 : 0})`;
-      });
+      // The clock runs only while the section is seen and the right model
+      // is on the canvas (a model that is still loading doesn't lose time).
+      if (!visible || document.hidden || shownRef.current !== modelsRef.current[activeRef.current]) return;
+      elapsed += dt;
+      progress.current = reduced ? 1 : Math.min(1, elapsed / PLAY_MS);
+      if (elapsed >= PLAY_MS + HOLD_MS && n > 1) {
+        elapsed = 0;
+        progress.current = 0;
+        const next = (activeRef.current + 1) % n;
+        activeRef.current = next;
+        resetBars(next);
+        setActive(next);
+      }
     };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(read);
-    };
-    read();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      io.disconnect();
     };
   }, [n]);
 
-  const mapProgress = useCallback(
-    (P: number) => {
-      if (n === 0) return P;
-      const i = Math.min(n - 1, Math.floor(P * n));
-      return (P * n - i) / PLAY;
-    },
-    [n]
-  );
-
   const jumpTo = (i: number) => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    const span = el.offsetHeight - window.innerHeight;
-    scrollToY(top + (i / n) * span + 4, { duration: 1.2 });
+    activeRef.current = i;
+    progress.current = 0;
+    restartRef.current = true;
+    resetBars(i);
+    setActive(i);
   };
 
   if (n === 0) return null;
@@ -156,19 +161,18 @@ export function ServicesSection({
     <section
       id="services"
       ref={sectionRef}
-      className="wwd relative"
-      style={{ height: `${n * 95 + 100}vh` }}
+      className="wwd relative mb-16 md:mb-24"
     >
-      <div className="wwd-stage sticky top-0 h-[100svh] w-full overflow-hidden">
+      <div className="wwd-stage relative h-[100svh] min-h-[640px] w-full overflow-hidden">
         {/* The model */}
         <figure className="wwd-figure m-0">
           <RoomScene
             variant={model}
-            trackRef={sectionRef}
-            mapProgress={mapProgress}
-            preload={models[active + 1] ? [models[active + 1]] : []}
+            progressRef={progress}
+            preload={models}
             label={MODEL_LABEL[model]}
-            onState={({ p, label }) => {
+            onState={({ p, label, variant }) => {
+              shownRef.current = variant;
               const local = Math.min(1, Math.max(0, p));
               const i = activeRef.current;
               const bar = barRefs.current[i];

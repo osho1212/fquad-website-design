@@ -98,7 +98,7 @@ export const homePage: PageDef = {
         eyebrow: 'FEATURED PROJECTS · RECENT WORKS',
         linkLabel: 'EXPLORE PORTFOLIO →',
         linkHref: '/past-projects',
-        footnoteLeft: 'INTERACTIVE ARCHITECTURAL SHOWCASE · SCROLL OR HOVER TO EXPAND · CLICK TO OPEN',
+        footnoteLeft: 'INTERACTIVE ARCHITECTURAL SHOWCASE · HOVER TO EXPAND · CLICK TO OPEN',
         footnoteRight: 'HYDERABAD · 2005 — PRESENT',
       },
     },

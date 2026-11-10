@@ -6,6 +6,7 @@ import { ProjectSwipe } from "../ui/ProjectSwipe";
 import { withDefaults } from "@/lib/cms/schema";
 import { InView } from "@/components/motion/InView";
 import { ParallaxField, type ParallaxItem } from "@/components/parallax/ParallaxField";
+import { prefersReducedMotion } from "@/lib/motion";
 
 const WORK_ART: ParallaxItem[] = [
   { art: "compass", x: "90%", y: "2%", w: 96, depth: 0.5, spin: 40, opacity: 0.3, desktopOnly: true },
@@ -21,6 +22,8 @@ const WORK_ART: ParallaxItem[] = [
  * set is one click away (Explore portfolio) and on the phone carousel.
  */
 const ACCORDION_COUNT = 7;
+/** How long each project stays open before the next one opens. */
+const AUTOPLAY_MS = 4200;
 const IMAGE_SIZES = "(min-width: 1024px) 55vw, 70vw";
 
 export interface FeaturedProject {
@@ -65,37 +68,47 @@ export function FeaturedProjects({
   const barRef = useRef<HTMLSpanElement>(null);
   const deskCount = Math.min(ACCORDION_COUNT, items.length);
   const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
+  activeRef.current = active;
+  const hoverRef = useRef(false);
 
-  // The section is pinned: progress through it opens each accordion panel in
-  // turn on desktop, and slides the phone carousel sideways (ProjectSwipe
-  // reads the same element).
+  // The open project changes by itself every few seconds while the section
+  // is on screen; hovering pauses it (and the hovered panel becomes the
+  // place it carries on from). The footer line fills over each turn.
   useEffect(() => {
     const el = sectionRef.current;
-    if (!el || deskCount === 0) return;
+    if (!el || deskCount < 2 || prefersReducedMotion()) return;
+    let visible = false;
     let raf = 0;
-    let last = -1;
-    const read = () => {
-      raf = 0;
-      const r = el.getBoundingClientRect();
-      const span = Math.max(1, r.height - window.innerHeight);
-      const p = Math.min(1, Math.max(0, -r.top / span));
-      const i = Math.min(deskCount - 1, Math.floor(p * deskCount));
-      if (i !== last) {
-        last = i;
-        setActive(i);
+    let last = performance.now();
+    let elapsed = 0;
+    let shown = activeRef.current;
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      last = performance.now();
+    }, { threshold: 0.35 });
+    io.observe(el);
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const dt = now - last;
+      last = now;
+      if (activeRef.current !== shown) {
+        shown = activeRef.current;
+        elapsed = 0;
       }
-      if (barRef.current) barRef.current.style.transform = `scaleX(${p.toFixed(4)})`;
+      if (!visible || hoverRef.current || document.hidden) return;
+      elapsed += dt;
+      if (barRef.current) barRef.current.style.transform = `scaleX(${Math.min(1, elapsed / AUTOPLAY_MS).toFixed(4)})`;
+      if (elapsed >= AUTOPLAY_MS) {
+        elapsed = 0;
+        shown = (activeRef.current + 1) % deskCount;
+        setActive(shown);
+      }
     };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(read);
-    };
-    read();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      io.disconnect();
     };
   }, [deskCount]);
 
@@ -105,14 +118,13 @@ export function FeaturedProjects({
     <section
       id="work"
       ref={sectionRef}
-      className="relative w-full bg-transparent h-[calc(100svh_+_var(--fp-m)_*_30svh)] md:h-[calc(100vh_+_var(--fp-d)_*_55vh)]"
-      style={{ ["--fp-m" as string]: items.length, ["--fp-d" as string]: deskCount } as React.CSSProperties}
+      className="relative w-full bg-transparent mb-20 md:mb-36"
     >
       {/* Background drafting marks, drifting at their own depth */}
       <ParallaxField items={WORK_ART} range={120} />
 
-      {/* Pinned one-screen stage */}
-      <div className="sticky top-0 w-full flex flex-col px-4 sm:px-8 md:px-12 h-[100svh] min-h-[560px] pt-[72px] pb-4 md:min-h-[640px] md:pt-24 md:pb-7">
+      {/* One screen */}
+      <div className="relative w-full flex flex-col px-4 sm:px-8 md:px-12 h-[100svh] min-h-[560px] pt-[72px] pb-4 md:min-h-[640px] md:pt-24 md:pb-7">
 
       {/* Section header. Phones: the eyebrow alone on one line (the portfolio
           link moves to a full-width button under the carousel). */}
@@ -140,7 +152,7 @@ export function FeaturedProjects({
           that is left, its controls, and the portfolio button. */}
       <div className="relative z-10 md:hidden flex-1 min-h-0 flex flex-col">
         <div className="flex-1 min-h-0">
-          <ProjectSwipe items={items} drivenBy={sectionRef} />
+          <ProjectSwipe items={items} autoplayMs={AUTOPLAY_MS} />
         </div>
         <a
           href={c.linkHref}
@@ -152,11 +164,17 @@ export function FeaturedProjects({
 
       {/* Desktop and tablet: equal cards, five (or three) across, filling the
           height the viewport leaves between header and footnote. */}
-      <div className="relative z-10 w-full hidden md:block md:flex-1 md:min-h-0" data-cursor-label="View project">
+      <div
+        className="relative z-10 w-full hidden md:block md:flex-1 md:min-h-0"
+        data-cursor-label="View project"
+        onPointerEnter={() => (hoverRef.current = true)}
+        onPointerLeave={() => (hoverRef.current = false)}
+      >
         <AccordionGallery
           items={items.slice(0, ACCORDION_COUNT)}
           defaultIndex={0}
           activeIndex={active}
+          onActiveChange={setActive}
           expandRatio={0.52}
           height="100%"
           imageSizes={IMAGE_SIZES}

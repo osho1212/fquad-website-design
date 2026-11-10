@@ -6,6 +6,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { clamp, damp, onFrame, pointer, prefersReducedMotion, retainPointer } from "@/lib/motion";
 import { makeLux, warmLuxCanvases } from "./lux/materials";
+import { whenIdle } from "./idleQueue";
 import { BUILDERS, type Built, type SceneVariant } from "./lux/scenes";
 
 export type { SceneVariant };
@@ -33,7 +34,7 @@ export interface RoomSceneProps {
    * (the time of day, the material in focus…). Write it to the DOM directly;
    * don't set React state from here.
    */
-  onState?: (state: { p: number; label?: string }) => void;
+  onState?: (state: { p: number; label?: string; variant?: SceneVariant }) => void;
   /** Called once, when the first model has compiled and drawn its first frame. */
   onReady?: () => void;
   /**
@@ -43,6 +44,11 @@ export interface RoomSceneProps {
   mapProgress?: (p: number) => number;
   /** Other variants to build and compile in the background once ready. */
   preload?: SceneVariant[];
+  /**
+   * Progress set by the caller (0–1), e.g. from a timer, instead of scroll.
+   * Takes precedence over trackRef and range.
+   */
+  progressRef?: React.RefObject<number>;
 }
 
 let areaLightsReady = false;
@@ -77,6 +83,7 @@ export default function RoomSceneImpl({
   onReady,
   mapProgress,
   preload,
+  progressRef,
 }: RoomSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const onStateRef = useRef(onState);
@@ -89,6 +96,8 @@ export default function RoomSceneImpl({
   mapRef.current = mapProgress;
   const preloadRef = useRef(preload);
   preloadRef.current = preload;
+  const externalRef = useRef(progressRef);
+  externalRef.current = progressRef;
   /** Set by the scene effect: asks it to switch to `variantRef.current`. */
   const requestRef = useRef<(() => void) | null>(null);
 
@@ -97,9 +106,24 @@ export default function RoomSceneImpl({
   }, [variant]);
 
   useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
+    const hostEl = hostRef.current;
+    if (!hostEl) return;
+    // Everything heavy waits for a still, idle moment (see ./idleQueue), so
+    // creating the context and the studio reflections never lands in a frame
+    // the visitor is scrolling through.
+    let teardown: (() => void) | undefined;
+    let cancelled = false;
+    const setupJob = whenIdle(() => {
+      if (cancelled) return;
+      teardown = setup(hostEl);
+    });
+    return () => {
+      cancelled = true;
+      setupJob.cancel();
+      teardown?.();
+    };
 
+    function setup(host: HTMLDivElement): (() => void) | undefined {
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
@@ -126,7 +150,7 @@ export default function RoomSceneImpl({
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.AgXToneMapping;
     renderer.toneMappingExposure = 1;
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = quality === "high";
     renderer.shadowMap.type = THREE.PCFShadowMap;
     // Shadows are re-rendered only when something that casts them moves
     // (see renderFrame), not on every frame.
@@ -199,13 +223,75 @@ export default function RoomSceneImpl({
       }
     };
 
+    /*
+     * Stable light count. three.js compiles every material for the number of
+     * lights in view, so a lamp that appears inside a piece popping in (the
+     * suite's pendants, say) forced every material in the scene to recompile
+     * — a multi-second frame. Lights nested in a model are moved up to its
+     * root, where they always count, and follow their fixture each frame;
+     * while the fixture is hidden they are simply dark.
+     */
+    type Proxy = { light: THREE.Light; parent: THREE.Object3D; local: THREE.Matrix4 };
+    const lightProxies = new WeakMap<Built, Proxy[]>();
+    const tmpM = new THREE.Matrix4();
+    const tmpInv = new THREE.Matrix4();
+    function hoistLights(b: Built) {
+      b.root.updateMatrixWorld(true);
+      const nested: THREE.Light[] = [];
+      b.root.traverse((o) => {
+        if ((o as THREE.Light).isLight && o.parent && o.parent !== b.root) nested.push(o as THREE.Light);
+      });
+      const list: Proxy[] = nested.map((light) => {
+        const parent = light.parent!;
+        const local = light.matrix.clone();
+        parent.remove(light);
+        b.root.add(light);
+        return { light, parent, local };
+      });
+      lightProxies.set(b, list);
+      syncLights(b);
+    }
+    function syncLights(b: Built) {
+      const list = lightProxies.get(b);
+      if (!list || !list.length) return;
+      b.root.updateMatrixWorld(true);
+      tmpInv.copy(b.root.matrixWorld).invert();
+      for (const { light, parent, local } of list) {
+        tmpM.multiplyMatrices(parent.matrixWorld, local).premultiply(tmpInv);
+        tmpM.decompose(light.position, light.quaternion, light.scale);
+        let shown = true;
+        for (let n: THREE.Object3D | null = parent; n && n !== b.root; n = n.parent) {
+          if (!n.visible) {
+            shown = false;
+            break;
+          }
+        }
+        // Remember the level while dark, for lights a scene sets only once.
+        const ud = light.userData as { fqDark?: boolean; fqLevel?: number };
+        if (!shown) {
+          if (!ud.fqDark) {
+            ud.fqDark = true;
+            ud.fqLevel = light.intensity;
+          } else if (light.intensity !== 0) {
+            ud.fqLevel = light.intensity;
+          }
+          light.intensity = 0;
+        } else if (ud.fqDark) {
+          ud.fqDark = false;
+          if (light.intensity === 0 && ud.fqLevel) light.intensity = ud.fqLevel;
+        }
+      }
+    }
+
     /** Builds a model and compiles its shaders in a staging scene, once. */
     function ensure(v: SceneVariant): Promise<Built> {
       const known = ready.get(v);
       if (known) return known;
-      const p = new Promise<Built>((resolve) => {
+      const p = new Promise<Built>((resolve) => whenIdle(() => {
+        if (disposed) return;
         const b = BUILDERS[v](lux, quality);
         b.setTheme(isDark());
+        hoistLights(b);
         cache.set(v, b);
         // Cap shadow maps: a 2048² map per light was the largest per-frame
         // cost, and at these canvas sizes 1024² is visually the same.
@@ -234,7 +320,7 @@ export default function RoomSceneImpl({
         const f = b.frame(b.restP);
         cam.position.copy(f.pos);
         cam.lookAt(f.look);
-        const done = () => {
+        const finish = () => {
           inflight--;
           staging.remove(b.root, ...b.lights, stand);
           standGeo.dispose();
@@ -244,13 +330,21 @@ export default function RoomSceneImpl({
           }
           resolve(b);
         };
+        const warm = () =>
+          whenIdle(() => {
+            if (!disposed) {
+              renderer.shadowMap.needsUpdate = true;
+              renderer.render(staging, cam);
+            }
+            finish();
+          });
         inflight++;
         const compile = (renderer as THREE.WebGLRenderer & {
           compileAsync?: (s: THREE.Object3D, c: THREE.Camera) => Promise<unknown>;
         }).compileAsync;
-        if (compile) compile.call(renderer, staging, cam).then(done, done);
-        else done();
-      });
+        if (compile) compile.call(renderer, staging, cam).then(warm, warm);
+        else warm();
+      }));
       ready.set(v, p);
       return p;
     }
@@ -296,6 +390,8 @@ export default function RoomSceneImpl({
 
     const progress = (): number => {
       if (reduced) return current?.restP ?? 0.5;
+      const ext = externalRef.current?.current;
+      if (typeof ext === "number") return clamp(ext);
       const vh = window.innerHeight;
       const trackEl = trackRef?.current;
       if (trackEl) {
@@ -444,6 +540,7 @@ export default function RoomSceneImpl({
     function renderFrame(dt: number, force = true) {
       const b = current;
       if (!b) return;
+      if (variantRef.current !== currentVariant && !force) return;
       const target = progress();
       const px = interactive && !reduced ? pointer.x : 0;
       const py = interactive && !reduced ? pointer.y : 0;
@@ -476,13 +573,14 @@ export default function RoomSceneImpl({
         },
         camera
       );
+      syncLights(b);
       renderer.toneMappingExposure = b.exposure ? b.exposure(smoothP) : 1;
       scene.environmentIntensity = b.env ? b.env(smoothP) : 0.45;
       renderer.render(scene, camera);
       const lbl = caption || undefined;
       if (onStateRef.current && (lbl !== lastLabel || !reduced)) {
         lastLabel = lbl;
-        onStateRef.current({ p: smoothP, label: lbl });
+        onStateRef.current({ p: smoothP, label: lbl, variant: currentVariant ?? undefined });
       }
     }
     function renderOnce() {
@@ -523,6 +621,7 @@ export default function RoomSceneImpl({
       // settle first (its `done` frees everything once it sees `disposed`).
       if (inflight === 0) freeGpu();
     };
+    }
     // `range` is a fresh array each render; key the effect on its values.
     // `variant` is read through variantRef and handled by the effect above.
     // eslint-disable-next-line react-hooks/exhaustive-deps

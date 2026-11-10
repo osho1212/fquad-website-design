@@ -57,6 +57,8 @@ export interface AccordionGalleryProps {
    * focus still open panels; the next change of this value takes over again.
    */
   activeIndex?: number;
+  /** Told whenever the open panel changes (hover, focus, or activeIndex). */
+  onActiveChange?: (index: number) => void;
 }
 
 export interface VisibleCount {
@@ -101,6 +103,7 @@ export default function AccordionGallery({
   imageSizes,
   grow: growActive = true,
   activeIndex,
+  onActiveChange,
 }: AccordionGalleryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLElement | null)[]>([]);
@@ -141,6 +144,12 @@ export default function AccordionGallery({
     const i = Math.min(Math.max(activeIndex, 0), base - 1);
     setActive(looping ? base + i : i);
   }, [activeIndex, base, looping]);
+
+  const onActiveRef = useRef(onActiveChange);
+  onActiveRef.current = onActiveChange;
+  useEffect(() => {
+    if (base > 0) onActiveRef.current?.(active % base);
+  }, [active, base]);
 
   const prefersReduced =
     typeof window !== "undefined" && window.matchMedia

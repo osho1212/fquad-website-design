@@ -724,10 +724,16 @@ export function buildSuite(L: Lux, quality: "high" | "low"): Built {
   const zen = new THREE.Color();
   const hor = new THREE.Color();
 
+  // Real finishes go on during the scroll; compile them with the rest so
+  // the switch never stalls a frame.
+  const finishes = new Set<THREE.Material>([ghost, ...archOrig.flat()]);
+  pieces.forEach((pc) => pc.meshes.forEach(({ orig }) => (Array.isArray(orig) ? orig : [orig]).forEach((m) => finishes.add(m))));
+
   return {
     root,
     lights: [hemi, sun, target],
     restP: 1,
+    precompile: [...finishes],
     frame: (p) => ({
       pos: new THREE.Vector3(6.3 - p * 0.3, 4.6 - p * 0.15, 7.3),
       look: new THREE.Vector3(0, 0.95, -0.1),

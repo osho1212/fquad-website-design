@@ -23,12 +23,6 @@
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
-/* Scroll-driven: the page scroll sets the position continuously, so snap
-   would fight it. */
-.ps--driven .ps-track {
-  scroll-snap-type: none;
-}
-
 .ps-track::-webkit-scrollbar {
   display: none;
 }

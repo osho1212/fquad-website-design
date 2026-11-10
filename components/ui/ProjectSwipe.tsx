@@ -23,15 +23,14 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
  */
 export function ProjectSwipe({
   items,
-  drivenBy,
+  autoplayMs,
 }: {
   items: ProjectSwipeItem[];
   /**
-   * A tall pinned element: vertical progress through it slides the track
-   * sideways, so scrolling the page walks through the projects. Swiping
-   * still works; the next page scroll takes over again.
+   * Glide to the next card on this interval while the carousel is on
+   * screen; any touch pauses it for a few seconds.
    */
-  drivenBy?: React.RefObject<HTMLElement | null>;
+  autoplayMs?: number;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
@@ -83,28 +82,34 @@ export function ProjectSwipe({
 
   useEffect(() => {
     const track = trackRef.current;
-    const el = drivenBy?.current;
-    if (!track || !el) return;
-    let raf = 0;
-    const drive = () => {
-      raf = 0;
-      const max = track.scrollWidth - track.clientWidth;
-      if (max <= 0) return;
-      const r = el.getBoundingClientRect();
-      const span = Math.max(1, r.height - window.innerHeight);
-      const p = Math.min(1, Math.max(0, -r.top / span));
-      track.scrollLeft = p * max;
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(drive);
-    };
-    drive();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (!track || !autoplayMs || items.length < 2 || prefersReducedMotion()) return;
+    let visible = false;
+    let touchedAt = 0;
+    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { threshold: 0.5 });
+    io.observe(track);
+    const touch = () => (touchedAt = Date.now());
+    track.addEventListener("pointerdown", touch, { passive: true });
+    track.addEventListener("touchstart", touch, { passive: true });
+    track.addEventListener("wheel", touch, { passive: true });
+    const id = window.setInterval(() => {
+      if (!visible || document.hidden || Date.now() - touchedAt < 6000) return;
+      const cards = Array.from(track.querySelectorAll<HTMLElement>(".ps-card"));
+      const mid = track.scrollLeft + track.clientWidth / 2;
+      let cur = 0;
+      cards.forEach((c, i) => {
+        if (Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid) < Math.abs(cards[cur].offsetLeft + cards[cur].offsetWidth / 2 - mid)) cur = i;
+      });
+      const next = cards[(cur + 1) % cards.length];
+      track.scrollTo({ left: next.offsetLeft - (track.clientWidth - next.offsetWidth) / 2, behavior: "smooth" });
+    }, autoplayMs);
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
+      window.clearInterval(id);
+      io.disconnect();
+      track.removeEventListener("pointerdown", touch);
+      track.removeEventListener("touchstart", touch);
+      track.removeEventListener("wheel", touch);
     };
-  }, [drivenBy, items]);
+  }, [autoplayMs, items]);
 
   const go = (dir: 1 | -1) => {
     const track = trackRef.current;
@@ -115,7 +120,7 @@ export function ProjectSwipe({
 
   return (
     <div
-      className={`ps${drivenBy ? " ps--driven" : ""}`}
+      className="ps"
       role="region"
       aria-roledescription="carousel"
       aria-label="Featured projects"
