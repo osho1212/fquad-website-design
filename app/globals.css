@@ -1029,3 +1029,51 @@ html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
   position: absolute;
   inset: -4px 0;
 }
+
+/* Hero scroll prompt: a bold label and three cascading arrows that pulse
+   downward — the whole group also bobs. */
+.fq-scroll-cue {
+  color: var(--hero-ink);
+  transition: color 500ms ease;
+}
+.fq-scroll-bob {
+  animation: fq-scroll-bob 1.8s ease-in-out infinite;
+}
+@keyframes fq-scroll-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+.fq-scroll-chevs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.fq-scroll-chevs i {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  animation: fq-scroll-chev 1.8s ease-in-out infinite;
+}
+.fq-scroll-chevs i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.fq-scroll-chevs i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes fq-scroll-chev {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fq-scroll-bob,
+  .fq-scroll-chevs i {
+    animation: none;
+  }
+  .fq-scroll-chevs i {
+    opacity: 1;
+  }
+}

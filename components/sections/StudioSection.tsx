@@ -6,6 +6,7 @@ import { InView } from "@/components/motion/InView";
 import { ScrollWords } from "@/components/motion/Reveal";
 import { ParallaxField, type ParallaxItem } from "@/components/parallax/ParallaxField";
 import { RoomScene } from "@/components/three/RoomScene";
+import Magnet, { FRAME_MAGNET } from "@/components/ui/Magnet";
 
 /**
  * Background layers sit at negative depth (slower than the page) and the
@@ -24,7 +25,6 @@ const STUDIO_ART: ParallaxItem[] = [
 export function StudioSection({ content }: { content?: Record<string, any> }) {
   const c = withDefaults("home", "studio", content);
   // Live clock for the salon's noon-to-night light; written from the scene's frame loop.
-  const clockRef = useRef<HTMLSpanElement>(null);
   const columns: string[] = c.columns ?? [];
 
   return (
@@ -60,16 +60,18 @@ export function StudioSection({ content }: { content?: Record<string, any> }) {
 
         {/* A drawing-sheet viewport holding the 3D salon: as the section scrolls
             past, the light moves from noon sun to golden hour to lamplit night. */}
+        <Magnet
+          {...FRAME_MAGNET}
+          wrapperClassName="xl:col-span-6"
+          style={{ display: "block", width: "100%" }}
+        >
         <figure
-          className="fq-fade fq-frame m-0 xl:col-span-6"
+          className="fq-fade fq-frame m-0"
           style={{ ["--i" as string]: 3 }}
         >
           <RoomScene
             variant="living"
             range={[0.12, 0.82]}
-            onState={({ label }) => {
-              if (label && clockRef.current) clockRef.current.textContent = label;
-            }}
             className="w-full aspect-[4/3] sm:aspect-[5/4]"
             label="A cut-away luxury living room — curved bouclé sofa, travertine table, brass ring chandelier, walnut reeded wall and an arched window — whose light moves from midday sun to golden hour to a lamplit evening as the page scrolls"
           />
@@ -77,11 +79,10 @@ export function StudioSection({ content }: { content?: Record<string, any> }) {
           {/* Below the model on phones, where a two-line caption covered it. */}
           <figcaption className="relative mt-2 px-1 pb-1 sm:p-0 sm:m-0 sm:absolute sm:left-3 sm:bottom-3 sm:right-3 flex justify-between gap-3 text-[11px] tracking-[0.22em] uppercase text-white/70 pointer-events-none">
             <span>Fig. 01 — Interior Design</span>
-            <span>
-              Scroll · <span ref={clockRef} className="tabular-nums">12:00</span>
-            </span>
+            <span>Selected work</span>
           </figcaption>
         </figure>
+        </Magnet>
       </InView>
     </section>
   );
