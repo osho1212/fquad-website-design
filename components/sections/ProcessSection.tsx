@@ -1,34 +1,40 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { withDefaults } from "@/lib/cms/schema";
+import { defaultsFor, withDefaults } from "@/lib/cms/schema";
 import { InView } from "@/components/motion/InView";
-import { SketchFrame, sketchImage, type SketchFrameImage } from "@/components/ui/SketchFrame";
+import { SketchFrame, sketchImageFromSrc, type SketchFrameImage } from "@/components/ui/SketchFrame";
 import { clamp, onFrame, prefersReducedMotion } from "@/lib/motion";
-
-/**
- * Project photos shown as the process advances, each with its rough sketch
- * and pencil drawing (built by `npm run sketch:images`). They are spread
- * across however many steps the CMS defines (one image per step).
- */
-const PROCESS_IMAGES: SketchFrameImage[] = [
-  sketchImage("b21", "A living room with a carved ceiling and a tufted sofa"),
-  sketchImage("b49", "A blue-panelled living room with an arched mural"),
-  sketchImage("b23", "Carved timber and amber-glass doors opening onto a stone floor"),
-  sketchImage("b61", "A living room with curtains, a curved sofa and a marble floor"),
-  sketchImage("a2", "The finished residence at dusk, its lights on"),
-];
-
-/** The image for step `i` of `n`, spread evenly across the list. */
-function imageForStep(i: number, n: number) {
-  const k = n <= 1 ? 0 : Math.round((i * (PROCESS_IMAGES.length - 1)) / (n - 1));
-  return PROCESS_IMAGES[Math.min(PROCESS_IMAGES.length - 1, k)];
-}
 
 interface Step {
   num: string;
   title: string;
   desc: string;
+  /** The step's photograph (Homepage → How We Work in the CMS). */
+  image?: string;
+  imageAlt?: string;
+}
+
+/** The steps and photographs that ship with the site. */
+const SHIPPED_STEPS = (defaultsFor("home", "process").steps ?? []) as Step[];
+
+/**
+ * The photograph for a step, drawn in pencil as it comes into view. It is the
+ * one chosen in the CMS; a photo that ships with the site brings its own rough
+ * sketch and pencil drawing (built by `npm run sketch:images`), while an upload
+ * is drawn as a graphite print of itself. A step with no photograph (or whose
+ * picture was deleted) takes the shipped one for its position.
+ */
+function stepImage(step: Step, idx: number): SketchFrameImage {
+  const shipped = SHIPPED_STEPS.length ? SHIPPED_STEPS[idx % SHIPPED_STEPS.length] : undefined;
+  const chosen = step.image?.trim();
+  if (!chosen && shipped?.image) {
+    return sketchImageFromSrc(shipped.image, shipped.imageAlt ?? `${step.title}: a project photograph`);
+  }
+  return sketchImageFromSrc(
+    chosen || "",
+    step.imageAlt?.trim() || `${step.title}: a project photograph`
+  );
 }
 
 /**
@@ -202,7 +208,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
             className="fq-frame relative m-0 order-1 md:order-2 h-[52vh] sm:h-[58vh] md:h-[min(72vh,680px)]"
           >
             <SketchFrame
-              images={steps.map((_, idx) => imageForStep(idx, steps.length))}
+              images={steps.map(stepImage)}
               active={active}
               // Pinned (desktop): per-step progress. Phones: the frame's own
               // pass through the screen.
