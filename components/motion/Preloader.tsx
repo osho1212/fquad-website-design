@@ -3,10 +3,24 @@
 import { useEffect, useRef, useState } from "react";
 import { damp, onFrame } from "@/lib/motion";
 import { FIBONACCI, goldenSpiral } from "@/lib/golden";
+import { watchSiteReady } from "@/lib/site-ready";
 
 const SESSION_KEY = "fq-intro";
-/** Never hold a visitor longer than this, whatever the network is doing. */
-const MAX_WAIT_MS = 4200;
+/**
+ * The intro holds until the page behind it is genuinely ready — every hero
+ * frame decoded, every image on the page loaded, fonts settled, the 3D
+ * scenes built — so that scrolling afterwards costs nothing. These are the
+ * ceilings that stop a slow network from holding anyone hostage:
+ *
+ *   MAX_WAIT_MS   a hard stop; past this the curtain lifts regardless
+ *   STALL_MS      how long to sit with no progress arriving before giving up
+ *
+ * The second is what keeps a long wait honest: while the bar is still
+ * climbing the intro keeps waiting, and the moment it stops climbing the
+ * intro stops waiting rather than sitting on a dead connection.
+ */
+const MAX_WAIT_MS = 30000;
+const STALL_MS = 6000;
 /** Floor so the construction gets to draw itself and read as intentional. */
 const MIN_SHOW_MS = 1900;
 
@@ -82,15 +96,32 @@ export function Preloader() {
         html.style.overflow = "";
       }, 560);
       window.setTimeout(() => setGone(true), 1700);
+      // Everything was laid out under a locked scrollbar. One resize puts
+      // ScrollTrigger's measurements and Lenis back in agreement with the
+      // page the visitor is about to scroll.
+      window.setTimeout(() => window.dispatchEvent(new Event("resize")), 620);
     };
 
+    // Pull the whole page's loading forward into the time the intro is
+    // already on screen, and follow it.
+    let real = 0;
+    let siteReady = false;
+    let bestAt = performance.now();
+    let best = 0;
+    const stopWatching = watchSiteReady((state) => {
+      real = state.progress;
+      siteReady = state.ready;
+      if (real > best + 0.005) {
+        best = real;
+        bestAt = performance.now();
+      }
+    });
+
     const stop = onFrame((_, dt) => {
-      const hero = window.__fqHero;
-      const real = hero ? Math.min(1, hero.loaded / Math.max(1, hero.total)) : 0;
       const elapsed = performance.now() - started;
-      // Time-based ceiling so the drawing keeps moving even before any frame
-      // has landed; real progress takes over once it's ahead.
-      const timed = Math.min(1, elapsed / MAX_WAIT_MS) * 0.6;
+      // A slow trickle so the drawing is never frozen before the first
+      // numbers arrive; real progress takes over the moment it is ahead.
+      const timed = Math.min(1, elapsed / MAX_WAIT_MS) * 0.25;
       const target = finishing ? 1 : Math.max(real, timed);
       shown = damp(shown, target, finishing ? 10 : 5, dt);
       if (finishing && shown > 0.999) shown = 1;
@@ -109,7 +140,15 @@ export function Preloader() {
         }
       }
 
-      if (!finishing && ((real >= 1 && elapsed > MIN_SHOW_MS) || elapsed > MAX_WAIT_MS)) {
+      // Done when the page really is done; otherwise give up only on a hard
+      // ceiling, or once progress has stopped arriving altogether.
+      const stalled = performance.now() - bestAt > STALL_MS;
+      if (
+        !finishing &&
+        ((siteReady && elapsed > MIN_SHOW_MS) ||
+          elapsed > MAX_WAIT_MS ||
+          (stalled && elapsed > MIN_SHOW_MS))
+      ) {
         finish();
       }
     });
@@ -117,6 +156,7 @@ export function Preloader() {
     return () => {
       mountedRef.current = false;
       stop();
+      stopWatching();
       html.style.overflow = "";
       // A real unmount (navigating away mid-intro) must not leave the page
       // stuck in its hidden "loading" state. React StrictMode's simulated

@@ -275,7 +275,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     // a failed request.
     let ext = "webp";
     const stride = slow ? 2 : 1;
-    const maxInflight = slow ? 3 : 6;
+    let maxInflight = slow ? 3 : 6;
 
     const images: (HTMLImageElement | undefined)[] = new Array(film.count);
     const started: boolean[] = new Array(film.count).fill(false);
@@ -291,7 +291,27 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     const priorityTotal = Array.from({ length: PRIORITY_FRAMES }, (_, k) => k).filter(
       (k) => k % stride === 0
     ).length;
-    window.__fqHero = { loaded: 0, total: priorityTotal };
+    /** Every frame the film will ever want, once stride is taken out. */
+    const filmTotal = Math.ceil(film.count / stride);
+    let filmSettled = 0;
+
+    /**
+     * What the intro reads. `loaded`/`total` is the opening handful — enough
+     * to start playing. `filmLoaded`/`filmTotal` is the whole film, which is
+     * what an intro that means to hold until scrolling is smooth must wait
+     * on: the rest of the frames are otherwise fetched as the visitor
+     * scrolls into them, which is exactly where the stutter came from.
+     */
+    const publish = () => {
+      window.__fqHero = {
+        loaded: priorityLoaded,
+        total: priorityTotal,
+        filmLoaded: filmSettled,
+        filmTotal,
+        preloadAll,
+      };
+    };
+    publish();
 
     const render = () => {
       const frameIdx = Math.min(film.count - 1, Math.max(0, Math.round(seq.frame)));
@@ -396,8 +416,8 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     // reads the headline and leaves downloads ~a third of the film, not all
     // of it. Scrolling slides the window; a far jump (an anchor link) simply
     // holds the nearest loaded frame until its neighbourhood arrives.
-    const AHEAD = slow ? 36 : 64;
-    const BEHIND = 10;
+    let AHEAD = slow ? 36 : 64;
+    let BEHIND = 10;
     const nextWanted = (): number => {
       const cur = Math.round(seq.frame);
       for (let d = 0; d <= AHEAD; d++) {
@@ -418,10 +438,9 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       const priority = idx < PRIORITY_FRAMES;
       const settle = () => {
         inflight -= 1;
-        if (priority) {
-          priorityLoaded += 1;
-          window.__fqHero = { loaded: priorityLoaded, total: priorityTotal };
-        }
+        filmSettled += 1;
+        if (priority) priorityLoaded += 1;
+        publish();
       };
       // Decode off the main thread before the frame counts as ready. A frame
       // drawn straight after onload is decoded synchronously inside
@@ -447,6 +466,20 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       img.src = `/assets/hero/${prefix}-${pad3(idx + 1)}.${ext}?v=${FILM_VERSION}`;
       images[idx] = img;
     };
+
+    /**
+     * Pull the whole film down now rather than a window around the current
+     * frame. The intro calls this so that by the time the curtain lifts every
+     * frame is decoded and a scrub costs nothing; nobody else should, or the
+     * hero would fight the rest of the page for bandwidth on first paint.
+     */
+    function preloadAll() {
+      if (AHEAD >= film.count) return;
+      AHEAD = film.count;
+      BEHIND = film.count;
+      maxInflight = slow ? 4 : 10;
+      if (formatSettled) pump();
+    }
 
     function pump() {
       while (inflight < maxInflight) {

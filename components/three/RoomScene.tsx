@@ -52,6 +52,18 @@ export function RoomScene(props: RoomSceneProps) {
   const [ready, setReady] = useState(false);
   const { onReady } = props;
 
+  // Count this scene into the page-wide tally the intro waits on, and count
+  // it out again if it unmounts before it ever drew.
+  const countedRef = useRef(false);
+  useEffect(() => {
+    const reg = (window.__fqScenes ??= { total: 0, ready: 0 });
+    reg.total += 1;
+    return () => {
+      reg.total -= 1;
+      if (countedRef.current) reg.ready -= 1;
+    };
+  }, []);
+
   useEffect(() => {
     prefetchWhenIdle();
     const el = ref.current;
@@ -80,6 +92,11 @@ export function RoomScene(props: RoomSceneProps) {
 
   const handleReady = useCallback(() => {
     setReady(true);
+    if (!countedRef.current) {
+      countedRef.current = true;
+      const reg = (window.__fqScenes ??= { total: 0, ready: 0 });
+      reg.ready += 1;
+    }
     onReady?.();
   }, [onReady]);
 
