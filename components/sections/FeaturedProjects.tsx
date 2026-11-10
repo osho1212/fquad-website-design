@@ -14,12 +14,14 @@ const WORK_ART: ParallaxItem[] = [
 ];
 
 /**
- * Cards on screen at once: five on desktop, three on tablets, and on phones
- * one card with the next peeking in (a swipe carousel). Kept outside the
- * component so the gallery sees a stable object between renders.
+ * Desktop is the React Bits accordion: one row in which the hovered panel
+ * opens to about half the width and the rest tilt back and desaturate. A
+ * row is shared by every panel, so it holds the lead projects — at 16 each
+ * collapsed panel would be a 30px sliver; at 7 they stay readable. The full
+ * set is one click away (Explore portfolio) and on the phone carousel.
  */
-const VISIBLE = { base: 3, md: 3, lg: 5 } as const;
-const IMAGE_SIZES = "(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 85vw";
+const ACCORDION_COUNT = 7;
+const IMAGE_SIZES = "(min-width: 1024px) 55vw, 70vw";
 
 export interface FeaturedProject {
   slug: string;
@@ -109,26 +111,24 @@ export function FeaturedProjects({
           height the viewport leaves between header and footnote. */}
       <div className="relative z-10 w-full hidden md:block md:flex-1 md:min-h-0" data-cursor-label="View project">
         <AccordionGallery
-          items={items}
-          defaultIndex={1}
-          expandRatio={0.46}
+          items={items.slice(0, ACCORDION_COUNT)}
+          defaultIndex={0}
+          expandRatio={0.52}
           height="100%"
-          visibleCount={VISIBLE}
           imageSizes={IMAGE_SIZES}
-          loop
-          grow={false}
-          gap={16}
+          gap={10}
           radius={0}
-          accentColor="var(--fq-accent)"
-          overlayColor="#000000"
+          accentColor="#ffffff"
+          overlayColor="#060010"
           textColor="#ffffff"
-          duration={0.65}
+          duration={0.6}
           ease="power3.out"
-          tilt={6}
-          parallax={0.4}
+          tilt={8}
+          parallax={0.5}
+          stagger={0.06}
           trigger="hover"
-          grayscale={false}
-          showLabels={true}
+          grayscale
+          showLabels
         />
       </div>
 
