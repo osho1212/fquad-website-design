@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>F.QUAD — Coming Soon</title>
-<meta name="description" content="F.QUAD Studio — architecture and interior design, Hyderabad. New site coming soon." />
+<title>F.QUAD — Almost Home</title>
+<meta name="description" content="F.QUAD Studio — architecture and interior design, Hyderabad. The new site opens 11:11 AM IST, 11 November 2026." />
 <meta name="theme-color" content="#ffffff" />
 <link rel="canonical" href="https://fquad.com/" />
 
 <meta property="og:type" content="website" />
-<meta property="og:title" content="F.QUAD — Coming Soon" />
+<meta property="og:title" content="F.QUAD — Almost Home" />
 <meta property="og:site_name" content="F.QUAD Studio" />
-<meta property="og:description" content="Architecture &amp; Interior Design Studio, Hyderabad. New site coming soon." />
+<meta property="og:description" content="Architecture &amp; Interior Design Studio, Hyderabad. The new site opens 11:11 AM IST, 11 November 2026." />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="F.QUAD — Coming Soon" />
-<meta name="twitter:description" content="Architecture &amp; Interior Design Studio, Hyderabad. New site coming soon." />
+<meta name="twitter:title" content="F.QUAD — Almost Home" />
+<meta name="twitter:description" content="Architecture &amp; Interior Design Studio, Hyderabad. The new site opens 11:11 AM IST, 11 November 2026." />
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='340 166 204 204'%3E%3Crect x='340' y='166' width='204' height='204' fill='%23fff'/%3E%3Cpath fill='%23111' d='M394.27,319.33c-1.04.89-1.63,3.73-.99,4.77.85,1.4,2.67,2.15,4.66,2.15l78.79-.02v40.19s-92.81-.02-92.81-.02c-.38-1.09.3-105.17.3-105.17l97.25-74.47c1.83-1.41,2.89-3.11,2.76-5.09-.1-1.56-3.27-4.33-4.76-3.21l-103.14,79.65v108.3s-35.47,0-35.47,0l.27-202.64h202.34s.02,202.64.02,202.64h-59.42s-.02-40.14-.02-40.14l24.6-.05c2.13-.5,3.38-2.61,3.38-4.45,0-1.49-2.22-3.91-4.23-3.91l-23.75-.34.02-65.82c-.73-1.33-2.25-2.82-3.36-3.1-1.2-.3-3.9,1.69-3.91,3.05l-.36,66-67.12-.23,47.68-39.71c1.73-1.43,2.17-4.71.92-6.22-1.81-2.19-4.7-1.16-6.64.43l-6.26,5.16-50.76,42.24Z'/%3E%3C/svg%3E" />
 
@@ -81,12 +81,15 @@ body{
 
 .shell{position:relative;z-index:2;flex:1;display:flex;flex-direction:column}
 
-/* ── Mark ─────────────────────────────────────────────────────────── */
-.brand{display:inline-flex;align-items:center;gap:11px;text-decoration:none;color:inherit;align-self:flex-start}
-.brand svg{width:32px;height:32px;display:block;flex-shrink:0}
-.brand-text{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
-.brand-text b{font-family:'Good Times',system-ui,sans-serif;font-size:13px;letter-spacing:.16em;font-weight:400;color:var(--fg);line-height:1}
-.brand-byline{font-family:'Good Times',system-ui,sans-serif;font-size:7px;letter-spacing:.14em;font-weight:400;color:var(--fg);text-transform:uppercase;line-height:1;white-space:nowrap}
+/* ── Brand Lockup (Matches Official Studio Identity) ───────────────── */
+.brand{display:inline-flex;align-items:center;gap:clamp(14px,1.8vw,20px);text-decoration:none;color:inherit;align-self:center;margin:0 auto}
+.brand-box{width:clamp(52px,6.2vw,68px);height:clamp(52px,6.2vw,68px);background:#262626;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:6px}
+.brand-box svg{width:100%;height:100%;display:block}
+.brand-text{display:flex;flex-direction:column;align-items:center;text-align:center}
+.brand-name{font-family:'Good Times',system-ui,sans-serif;font-size:clamp(20px,2.6vw,30px);line-height:1.05;letter-spacing:.06em;font-weight:400;color:var(--fg)}
+.brand-tagline{font-family:'Montserrat',system-ui,sans-serif;font-size:clamp(8px,1vw,10.5px);font-weight:400;letter-spacing:.04em;color:var(--fg);margin-top:3px;line-height:1.2;white-space:nowrap}
+.brand-by{font-family:'Montserrat',system-ui,sans-serif;font-size:clamp(7.5px,0.9vw,9.5px);font-weight:600;color:var(--fg);margin-top:5px;line-height:1.1}
+.brand-founders{font-family:'Montserrat',system-ui,sans-serif;font-size:clamp(8.5px,1.05vw,11.5px);font-weight:700;letter-spacing:.12em;color:var(--fg);margin-top:2px;line-height:1.2;white-space:nowrap}
 
 /* ── The statement ────────────────────────────────────────────────── */
 main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(10px,2vh,28px) 0}
@@ -174,20 +177,24 @@ a:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 
 <div class="shell">
 
-  <a class="brand" href="/" aria-label="F.QUAD Studio — By Amit and Ashmi">
-    <svg viewBox="340 166 204 204" fill="#111" aria-hidden="true"><path d="M394.27,319.33c-1.04.89-1.63,3.73-.99,4.77.85,1.4,2.67,2.15,4.66,2.15l78.79-.02v40.19s-92.81-.02-92.81-.02c-.38-1.09.3-105.17.3-105.17l97.25-74.47c1.83-1.41,2.89-3.11,2.76-5.09-.1-1.56-3.27-4.33-4.76-3.21l-103.14,79.65v108.3s-35.47,0-35.47,0l.27-202.64h202.34s.02,202.64.02,202.64h-59.42s-.02-40.14-.02-40.14l24.6-.05c2.13-.5,3.38-2.61,3.38-4.45,0-1.49-2.22-3.91-4.23-3.91l-23.75-.34.02-65.82c-.73-1.33-2.25-2.82-3.36-3.1-1.2-.3-3.9,1.69-3.91,3.05l-.36,66-67.12-.23,47.68-39.71c1.73-1.43,2.17-4.71.92-6.22-1.81-2.19-4.7-1.16-6.64.43l-6.26,5.16-50.76,42.24Z"/></svg>
+  <a class="brand" href="/" aria-label="F.QUAD Studio — Architecture &amp; Interior Design Studio by Amit &amp; Ashmi">
+    <div class="brand-box">
+      <svg viewBox="340 166 204 204" fill="#ffffff" aria-hidden="true"><path d="M394.27,319.33c-1.04.89-1.63,3.73-.99,4.77.85,1.4,2.67,2.15,4.66,2.15l78.79-.02v40.19s-92.81-.02-92.81-.02c-.38-1.09.3-105.17.3-105.17l97.25-74.47c1.83-1.41,2.89-3.11,2.76-5.09-.1-1.56-3.27-4.33-4.76-3.21l-103.14,79.65v108.3s-35.47,0-35.47,0l.27-202.64h202.34s.02,202.64.02,202.64h-59.42s-.02-40.14-.02-40.14l24.6-.05c2.13-.5,3.38-2.61,3.38-4.45,0-1.49-2.22-3.91-4.23-3.91l-23.75-.34.02-65.82c-.73-1.33-2.25-2.82-3.36-3.1-1.2-.3-3.9,1.69-3.91,3.05l-.36,66-67.12-.23,47.68-39.71c1.73-1.43,2.17-4.71.92-6.22-1.81-2.19-4.7-1.16-6.64.43l-6.26,5.16-50.76,42.24Z"/></svg>
+    </div>
     <div class="brand-text">
-      <b>F.QUAD</b>
-      <span class="brand-byline">BY AMIT and ASHMI</span>
+      <span class="brand-name">F.QUAD</span>
+      <span class="brand-tagline">Architecture &amp; Interior Design Studio</span>
+      <span class="brand-by">By</span>
+      <span class="brand-founders">AMIT &amp; ASHMI</span>
     </div>
   </a>
 
   <main>
     <div class="mesh" id="mesh">
-      <h1 id="meshText"><span>Coming</span><span>Soon</span></h1>
+      <h1 id="meshText"><span>Almost</span><span>Home</span></h1>
       <canvas id="meshCanvas" aria-hidden="true"></canvas>
     </div>
-    <p class="meta">Architecture &amp; Interior Design Studio — Hyderabad</p>
+    <p class="meta">11:11 is the minute people stop to make a wish — ours opens its doors</p>
 
     <div class="count" id="count" role="timer" aria-live="off">
       <div class="unit"><span class="num" data-cd="d">--</span><span class="lbl">Days</span></div>
@@ -195,6 +202,7 @@ a:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
       <div class="unit"><span class="num" data-cd="m">--</span><span class="lbl">Minutes</span></div>
       <div class="unit"><span class="num" data-cd="s">--</span><span class="lbl">Seconds</span></div>
     </div>
+    <p class="meta" style="margin-top:clamp(16px,2.6vh,26px)">Doors open 11:11 AM IST &middot; Wed 11 Nov 2026</p>
     <p class="sr" id="cdSr"></p>
   </main>
 
@@ -209,23 +217,12 @@ a:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 document.getElementById('yr').textContent = new Date().getFullYear();
 
 /* ════════════════════════════════════════════════════════════════════
-   Countdown to launch (2 Weeks / 14 Days).
-   Persists via localStorage so the countdown ticks down smoothly
-   from 14 days without resetting on refresh.
+   Countdown to launch — 11:11 AM IST, Wednesday 11 November 2026.
    ══════════════════════════════════════════════════════════════════ */
-var TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
-var target;
-try {
-  var saved = localStorage.getItem('fq_launch_target');
-  if (saved && !isNaN(Number(saved)) && Number(saved) > Date.now()) {
-    target = Number(saved);
-  } else {
-    target = Date.now() + TWO_WEEKS_MS;
-    localStorage.setItem('fq_launch_target', String(target));
-  }
-} catch (e) {
-  target = Date.now() + TWO_WEEKS_MS;
-}
+/* The launch instant, in the studio's own timezone. Must match
+   NEXT_PUBLIC_LAUNCH_AT / lib/launch.ts on the main site, or the two
+   countdowns will disagree in public. */
+var target = Date.parse('2026-11-11T11:11:00+05:30');
 
 (function () {
   var box = document.getElementById('count');
