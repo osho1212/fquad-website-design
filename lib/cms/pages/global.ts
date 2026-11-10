@@ -153,8 +153,7 @@ export const globalPage: PageDef = {
         contactHeading: 'CONTACT',
         copyright: '© {year} F.QUAD Studio. All rights reserved.',
         legalLinks: [
-          { label: 'PRIVACY', href: '/privacy' },
-          { label: 'TERMS', href: '/terms' },
+          { label: 'PRIVACY', href: '#' },
           { label: 'SITEMAP', href: '/sitemap.xml' },
         ],
       },
@@ -208,8 +207,7 @@ export const globalPage: PageDef = {
         contactLocation: 'Hyderabad, Telangana, India',
         copyright: '© {year} F.QUAD STUDIO. ALL RIGHTS RESERVED.',
         legalLinks: [
-          { label: 'PRIVACY', href: '/privacy' },
-          { label: 'TERMS', href: '/terms' },
+          { label: 'PRIVACY', href: '#' },
           { label: 'SITEMAP', href: '/sitemap.xml' },
         ],
       },

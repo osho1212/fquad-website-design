@@ -17,8 +17,6 @@ const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "/testimonials", priority: 0.5 },
   { path: "/blog", priority: 0.5 },
   { path: "/contact", priority: 0.8 },
-  { path: "/privacy", priority: 0.2 },
-  { path: "/terms", priority: 0.2 },
 ];
 
 /** A failing data source must never take the whole sitemap down with it. */
