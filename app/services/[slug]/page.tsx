@@ -228,7 +228,7 @@ export default async function ServiceDetailPage(
             <button
               type="button"
               data-start-project="true"
-              className="btn-metallic text-xs uppercase font-medium cursor-pointer"
+              className="btn-primary text-xs uppercase font-medium cursor-pointer"
             >
               {labels.ctaLabel}
             </button>

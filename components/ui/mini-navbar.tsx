@@ -23,6 +23,7 @@ function isLinkActive(link: NavLink, pathname: string): boolean {
   return pathname === link.href || pathname.startsWith(`${link.href}/`);
 }
 
+/** A tab: the selected one is marked by a stroke along its bottom edge. */
 const AnimatedNavLink = ({
   href,
   children,
@@ -38,24 +39,20 @@ const AnimatedNavLink = ({
     <Link
       href={href}
       onClick={onClick}
-      className={`group relative block overflow-hidden h-7 px-3.5 text-[11px] tracking-[0.18em] uppercase rounded-none font-display transition-all duration-300 ${
+      aria-current={isActive ? "page" : undefined}
+      className={`group relative block overflow-hidden h-9 px-3 xl:px-4 text-[11px] tracking-[0.18em] uppercase rounded-none font-display border-b-2 transition-colors duration-300 ${
         isActive
-          ? "bg-white text-black border border-white font-bold"
-          : "text-white/70 hover:text-white hover:bg-white/10 border border-transparent"
+          ? "text-white border-white font-bold"
+          : "text-white/70 hover:text-white border-transparent hover:border-white/40"
       }`}
       style={{ fontFamily: "var(--font-good-times)" }}
     >
       <div className="flex flex-col transition-transform duration-300 ease-out transform group-hover:-translate-y-1/2">
-        <span className="h-7 leading-7 flex items-center justify-center whitespace-nowrap">
+        <span className="h-[34px] flex items-center justify-center whitespace-nowrap">
           {children}
         </span>
-        {/* Hover duplicate. On the active pill the background is the fg colour,
-            so this must invert too — otherwise the label disappears on hover. */}
-        <span
-          className={`h-7 leading-7 flex items-center justify-center whitespace-nowrap font-bold ${
-            isActive ? "text-black" : "text-white"
-          }`}
-        >
+        {/* Hover duplicate for the roll-over effect. */}
+        <span className="h-[34px] flex items-center justify-center whitespace-nowrap font-bold text-white">
           {children}
         </span>
       </div>
@@ -109,131 +106,124 @@ export function Navbar({
     setIsOpen(false);
   }, [pathname]);
 
+  const logo = (
+    <Link
+      href="/"
+      className="pointer-events-auto fq-tap-y inline-flex items-center justify-center w-10 h-9 lg:w-auto lg:h-auto lg:p-0.5 text-white hover:opacity-85 transition-opacity duration-300 group"
+      aria-label="F.QUAD Home"
+    >
+      <img
+        src={c.logo}
+        alt={c.logoAlt}
+        width={32}
+        height={32}
+        className="fq-nav-logo w-7 h-7 sm:w-8 sm:h-8 object-contain block"
+      />
+    </Link>
+  );
+
+  /*
+   * Three-column grid so the centre never collides with either side.
+   *
+   *  < lg (phone / tablet):  [ logo | hamburger ]            [ theme · primary CTA ]
+   *  ≥ lg (desktop):         [ logo ]   [ tabs ]               [ theme · primary CTA ]
+   */
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-11 py-3.5 pointer-events-none transition-transform duration-500 ease-out ${
+      className={`fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-6 lg:px-11 py-3 pointer-events-none transition-transform duration-500 ease-out ${
         isVisible ? "translate-y-0" : "-translate-y-full"
       }`}
     >
-      {/* Standalone Brand Logo (No container background) */}
-      <Link
-        href="/"
-        className="pointer-events-auto inline-flex items-center justify-center p-0.5 text-white hover:opacity-85 hover:-translate-y-0.5 transition-all duration-300 group"
-        aria-label="F.QUAD Home"
-      >
-        <img
-          src={c.logo}
-          alt={c.logoAlt}
-          width={32}
-          height={32}
-          className="w-7 h-7 sm:w-8 sm:h-8 object-contain block group-hover:scale-105 transition-transform drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
-        />
-      </Link>
-
-      {/* Center Nav Box (Desktop - Absolute Center Alignment & Sharp Geometric Edges) */}
-      <nav
-        aria-label="Primary"
-        className="pointer-events-auto hidden md:inline-flex items-center gap-1 px-1.5 py-1 bg-[#121212]/80 backdrop-blur-2xl border border-white/20 rounded-none shadow-[0_6px_30px_rgba(0,0,0,0.5)] absolute left-1/2 -translate-x-1/2 font-display"
-        style={{ fontFamily: "var(--font-good-times)" }}
-      >
-        {navLinks.map((link) => (
-          <AnimatedNavLink
-            key={link.label}
-            href={link.href}
-            isActive={isLinkActive(link, pathname)}
-          >
-            {link.label}
-          </AnimatedNavLink>
-        ))}
-      </nav>
-
-      {/* Right Action & Mobile Toggle */}
-      <div className="pointer-events-auto flex items-center gap-3">
-        <ThemeToggle />
+      {/* Left: logo — on phone/tablet it shares one frame with the menu button */}
+      <div className="fq-nav-frame pointer-events-auto flex items-center justify-self-start">
+        {logo}
+        <span aria-hidden="true" className="lg:hidden w-px h-5 bg-white/20" />
         <button
           type="button"
-          onClick={() => openModal()}
-          className="btn-metallic hidden sm:inline-flex text-[11px] py-2 px-5 tracking-[0.18em] rounded-none font-display cursor-pointer"
-          style={{ fontFamily: "var(--font-good-times)" }}
-        >
-          {c.ctaLabel}
-        </button>
-
-        {/* Mobile Hamburger Button */}
-        <button
           onClick={toggleMenu}
           aria-label={isOpen ? "Close menu" : "Open menu"}
           aria-expanded={isOpen}
           aria-controls="mobile-menu"
-          className="md:hidden flex items-center justify-center w-10 h-10 rounded-none bg-[#121212]/80 backdrop-blur-xl border border-white/20 text-white/80 hover:text-white"
+          className="fq-tap-y lg:hidden flex items-center justify-center w-10 h-9 rounded-none text-white/80 hover:text-white"
         >
-          {isOpen ? (
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="square"
-                strokeLinejoin="miter"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="square"
-                strokeLinejoin="miter"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          )}
+          <svg
+            className="w-[18px] h-[18px]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="square"
+              strokeLinejoin="miter"
+              strokeWidth="2"
+              d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+            />
+          </svg>
         </button>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Centre: tabs (desktop only) */}
+      <div className="justify-self-center">
+        <nav
+          aria-label="Primary"
+          className="pointer-events-auto hidden lg:inline-flex items-center gap-1 px-2 bg-[#121212]/80 backdrop-blur-2xl border border-white/20 rounded-none font-display"
+          style={{ fontFamily: "var(--font-good-times)" }}
+        >
+          {navLinks.map((link) => (
+            <AnimatedNavLink
+              key={link.label}
+              href={link.href}
+              isActive={isLinkActive(link, pathname)}
+            >
+              {link.label}
+            </AnimatedNavLink>
+          ))}
+        </nav>
+      </div>
+
+      {/* Right: primary action (and theme toggle on desktop) */}
+      <div className="pointer-events-auto flex items-center gap-3 justify-self-end">
+        <ThemeToggle className="w-9 h-9 lg:w-8 lg:h-8" />
+        <button
+          type="button"
+          onClick={() => openModal()}
+          className="btn-primary fq-tap min-h-9 lg:min-h-[40px] text-[11px] py-2 px-3 sm:px-5 tracking-[0.1em] sm:tracking-[0.18em] rounded-none font-display"
+          style={{ fontFamily: "var(--font-good-times)" }}
+        >
+          {c.ctaLabel}
+        </button>
+      </div>
+
+      {/* Mobile / tablet drawer */}
       <nav
         id="mobile-menu"
         aria-label="Mobile"
-        className={`md:hidden pointer-events-auto fixed top-16 left-6 right-6 p-5 rounded-none bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/20 shadow-2xl flex flex-col items-center gap-3 transition-all duration-300 font-display ${
+        className={`lg:hidden pointer-events-auto fixed top-[68px] left-4 right-4 sm:left-6 sm:right-auto sm:w-80 px-5 py-2 rounded-none bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/20 flex flex-col transition-all duration-300 font-display origin-top-left ${
           isOpen
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 scale-95 pointer-events-none invisible"
         }`}
         style={{ fontFamily: "var(--font-good-times)" }}
       >
-        {navLinks.map((link) => (
-          <Link
-            key={link.label}
-            href={link.href}
-            onClick={() => setIsOpen(false)}
-            className={`w-full py-3 min-h-[44px] flex items-center justify-center text-[11px] tracking-[0.2em] rounded-none transition-colors ${
-              isLinkActive(link, pathname)
-                ? "bg-white text-black font-bold"
-                : "text-white/70 hover:text-white"
-            }`}
-          >
-            {link.label}
-          </Link>
-        ))}
-        <button
-          type="button"
-          onClick={() => {
-            setIsOpen(false);
-            openModal();
-          }}
-          className="btn-metallic w-full text-center mt-2 text-[11px] py-2.5 rounded-none cursor-pointer"
-        >
-          {c.ctaLabel}
-        </button>
+        {navLinks.map((link) => {
+          const active = isLinkActive(link, pathname);
+          return (
+            <Link
+              key={link.label}
+              href={link.href}
+              onClick={() => setIsOpen(false)}
+              aria-current={active ? "page" : undefined}
+              className={`w-full py-3 min-h-[48px] flex items-center text-[11px] tracking-[0.2em] uppercase rounded-none border-b transition-colors ${
+                active
+                  ? "text-white font-bold border-white"
+                  : "text-white/70 hover:text-white border-white/10"
+              }`}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
       </nav>
     </header>
   );

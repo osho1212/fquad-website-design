@@ -36,11 +36,11 @@ const CLOSING_ART: ParallaxItem[] = [
   { art: "cross", x: "3%", y: "86%", w: 28, depth: 0.9, spin: 90, opacity: 0.2 },
 ];
 
-// `.btn-metallic` pins its own 10px type, so the 11px floor needs `!`.
+// `.btn-primary` pins its own 10px type, so the 11px floor needs `!`.
 const OUTLINE_BTN =
-  "inline-flex min-h-[44px] items-center justify-center px-6 text-[11px] tracking-[0.18em] uppercase font-medium text-white border border-white/35 hover:border-white transition-colors";
+  "btn-secondary min-h-[44px] px-6 text-[11px] tracking-[0.18em] uppercase font-medium";
 const PRIMARY_BTN =
-  "btn-metallic !text-[11px] min-h-[44px] uppercase font-medium cursor-pointer";
+  "btn-primary !text-[11px] min-h-[44px] uppercase font-medium cursor-pointer";
 
 /** "Residential • Commercial • Retail" → ["Residential", "Commercial", "Retail"]. */
 function splitSectors(line: unknown): string[] {

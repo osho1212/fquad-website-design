@@ -38,7 +38,7 @@ export function StartProjectModal() {
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-2xl bg-[#0e0e0e] border border-white/20 shadow-2xl my-auto text-white max-h-[92vh] flex flex-col rounded-none"
+        className="relative w-full max-w-2xl bg-[#0e0e0e] border border-white/20 my-auto text-white max-h-[92vh] flex flex-col rounded-none"
       >
         {/* Top Header Bar */}
         <div className="sticky top-0 z-20 bg-[#0e0e0e]/95 backdrop-blur-md px-6 sm:px-8 py-5 border-b border-white/10 flex items-center justify-between">
