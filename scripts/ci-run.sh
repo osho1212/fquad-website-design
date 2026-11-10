@@ -7,11 +7,6 @@
 set -euo pipefail
 
 export NODE_ENV=production
-# The login page's "Continue with Google" button is built in only when these are set;
-# they point the browser at the local Auth emulator (public values, not secrets).
-export NEXT_PUBLIC_FIREBASE_API_KEY="${NEXT_PUBLIC_FIREBASE_API_KEY:-fake-api-key}"
-export NEXT_PUBLIC_FIREBASE_PROJECT_ID="${NEXT_PUBLIC_FIREBASE_PROJECT_ID:-demo-fquad}"
-export NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST="${NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST:-127.0.0.1:9099}"
 export SESSION_SECRET="${SESSION_SECRET:-ci-only-secret-0123456789-abcdefghijklmnopqrstuvwxyz}"
 PORT="${PORT:-3002}"
 
@@ -24,7 +19,14 @@ fi
 # The Google sign-in token check, on its own (no emulator or network needed).
 node --experimental-strip-types scripts/test-google-token.mjs
 
+# Built WITHOUT the Google sign-in settings, which are given only when the server
+# starts: the login page reads them as it is served, exactly as on Vercel when
+# the key is added after a build (the e2e test then checks the button is offered).
 npm run build
+
+# Public values (not secrets) that point the browser at the local Auth emulator.
+export NEXT_PUBLIC_FIREBASE_API_KEY="${NEXT_PUBLIC_FIREBASE_API_KEY:-fake-api-key}"
+export NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST="${NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST:-127.0.0.1:9099}"
 
 npx next start -p "$PORT" > server.log 2>&1 &
 SERVER=$!
