@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const members = await prisma.teamMember.findMany({
     orderBy: { order: 'asc' },
     include: { media: { include: { variants: true } } },
@@ -10,6 +14,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   let body: any;
   try {
     body = await req.json();

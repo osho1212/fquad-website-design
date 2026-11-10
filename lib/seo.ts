@@ -27,7 +27,11 @@ export function pageMetadata({
   noIndex,
 }: PageMeta): Metadata {
   const full = `${title} — ${SITE.name}`;
-  const images = image ? [{ url: image }] : undefined;
+  // Passing `images` here replaces the site-wide card, so pages without a
+  // picture of their own must name it explicitly or they share with none.
+  const images = image
+    ? [{ url: image }]
+    : [{ url: "/opengraph-image", width: 1200, height: 630, alt: SITE.name }];
   return {
     title: full,
     description,

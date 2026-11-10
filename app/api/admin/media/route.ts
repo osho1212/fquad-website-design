@@ -5,6 +5,7 @@ import path from 'path';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { processImage, processVideo, deleteMediaFiles } from '@/lib/media';
+import { requireAdmin } from '@/lib/admin-guard';
 
 // The media library is never static: this route lists live uploads and runs
 // image/video processing. Marking it dynamic also keeps `next build` from
@@ -12,6 +13,9 @@ import { processImage, processVideo, deleteMediaFiles } from '@/lib/media';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const media = await prisma.media.findMany({
     include: { variants: true },
     orderBy: { createdAt: 'desc' },
@@ -20,6 +24,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   let formData: FormData;
   try {
     formData = await req.formData();
@@ -43,6 +50,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: 'Unsupported file type — please upload an image or video.' },
       { status: 400 }
+    );
+  }
+
+  const maxBytes = isImage ? 40 * 1024 * 1024 : 400 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    return NextResponse.json(
+      { error: `That file is too large (${isImage ? '40 MB' : '400 MB'} maximum).` },
+      { status: 413 }
     );
   }
 

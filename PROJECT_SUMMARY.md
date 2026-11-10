@@ -13,7 +13,7 @@
 - ✅ `package.json` — Dependencies and scripts
 - ✅ `tsconfig.json` — TypeScript configuration
 - ✅ `next.config.js` — Next.js configuration
-- ✅ `.env.local.example` — Environment variables template
+- ✅ `.env.example` — Environment variables template
 - ✅ `.gitignore` — Git ignore rules
 
 ### Documentation
@@ -80,7 +80,7 @@ npm install
 
 ### 2. Set API Key
 ```bash
-cp .env.local.example .env.local
+cp .env.example .env.local
 # Add your Resend API key to .env.local
 ```
 
@@ -129,7 +129,7 @@ FQuad-Website-Complete/
 ├── package.json
 ├── tsconfig.json
 ├── next.config.js
-└── .env.local.example
+└── .env.example
 ```
 
 ---

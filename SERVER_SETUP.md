@@ -1,105 +1,109 @@
-# F.QUAD — Server Setup Notes
+# F.QUAD — Server Setup
 
-Running checklist of everything that needs to happen on **pta-webblr-01**
-(DigitalOcean, Bangalore BLR1) to get the CMS-powered site live. I'll keep
-adding to this as each build phase lands — by the time we deploy, this
-should be a complete step-by-step.
-
-Status: **Phase 1 (auth + database) done.** Sections below marked
-`[ ]` are not needed yet but are listed so nothing gets missed later.
+Everything that has to happen on **pta-webblr-01** (DigitalOcean, Bangalore
+BLR1) to run the site in production. The site must run on a server with a
+**persistent disk** (this one): the CMS writes a SQLite database file and
+saves uploaded media to disk, so serverless hosts (Vercel, Netlify) would lose
+every edit and upload. Run **one** Node instance only — the database, the page
+cache and the rate limiter all live inside that process.
 
 ---
 
 ## 1. System requirements
 
-- [x] Node.js 18.18+ (Next.js 14 requirement) — check with `node -v`
-- [x] npm (comes with Node)
-- [ ] `ffmpeg` — needed from Phase 2 (video compression/poster frames).
-      Install with: `sudo apt update && sudo apt install -y ffmpeg`
-- [x] SQLite — no install needed, Prisma bundles its own driver. The
-      database is just a file (`prisma/dev.db` by default).
+- [ ] Node.js 20 or 22 (`node -v`; the project pins `>=20 <23`, see `.nvmrc`)
+- [ ] `ffmpeg` (video compression): `sudo apt install -y ffmpeg`
+- [ ] `sqlite3` (used by the backup script): `sudo apt install -y sqlite3`
+- [ ] Nginx and Certbot (HTTPS)
+- [ ] PM2: `sudo npm install -g pm2`
 
-`sharp` (image resizing, Phase 2) ships prebuilt binaries for Linux x64,
-so a plain `npm install` on the droplet should work without extra build
-tools. If `npm install` complains about sharp, run:
+`sharp` ships prebuilt Linux binaries. If `npm install` complains about it:
 `sudo apt install -y build-essential python3` and reinstall.
 
 ---
 
 ## 2. Environment variables
 
-Copy `.env.local.example` → `.env.local` on the server and fill in:
+Copy `.env.example` → **`.env`** in the project folder on the server and fill
+it in. Use `.env` (not `.env.local`) on the server: the Prisma command line
+reads only `.env`, so one file keeps the app and the `prisma` commands in
+agreement. The file is gitignored — create it on the server, never commit it.
 
-| Variable | Notes |
-|---|---|
-| `RESEND_API_KEY` | from the contact-form phase, unchanged |
-| `DATABASE_URL` | `file:./prisma/dev.db` (or an absolute path — see §3) |
-| `SESSION_SECRET` | generate with `openssl rand -base64 32`, keep this secret |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | only used once by the seed script to create the first admin — **change the password from the admin panel after first login**, then these can stay as-is or be removed |
+| Variable | Required | Notes |
+|---|---|---|
+| `DATABASE_URL` | yes | `file:/var/data/fquad/app.db` — outside the project folder (§3) |
+| `SESSION_SECRET` | **yes** | 32+ random characters: `openssl rand -base64 48`. The admin refuses to work without it |
+| `NEXT_PUBLIC_SITE_URL` | **yes** | the live address, e.g. `https://fquad.com`. Without it the sitemap, canonical links and share cards say `localhost` |
+| `RESEND_API_KEY` | yes | emails for the contact and project forms |
+| `MAIL_FROM`, `ENQUIRY_TO` | no | defaults: `F.QUAD Studio <contact@fquad.com>` and `admin@fquad.com`. The sender domain must be verified in Resend (SPF + DKIM) |
+| `MEDIA_DIR`, `MEDIA_URL_PREFIX` | recommended | `/var/data/fquad/media` and `/uploads` — Nginx serves it (§6) |
+| `PRIVATE_UPLOAD_DIR` | recommended | `/var/data/fquad/private-uploads` — plans attached to the project form; only an admin can download them |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | first run only | used by `npm run db:seed`; there is no default password; remove after |
 
-`.env.local` is gitignored — it has to be created directly on the server,
-not pulled from the repo.
+If the Node process is ever started with the secret missing, the log shows
+`SESSION_SECRET must be set…` and `/admin` returns an error instead of running
+with a weak key.
 
 ---
 
-## 3. Database file — persistence
+## 3. Data folder — persistence
 
-The SQLite file is the entire CMS database (projects, page text, settings).
-**This file must survive redeploys and be backed up.**
-
-Recommended: point `DATABASE_URL` at a path *outside* the app's deploy
-directory, e.g. `file:/var/data/fquad/app.db`, so that redeploying the app
-code never touches it. Make sure the directory exists and is writable by
-whichever user runs the Node process:
+Three things are the site's real data and must survive redeploys and be backed
+up. Keep them outside the project folder:
 
 ```bash
-sudo mkdir -p /var/data/fquad
-sudo chown <deploy-user>:<deploy-user> /var/data/fquad
+sudo mkdir -p /var/data/fquad/media /var/data/fquad/private-uploads
+sudo chown -R <deploy-user>:<deploy-user> /var/data/fquad
+sudo chmod 700 /var/data/fquad /var/data/fquad/private-uploads
 ```
 
-Back up this file regularly (a simple nightly `cp` to a dated filename, or
-add it to whatever backup routine the droplet already has).
+- `/var/data/fquad/app.db` — the SQLite database (CMS content, admin accounts,
+  enquiries with visitors' names, emails and phone numbers)
+- `/var/data/fquad/media` — the CMS media library
+- `/var/data/fquad/private-uploads` — customers' plans and drawings
 
 ---
 
 ## 4. First-time setup commands
 
-From the project directory on the server, after `.env.local` is in place:
+From the project folder, after `.env` is in place:
 
 ```bash
-npm install
+npm ci
 npx prisma generate
-npx prisma db push      # creates tables from schema.prisma
-npm run db:seed         # creates first admin user + default content
+npx prisma db push        # creates the tables from prisma/schema.prisma
+ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run db:seed
 npm run build
 ```
 
-Then log in at `https://fquad.com/admin/login` with `ADMIN_EMAIL` /
-`ADMIN_PASSWORD` from `.env.local`, and **change the password immediately**
-(password-change UI lands in a later phase — until then, update it by
-re-running the seed with a new `ADMIN_PASSWORD` and deleting the old
-`AdminUser` row, or ask me for a one-off script when we get there).
+Remove `ADMIN_PASSWORD` from your shell history afterwards, then sign in at
+`/admin/login` and change it under **Admin → Account** if you like.
+
+To reset a forgotten password, or add the first admin to a new database:
+
+```bash
+ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run admin:password
+```
 
 ---
 
-## 5. Running the app (process manager)
+## 5. Running the app
 
-Next.js needs to run as a persistent process behind Nginx. Recommended:
-PM2.
+The app listens on port **3002** (`npm start`).
 
 ```bash
-sudo npm install -g pm2
 pm2 start npm --name fquad -- start
 pm2 save
-pm2 startup    # follow the printed instructions to enable on boot
+pm2 startup                 # run the command it prints, so it starts on boot
+pm2 install pm2-logrotate   # keeps logs from filling the disk
 ```
 
-To redeploy after changes:
+Redeploy:
 
 ```bash
-git pull                # or however code gets onto the server
-npm install
-npx prisma db push       # only if schema.prisma changed
+git pull
+npm ci
+npx prisma db push          # only if prisma/schema.prisma changed
 npm run build
 pm2 restart fquad
 ```
@@ -108,30 +112,116 @@ pm2 restart fquad
 
 ## 6. Nginx
 
-Existing Nginx config (from earlier setup) should reverse-proxy to the
-Next.js port (default 3000). No changes needed for Phase 1.
+The proxy must tell the app who is really visiting — the rate limits on the
+login and forms rely on `X-Real-IP`, and the admin's cross-site protection
+relies on `Host`. `X-Forwarded-For` is **overwritten** (not appended) so a
+visitor cannot invent addresses.
 
-**[ ] Phase 2 note:** once media uploads exist, uploaded files will live
-on disk (e.g. `/var/data/fquad/media`). We'll add an Nginx location block
-to serve that directory directly (faster than proxying through Node) —
-I'll provide the exact config when we get there.
+```nginx
+# http { } context (e.g. /etc/nginx/conf.d/fquad-limits.conf)
+limit_req_zone $binary_remote_addr zone=fquad_sensitive:10m rate=10r/m;
+
+server {
+    server_name fquad.com www.fquad.com;
+    # listen 443 ssl … is added by Certbot
+
+    client_max_body_size 32m;            # project plans are up to 30 MB
+
+    # CMS media, straight from disk (matches MEDIA_DIR)
+    location /uploads/ {
+        alias /var/data/fquad/media/;
+        access_log off;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options nosniff;
+    }
+
+    # Extra brake on login and the public forms, on top of the app's own limits
+    location ~ ^/api/(admin/login|contact|start-project)$ {
+        limit_req zone=fquad_sensitive burst=5 nodelay;
+        include /etc/nginx/snippets/fquad-proxy.conf;
+    }
+
+    location / {
+        include /etc/nginx/snippets/fquad-proxy.conf;
+    }
+}
+```
+
+`/etc/nginx/snippets/fquad-proxy.conf`:
+
+```nginx
+proxy_pass http://127.0.0.1:3002;
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $remote_addr;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+
+Then `sudo nginx -t && sudo systemctl reload nginx`, and
+`sudo certbot --nginx -d fquad.com -d www.fquad.com` for HTTPS (it renews
+itself). Pick one of `fquad.com` / `www.fquad.com` as the main address and
+redirect the other to it; set `NEXT_PUBLIC_SITE_URL` to the main one.
 
 ---
 
-## 7. Admin routes
+## 7. Admin and what protects it
 
-- `/admin/login` — public
-- `/admin` and everything under `/admin/*` — requires login, enforced by
-  `middleware.ts`. Nothing extra needed in Nginx; this is handled by the
-  app itself.
+- `/admin/login` is public; everything else under `/admin` and `/api/admin`
+  needs a session. This is enforced twice: by `middleware.ts` and again inside
+  every admin API handler (`lib/admin-guard.ts`).
+- Sessions last 24 hours. Login allows 5 wrong passwords per account and 10 per
+  address per 15 minutes, then blocks for the rest of the window.
+- The contact and project forms allow 5 submissions per address per 10 minutes.
+- Plans attached to the project form are checked (PDF, JPG, PNG, DWG, DXF only,
+  30 MB, contents must match), stored outside the web folder under random names,
+  and only downloadable by a signed-in admin from **Admin → Enquiries**.
 
 ---
 
-## Open items for later phases
+## 8. Backups
 
-- [ ] `ffmpeg` install (Phase 2 — video processing)
-- [ ] `/var/data/fquad/media` directory + Nginx static serving (Phase 2)
-- [ ] Password-change UI (so the seed password doesn't need to linger)
-- [ ] Backup routine for `app.db` and `/var/data/fquad/media`
-- [ ] SSL/domain (separate, already tracked elsewhere — Adroit domain
-      transfer pending)
+`scripts/backup.sh` writes a consistent copy of the database plus the media and
+private uploads, keeps 30 days, and (optionally) copies them off the server.
+
+```bash
+sudo apt install -y sqlite3
+chmod +x scripts/backup.sh
+crontab -e
+# every night at 02:15
+15 2 * * * /srv/fquad/scripts/backup.sh >> /var/log/fquad-backup.log 2>&1
+```
+
+Off-server copy (strongly recommended — a backup on the same disk does not
+survive losing the server): install `rclone`, configure a remote for
+DigitalOcean Spaces or Cloudflare R2 with `rclone config`, and set
+`BACKUP_REMOTE=spaces:fquad-backups` in the cron line's environment.
+
+**Test a restore once** before launch: copy a `.db.gz` to a temp folder,
+`gunzip` it, and open it with `sqlite3 file.db "select count(*) from Enquiry;"`.
+
+---
+
+## 9. Monitoring
+
+- [ ] **Uptime:** add a free UptimeRobot or Better Stack monitor on
+      `https://fquad.com/` and `https://fquad.com/admin/login` (both should
+      return 200), alerting the studio by email.
+- [ ] **Logs:** `pm2 logs fquad`; `pm2-logrotate` (§5) caps their size.
+- [ ] **Errors (optional):** Sentry (free tier) — `npx @sentry/wizard@latest -i nextjs`
+      after creating a project and DSN. Not installed yet.
+- [ ] **Server:** firewall allowing only 22/80/443 (`sudo ufw allow OpenSSH &&
+      sudo ufw allow 'Nginx Full' && sudo ufw enable`), SSH keys only
+      (`PasswordAuthentication no`), `sudo apt install unattended-upgrades`.
+
+---
+
+## Still open
+
+- [ ] Verify `fquad.com` in Resend (add the SPF, DKIM and DMARC records it
+      shows) and send a test enquiry end to end
+- [ ] Domain / DNS cut-over (Adroit domain transfer pending)
+- [ ] Sentry (optional, §9)
+- [ ] Captcha on the public forms (Cloudflare Turnstile needs a free account;
+      the rate limits are the only bot protection until then)

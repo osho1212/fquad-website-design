@@ -19,6 +19,20 @@ const STATUS_COLORS: Record<string, string> = {
   CLOSED: '#9C9890',
 };
 
+// Plan files a visitor attached are stored privately; the message holds a
+// path only a signed-in admin can open. Show it as a download link.
+function renderMessage(text: string) {
+  return text.split(/(\/api\/admin\/enquiry-files\/[a-f0-9]{24}\.[a-z]{3,4})/).map((part, i) =>
+    part.startsWith('/api/admin/enquiry-files/') ? (
+      <a key={i} href={part} download style={{ color: '#4A4A4A', fontWeight: 600 }}>
+        Download plan
+      </a>
+    ) : (
+      part
+    )
+  );
+}
+
 export default function EnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +162,7 @@ export default function EnquiriesPage() {
               </div>
 
               <p style={{ fontSize: 14, color: '#4A4844', lineHeight: 1.6, marginBottom: 16, whiteSpace: 'pre-wrap' }}>
-                {enquiry.message}
+                {renderMessage(enquiry.message)}
               </p>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

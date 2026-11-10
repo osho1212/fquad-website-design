@@ -31,7 +31,7 @@ npm install
 
 ### Step 3: Create Environment File
 ```bash
-cp .env.local.example .env.local
+cp .env.example .env.local
 ```
 - [ ] `.env.local` file created in root folder
 

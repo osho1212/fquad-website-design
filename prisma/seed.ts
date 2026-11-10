@@ -6,7 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   // --- Admin user ---
   const adminEmail = (process.env.ADMIN_EMAIL || 'admin@fquad.com').toLowerCase().trim();
-  const adminPassword = process.env.ADMIN_PASSWORD || 'changeme123';
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword.length < 12 || adminPassword.toLowerCase() === 'changeme123') {
+    console.error(
+      'Set ADMIN_PASSWORD to a unique password of at least 12 characters before seeding.\n' +
+        'There is deliberately no default: this account controls the whole site.'
+    );
+    process.exit(1);
+  }
 
   const existingAdmin = await prisma.adminUser.findUnique({ where: { email: adminEmail } });
   if (!existingAdmin) {
@@ -15,9 +22,6 @@ async function main() {
       data: { email: adminEmail, passwordHash, name: 'F.QUAD Admin', role: 'SUPERADMIN' },
     });
     console.log(`Created admin user: ${adminEmail}`);
-    if (!process.env.ADMIN_PASSWORD) {
-      console.log('  (using default password "changeme123" — set ADMIN_PASSWORD env var to change)');
-    }
   } else {
     console.log(`Admin user already exists: ${adminEmail}`);
   }

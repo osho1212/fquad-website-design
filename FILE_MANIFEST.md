@@ -58,7 +58,7 @@ app/api/contact/route.ts
 | **package.json** | Dependencies and npm scripts |
 | **tsconfig.json** | TypeScript configuration |
 | **next.config.js** | Next.js settings |
-| **.env.local.example** | Environment variables template |
+| **.env.example** | Environment variables template |
 | **.gitignore** | Git ignore rules (don't commit secrets) |
 
 ---
@@ -96,7 +96,7 @@ FQuad-Website-Complete/
 │   ├── package.json                ← Dependencies
 │   ├── tsconfig.json               ← TypeScript config
 │   ├── next.config.js              ← Next.js config
-│   ├── .env.local.example          ← API key template
+│   ├── .env.example          ← API key template
 │   └── .gitignore                  ← Git rules
 │
 └── 📁 public/                       ← Images & logos go here (empty now)
@@ -225,7 +225,7 @@ Footer.tsx              → Footer (appears on all pages)
 contact/page.tsx        → Contact page example
 
 package.json            → Dependencies
-.env.local.example      → API key template
+.env.example      → API key template
 tsconfig.json           → TypeScript config
 next.config.js          → Next.js config
 ```

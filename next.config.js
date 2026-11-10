@@ -38,6 +38,11 @@ const nextConfig = {
         ],
       },
       {
+        // The admin must never appear in search results.
+        source: '/admin/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
         // Baseline hardening for every response. No CSP here on purpose: the
         // site relies on inline theme/motion boot scripts and a Google Maps
         // embed, so a policy needs nonces and its own testing pass.
@@ -46,6 +51,14 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          // Browsers ignore this over plain http, so it is safe to send everywhere.
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+          // Only what is safe without nonces: no framing by other sites, no
+          // plugins, no rewriting of <base>, forms may post only to this site.
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
+          },
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',

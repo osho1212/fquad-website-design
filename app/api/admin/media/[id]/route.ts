@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { deleteMediaFiles } from '@/lib/media';
+import { requireAdmin } from '@/lib/admin-guard';
 
 // The media library is never static: this route lists live uploads and runs
 // image/video processing. Marking it dynamic also keeps `next build` from
@@ -8,6 +9,9 @@ import { deleteMediaFiles } from '@/lib/media';
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { id } = params;
   let body: any;
   try {
@@ -34,6 +38,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { id } = params;
 
   const media = await prisma.media.findUnique({ where: { id } });
