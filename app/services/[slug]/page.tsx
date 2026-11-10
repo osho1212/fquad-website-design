@@ -9,6 +9,7 @@ import { getServices, getService, defaultServices } from "@/lib/services";
 import { getPage } from "@/lib/cms/content";
 import { fill } from "@/lib/cms/schema";
 import { getSiteSettings } from "@/lib/public-content";
+import { responsive } from "@/lib/img";
 
 export const revalidate = 60;
 // A service added in the CMS after a build is rendered on demand rather than 404ing.
@@ -117,7 +118,7 @@ export default async function ServiceDetailPage(
           <figure className="m-0 overflow-hidden aspect-[16/9] bg-zinc-900 border border-white/10 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={service.image}
+              {...responsive(service.image, "100vw")}
               alt={service.alt}
               className="w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
             />

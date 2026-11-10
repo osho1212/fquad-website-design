@@ -7,6 +7,7 @@ import { getServices } from "@/lib/services";
 import { getPage } from "@/lib/cms/content";
 import { fill, toLines } from "@/lib/cms/schema";
 import { getSiteSettings } from "@/lib/public-content";
+import { responsive } from "@/lib/img";
 import { SOCIAL_FALLBACKS } from "@/lib/social";
 
 export const revalidate = 60;
@@ -77,7 +78,7 @@ export default async function ServicesPage() {
           <figure className="m-0 overflow-hidden h-[45vh] lg:h-[55vh] rounded-none bg-zinc-900 border border-white/10">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={hero.image}
+              {...responsive(hero.image, "(min-width: 1024px) 50vw, 100vw")}
               alt={hero.imageAlt}
               className="w-full h-full object-cover block transition-transform duration-700 hover:scale-105"
             />
@@ -120,7 +121,7 @@ export default async function ServicesPage() {
                 <figure className="m-0 overflow-hidden aspect-[16/10] rounded-none bg-zinc-900 border border-white/10">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={svc.image}
+                    {...responsive(svc.image, "(min-width: 1024px) 40vw, 100vw")}
                     alt={svc.alt}
                     className="w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
                   />

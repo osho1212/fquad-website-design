@@ -1,4 +1,5 @@
 import React from "react";
+import { responsive } from "@/lib/img";
 
 export interface Founder {
   name: string;
@@ -35,7 +36,7 @@ export function FounderCard({ person, index }: { person: Founder; index: number 
           {person.portrait ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={person.portrait}
+              {...responsive(person.portrait, "320px", [640, 828])}
               alt={`Portrait of ${person.name}, ${person.role}`}
               width={600}
               height={800}

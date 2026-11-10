@@ -36,6 +36,7 @@ agreement. The file is gitignored — create it on the server, never commit it.
 | `NEXT_PUBLIC_SITE_URL` | **yes** | the live address, e.g. `https://fquad.com`. Without it the sitemap, canonical links and share cards say `localhost` |
 | `RESEND_API_KEY` | yes | emails for the contact and project forms |
 | `MAIL_FROM`, `ENQUIRY_TO` | no | defaults: `F.QUAD Studio <contact@fquad.com>` and `admin@fquad.com`. The sender domain must be verified in Resend (SPF + DKIM) |
+| `GOOGLE_SITE_VERIFICATION` | optional | the token Google Search Console shows for the "HTML tag" method; add it, deploy, then verify and submit `/sitemap.xml` |
 | `MEDIA_DIR`, `MEDIA_URL_PREFIX` | recommended | `/var/data/fquad/media` and `/uploads` — the app serves it at `/uploads`; Nginx may too (§6) |
 | `PRIVATE_UPLOAD_DIR` | recommended | `/var/data/fquad/private-uploads` — plans attached to the project form; only an admin can download them |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | first run only | used by `npm run db:seed`; there is no default password; remove after |
