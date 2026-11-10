@@ -5,7 +5,6 @@ import Link from "next/link";
 import { withDefaults } from "@/lib/cms/schema";
 import { prefersReducedMotion } from "@/lib/motion";
 import { RoomScene } from "@/components/three/RoomScene";
-import Magnet, { FRAME_MAGNET } from "@/components/ui/Magnet";
 import type { SceneVariant } from "@/components/three/RoomSceneImpl";
 import "./ServicesSection.css";
 
@@ -166,13 +165,7 @@ export function ServicesSection({
     >
       <div className="wwd-stage relative h-[100svh] min-h-[640px] w-full overflow-hidden">
         {/* The model */}
-        <Magnet
-          {...FRAME_MAGNET}
-          wrapperClassName="order-2 min-h-0"
-          innerClassName="h-full"
-          style={{ display: "block", width: "100%" }}
-        >
-        <figure className="wwd-figure m-0 h-full">
+        <figure className="wwd-figure m-0">
           <RoomScene
             variant={model}
             progressRef={progress}
@@ -216,7 +209,6 @@ export function ServicesSection({
             </div>
           </div>
         </figure>
-        </Magnet>
 
         {/* The words */}
         <div className="wwd-panel">

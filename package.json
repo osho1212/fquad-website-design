@@ -16,7 +16,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "npx --yes tsx prisma/seed.ts",
     "admin:password": "node scripts/set-admin-password.mjs",
-    "hero:avif": "node scripts/encode-hero-avif.mjs"
+    "hero:avif": "node scripts/encode-hero-avif.mjs",
+    "sketch:images": "node scripts/make-sketches.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

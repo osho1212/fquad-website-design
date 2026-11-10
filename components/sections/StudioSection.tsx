@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { withDefaults } from "@/lib/cms/schema";
 import { InView } from "@/components/motion/InView";
 import { ScrollWords } from "@/components/motion/Reveal";
 import { ParallaxField, type ParallaxItem } from "@/components/parallax/ParallaxField";
-import { RoomScene } from "@/components/three/RoomScene";
-import Magnet, { FRAME_MAGNET } from "@/components/ui/Magnet";
 
 /**
  * Background layers sit at negative depth (slower than the page) and the
@@ -24,19 +22,18 @@ const STUDIO_ART: ParallaxItem[] = [
 
 export function StudioSection({ content }: { content?: Record<string, any> }) {
   const c = withDefaults("home", "studio", content);
-  // Live clock for the salon's noon-to-night light; written from the scene's frame loop.
   const columns: string[] = c.columns ?? [];
 
   return (
     <section
       id="studio"
-      className="relative overflow-hidden py-28 sm:py-40 px-6 sm:px-11 border-t border-white/15 bg-transparent"
+      className="relative overflow-hidden pt-28 sm:pt-40 pb-12 sm:pb-16 px-6 sm:px-11 border-t border-white/15 bg-transparent"
     >
       <ParallaxField items={STUDIO_ART} />
 
-      {/* Two halves: the statement, and the model at the same weight. */}
+      {/* The statement and its supporting columns. */}
       <InView className="relative z-10 grid grid-cols-1 xl:grid-cols-12 gap-x-12 gap-y-14 items-center max-w-[1760px] mx-auto">
-        <div className="xl:col-span-6">
+        <div className="xl:col-span-9 2xl:col-span-8">
           <ScrollWords
             as="p"
             text={c.lead}
@@ -57,32 +54,6 @@ export function StudioSection({ content }: { content?: Record<string, any> }) {
             </div>
           )}
         </div>
-
-        {/* A drawing-sheet viewport holding the 3D salon: as the section scrolls
-            past, the light moves from noon sun to golden hour to lamplit night. */}
-        <Magnet
-          {...FRAME_MAGNET}
-          wrapperClassName="xl:col-span-6"
-          style={{ display: "block", width: "100%" }}
-        >
-        <figure
-          className="fq-fade fq-frame m-0"
-          style={{ ["--i" as string]: 3 }}
-        >
-          <RoomScene
-            variant="living"
-            range={[0.12, 0.82]}
-            className="w-full aspect-[4/3] sm:aspect-[5/4]"
-            label="A cut-away luxury living room — curved bouclé sofa, travertine table, brass ring chandelier, walnut reeded wall and an arched window — whose light moves from midday sun to golden hour to a lamplit evening as the page scrolls"
-          />
-          <span className="fq-frame-b" aria-hidden="true" />
-          {/* Below the model on phones, where a two-line caption covered it. */}
-          <figcaption className="relative mt-2 px-1 pb-1 sm:p-0 sm:m-0 sm:absolute sm:left-3 sm:bottom-3 sm:right-3 flex justify-between gap-3 text-[11px] tracking-[0.22em] uppercase text-white/70 pointer-events-none">
-            <span>Fig. 01 — Interior Design</span>
-            <span>Selected work</span>
-          </figcaption>
-        </figure>
-        </Magnet>
       </InView>
     </section>
   );

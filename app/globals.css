@@ -1077,3 +1077,126 @@ html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
     opacity: 1;
   }
 }
+
+/* ── Sketch frame ─────────────────────────────────────────────────────────
+   A photo being drawn in pencil (components/ui/SketchFrame.tsx). Paper and
+   ink are the hero film's colours. Layers, bottom to top: paper, the colour
+   photo, the finished pencil drawing, the rough first sketch. The two pencil
+   layers are graphite-on-white artwork multiplied over what is beneath, each
+   uncovered through a scribble mask that is drawn on as the page scrolls.
+   JS writes --rough-draw, --rough-full, --rough, --draw, --full, --lines,
+   --color and --settle (0–1) on the active group; the fallbacks show the
+   finished photo if script never runs. */
+.fq-sketch {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f5f3ee;
+}
+.fq-sketch-group {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 500ms ease;
+  background: #f5f3ee;
+}
+.fq-sketch-group.is-active {
+  opacity: 1;
+}
+/* The stack is its own stacking context (transform), so it carries the paper
+   itself: the multiplied layers need it as their backdrop. */
+.fq-sketch-stack {
+  position: absolute;
+  inset: 0;
+  background: #f5f3ee;
+  transform: scale(calc(1.04 - 0.04 * var(--settle, 1)));
+  will-change: transform;
+}
+.fq-sketch-color {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  opacity: var(--color, 1);
+}
+.fq-sketch-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+.fq-sketch-layer--pencil {
+  opacity: var(--lines, 0);
+}
+.fq-sketch-layer--rough {
+  opacity: var(--rough, 0);
+}
+/* The scribble masks. Each path has pathLength=1, so one dash offset draws
+   it on whatever its real length (the same convention as [data-draw]).
+   Widths are fractions of the frame: a little over twice the path's step, so
+   neighbouring passes overlap. */
+.fq-sketch-stroke {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+}
+.fq-sketch-layer--rough .fq-sketch-stroke {
+  stroke-width: 0.135;
+  stroke-dashoffset: calc(1 - var(--rough-draw, 1));
+}
+.fq-sketch-layer--rough .fq-sketch-stroke--soft {
+  stroke-width: 0.2;
+  stroke-opacity: 0.45;
+}
+.fq-sketch-layer--pencil .fq-sketch-stroke {
+  stroke-width: 0.08;
+  stroke-dashoffset: calc(1 - var(--draw, 1));
+}
+.fq-sketch-layer--pencil .fq-sketch-stroke--soft {
+  stroke-width: 0.12;
+  stroke-opacity: 0.45;
+}
+.fq-sketch-fill {
+  fill: #fff;
+}
+.fq-sketch-layer--rough .fq-sketch-fill {
+  opacity: var(--rough-full, 1);
+}
+.fq-sketch-layer--pencil .fq-sketch-fill {
+  opacity: var(--full, 1);
+}
+
+/* Caption over the frame: graphite ink while the paper shows, white (on a
+   soft scrim) once colour arrives. ProcessSection writes --sketch-color. */
+[data-theme] .fq-sketch-caption {
+  color: color-mix(in srgb, #ffffff calc(var(--sketch-color, 1) * 100%), #151412);
+}
+.fq-sketch-scrim {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 30%;
+  pointer-events: none;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.45), transparent);
+  opacity: var(--sketch-color, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-sketch-stack {
+    transform: none;
+  }
+}
+
+/* Same caption treatment where the caption only overlays the frame from the
+   sm breakpoint up (below it, it sits under the photo in normal text colour). */
+@media (min-width: 640px) {
+  [data-theme] .fq-sketch-caption-sm {
+    color: color-mix(in srgb, #ffffff calc(var(--sketch-color, 1) * 100%), #151412);
+  }
+}

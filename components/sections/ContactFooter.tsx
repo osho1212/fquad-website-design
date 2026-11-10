@@ -4,7 +4,6 @@ import React, { useRef } from "react";
 import { InView } from "@/components/motion/InView";
 import { Magnetic, RevealText } from "@/components/motion/Reveal";
 import { RoomScene } from "@/components/three/RoomScene";
-import Magnet, { FRAME_MAGNET } from "@/components/ui/Magnet";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 import { Footer } from "@/components/layout/Footer";
 import { withDefaults, toLines } from "@/lib/cms/schema";
@@ -85,7 +84,6 @@ export function ContactFooter({
             </div>
           </div>
 
-          <Magnet {...FRAME_MAGNET} style={{ display: "block", width: "100%" }}>
           <div className="fq-fade relative h-[44vh] sm:h-[50vh] lg:h-[min(58vh,540px)]" style={{ ["--i" as string]: 3 }}>
             <RoomScene
               variant="lounge"
@@ -100,7 +98,6 @@ export function ContactFooter({
               <span className="text-right text-white/80">F.QUAD Studio</span>
             </div>
           </div>
-          </Magnet>
         </InView>
       </div>
     </section>
