@@ -4,8 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { withDefaults } from "@/lib/cms/schema";
 import { prefersReducedMotion } from "@/lib/motion";
-import { RoomScene } from "@/components/three/RoomScene";
-import type { SceneVariant } from "@/components/three/RoomSceneImpl";
+import { PhotoScene, type PhotoVariant } from "@/components/ui/PhotoScene";
 import "./ServicesSection.css";
 
 export interface ServiceCard {
@@ -15,45 +14,22 @@ export interface ServiceCard {
   desc: string;
 }
 
-/** Which model tells each practice's story. */
-const MODEL_FOR_SLUG: Record<string, SceneVariant> = {
+/** Which photograph tells each practice's story. */
+const MODEL_FOR_SLUG: Record<string, PhotoVariant> = {
   architecture: "residence",
   "interior-design": "skylounge",
   "interior-styling": "atelier",
   farmhouse: "farmhouse",
 };
-const FALLBACK_ORDER: SceneVariant[] = ["residence", "skylounge", "atelier", "farmhouse"];
+const FALLBACK_ORDER: PhotoVariant[] = ["residence", "skylounge", "atelier", "farmhouse"];
 
-const MODEL_NAME: Record<SceneVariant, string> = {
+const MODEL_NAME: Record<PhotoVariant, string> = {
   residence: "The Residence",
-  living: "The Salon",
-  bedroom: "The Suite",
   farmhouse: "The Farmhouse",
-  lounge: "Material Library",
   skylounge: "The Sky Lounge",
   atelier: "The Atelier",
 };
 
-const MODEL_LABEL: Record<SceneVariant, string> = {
-  residence:
-    "A site model of a contemporary two-storey residence turning from a white concept model into real materials, then to dusk as its lights come on one by one",
-  living:
-    "A cut-away living room whose light moves from midday sun to golden hour to a lamplit evening",
-  bedroom:
-    "A bedroom suite built in four stages — line drawing, white model, materials, then styled and lit for the evening",
-  farmhouse:
-    "A weekend farmhouse estate lit from morning to a lantern-lit evening",
-  lounge: "A material library of stone, timber, metal and fabric swatches",
-  skylounge:
-    "A penthouse living room behind a glazed wall onto the city — Nero marble floor with inlaid light lines, a floating stair, a halo light and a calacatta bar — from afternoon sun to a night of city lights as its own lights come on one by one",
-  atelier:
-    "A dark gallery room being styled — an onyx wall, lit arched niches and a glass cabinet — first empty, then furnished, then filled object by object, then lit for the evening by track spots",
-};
-
-/** The suite reports no caption of its own; name its stage from progress. */
-function suiteStage(p: number) {
-  return p < 0.25 ? "Line drawing" : p < 0.5 ? "White model" : p < 0.77 ? "Materials" : "Styled & lit";
-}
 
 /**
  * Each practice plays its model's story over PLAY_MS (concept to dusk, noon
@@ -89,7 +65,7 @@ export function ServicesSection({
   /** The model's progress, 0–1, driven by the clock below. */
   const progress = useRef(0);
   /** Which model the canvas is actually showing (reported per frame). */
-  const shownRef = useRef<SceneVariant | undefined>(undefined);
+  const shownRef = useRef<PhotoVariant | undefined>(undefined);
   const restartRef = useRef(false);
 
   const n = services.length;
@@ -166,12 +142,11 @@ export function ServicesSection({
       <div className="wwd-stage relative h-[100svh] min-h-[640px] w-full overflow-hidden">
         {/* The model */}
         <figure className="wwd-figure m-0">
-          <RoomScene
+          <PhotoScene
             variant={model}
             progressRef={progress}
             preload={models}
-            label={MODEL_LABEL[model]}
-            onState={({ p, label, variant }) => {
+            onState={({ p, variant }) => {
               shownRef.current = variant;
               const local = Math.min(1, Math.max(0, p));
               const i = activeRef.current;
@@ -180,10 +155,6 @@ export function ServicesSection({
               const seg = segRefs.current[i];
               if (seg) seg.style.transform = `scaleX(${local.toFixed(4)})`;
               if (meterRef.current) meterRef.current.style.transform = `scaleX(${local.toFixed(4)})`;
-              const text = models[i] === "bedroom" ? suiteStage(local) : label;
-              if (text && captionRef.current && captionRef.current.textContent !== text) {
-                captionRef.current.textContent = text;
-              }
             }}
             className="absolute inset-0"
           />
