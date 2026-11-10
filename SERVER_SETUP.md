@@ -209,6 +209,12 @@ redirect the other to it; set `NEXT_PUBLIC_SITE_URL` to the main one.
 - `/admin/login` is public; everything else under `/admin` and `/api/admin`
   needs a session. This is enforced twice: by `middleware.ts` and again inside
   every admin API handler (`lib/admin-guard.ts`).
+- Changing a password (Admin → Account) signs out every other session at once, and
+  deleting an account ends its sessions; the person changing it stays signed in.
+  An **ADMIN** account can edit page content, the media library and enquiries; a
+  **SUPERADMIN** can also manage team, testimonials, awards, the journal and
+  site settings. Links entered in the editors must be https, mailto, tel or
+  a page of this site.
 - Sessions last 24 hours. Login allows 5 wrong passwords per account and 10 per
   address per 15 minutes, then blocks for the rest of the window.
 - The contact and project forms allow 5 submissions per address per 10 minutes,
