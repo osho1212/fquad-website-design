@@ -92,20 +92,23 @@ From the project folder, after `.env` is in place:
 ```bash
 npm ci
 npx prisma generate
-npm run db:migrate       # applies prisma/migrations to the database in DATABASE_URL
 ```
 
-**Brand-new, empty database:** create the first admin and the default settings:
+**Brand-new, empty database:** build its tables, then create the first admin and the default settings:
 
 ```bash
+npm run db:migrate
 ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run db:seed
 ```
 
-**Database copied from the existing site (§3):** it already has the tables, so tell Prisma the first
-migration is applied (once only), then replace the old default password:
+**Database copied from the existing site (§3):** it already has the tables, so first tell Prisma the
+first migration is already applied (once only), then run the migrations (this reports nothing to apply,
+and keeps later migrations working), then replace the old default password. Running `db:migrate`
+*before* the `resolve` step fails with Prisma error P3005 ("database schema is not empty").
 
 ```bash
 npx prisma migrate resolve --applied 0_init
+npm run db:migrate
 ADMIN_EMAIL=admin@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run admin:password
 ```
 
