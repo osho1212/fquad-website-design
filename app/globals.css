@@ -303,6 +303,30 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
   color: rgb(var(--fq-fg));
   contain: strict;
 }
+/* A translucent sheet of paper laid over the backdrop. Where copy or a form sits
+   on the drafting sheet, its construction lines and grid would otherwise run
+   through the words; the panel keeps a little of the drawing showing, softened
+   by the blur, so the page keeps its character and the text stays readable.
+   Colours come from the theme tokens, so it follows light and dark. */
+.fq-panel {
+  background: rgb(var(--fq-bg) / 0.88);
+  border: 1px solid rgb(var(--fq-fg) / 0.14);
+  box-shadow: 0 24px 48px -32px rgb(0 0 0 / 0.28);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fq-panel {
+    background: rgb(var(--fq-bg) / 0.94);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .fq-panel {
+    background: rgb(var(--fq-bg));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 .fq-bd-glow {
   position: absolute;
   inset: 0;
