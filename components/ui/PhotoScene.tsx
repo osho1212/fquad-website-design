@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { ModernImage } from "@/components/ui/ModernImage";
 
 /** The four photographs the What We Do section cycles through, one per practice. */
 export type PhotoVariant = "residence" | "farmhouse" | "skylounge" | "atelier";
@@ -121,7 +122,7 @@ export function PhotoScene({
     >
       <div ref={zoomRef} className="absolute inset-0 will-change-transform">
         {shown.map((v) => (
-          <img
+          <ModernImage
             key={v}
             src={images[v].src}
             alt=""

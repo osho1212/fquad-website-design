@@ -2,6 +2,8 @@
 
 import React, { useEffect, useId, useRef } from "react";
 import { clamp, onFrame, prefersReducedMotion } from "@/lib/motion";
+import { ModernImage } from "@/components/ui/ModernImage";
+import { bestSingleSource } from "@/lib/photo-sources";
 
 export interface SketchFrameImage {
   /** The finished photograph. */
@@ -248,7 +250,7 @@ export function SketchFrame({
             aria-hidden={on ? undefined : true}
           >
             <div className="fq-sketch-stack">
-              <img
+              <ModernImage
                 src={img.src}
                 alt={on ? img.alt : ""}
                 draggable={false}
@@ -260,14 +262,14 @@ export function SketchFrame({
                 <>
                   <SketchLayer
                     kind="pencil"
-                    href={img.pencil ?? img.src}
+                    href={img.pencil ?? bestSingleSource(img.src)}
                     photo={!img.pencil}
                     id={`${uid}-p${i}`}
                     d={PENCIL_PATH}
                   />
                   <SketchLayer
                     kind="rough"
-                    href={img.rough ?? img.src}
+                    href={img.rough ?? bestSingleSource(img.src)}
                     photo={!img.rough}
                     id={`${uid}-r${i}`}
                     d={ROUGH_PATH}
