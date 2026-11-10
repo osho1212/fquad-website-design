@@ -126,16 +126,33 @@ export function LaunchGate() {
     // have warmed everything; if not, 11:11 holds on screen until it has.
     const openUp = () => {
       setPhase("split");
-      // The site is uncovered, so hand it back: scrolling, pointers, focus and
-      // the arrival animation all start with the quadrants parting.
-      html.setAttribute("data-launch", "arriving");
-      releasePage();
-      setFlash(true);
+
+      // On the home page the intro has been drawing itself behind the gate
+      // all along, against the same loading. Rather than reveal the page
+      // over its head, the quadrants part onto *it* — already full from the
+      // countdown — and it opens the page itself a moment later. Everywhere
+      // else there is no intro, so the gate reveals the page directly.
+      const intro =
+        html.getAttribute("data-intro") === "loading" &&
+        document.querySelector(".fq-preloader");
+
+      if (!intro) {
+        html.setAttribute("data-launch", "arriving");
+        setFlash(true);
+        releasePage();
+      }
 
       after(beats.split, () => {
         setPhase("done");
-        html.removeAttribute("data-launch");
         setFlash(false);
+        // Dropping "locked" is the handover, and it waits until the gate is
+        // actually gone: that is the first moment the intro is unobstructed,
+        // so it is where the intro's own showing time should start counting.
+        html.removeAttribute("data-launch");
+        if (intro) {
+          releasePage();
+          return;
+        }
         // The page was laid out under a locked scrollbar; one resize puts
         // ScrollTrigger and Lenis back in agreement with it.
         window.dispatchEvent(new Event("resize"));

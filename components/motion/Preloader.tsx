@@ -65,6 +65,17 @@ export function Preloader() {
 
     html.style.overflow = "hidden";
     const started = performance.now();
+    /**
+     * While the launch gate is up this intro draws itself behind it, against
+     * the same loading the gate is doing — but it must not *finish* behind
+     * it, or the quadrants would part onto a page with no intro left to
+     * play. It stays on its last frame until the gate hands over, and only
+     * then does its own minimum showing time start running: before that
+     * nobody has seen it.
+     */
+    const gated = () => document.documentElement.getAttribute("data-launch") === "locked";
+    let shownFrom = started;
+    let wasGated = gated();
     let shown = 0;
     let finishing = false;
     const spiral = spiralRef.current;
@@ -118,7 +129,14 @@ export function Preloader() {
     });
 
     const stop = onFrame((_, dt) => {
-      const elapsed = performance.now() - started;
+      // The moment the gate opens, the spiral becomes visible for the first
+      // time — carrying whatever the countdown already loaded — and its own
+      // clock starts from there.
+      if (wasGated && !gated()) {
+        wasGated = false;
+        shownFrom = performance.now();
+      }
+      const elapsed = performance.now() - shownFrom;
       // A slow trickle so the drawing is never frozen before the first
       // numbers arrive; real progress takes over the moment it is ahead.
       const timed = Math.min(1, elapsed / MAX_WAIT_MS) * 0.25;
@@ -145,6 +163,7 @@ export function Preloader() {
       const stalled = performance.now() - bestAt > STALL_MS;
       if (
         !finishing &&
+        !wasGated &&
         ((siteReady && elapsed > MIN_SHOW_MS) ||
           elapsed > MAX_WAIT_MS ||
           (stalled && elapsed > MIN_SHOW_MS))

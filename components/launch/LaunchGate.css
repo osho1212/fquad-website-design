@@ -728,6 +728,11 @@ html[data-launch='locked'] .fq-lg {
   background: transparent;
   pointer-events: none;
 }
+/* Handing over to the intro: it is already on screen underneath, so the
+   quadrants part onto the spiral rather than onto the page itself. */
+html[data-intro='loading'] .fq-preloader {
+  z-index: 290;
+}
 .fq-lg[data-phase='split'] .fq-lg-veil,
 .fq-lg[data-phase='split'] .fq-lg-light {
   opacity: 0;
