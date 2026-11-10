@@ -120,12 +120,18 @@ export default function RoomSceneImpl({
     // simpler shaders and a lower pixel ratio; the look is the same.
     const quality: "high" | "low" =
       window.innerWidth < 768 || (navigator.hardwareConcurrency || 8) <= 4 ? "low" : "high";
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === "high" ? 2 : 1.5));
+    // 1.5 is indistinguishable from 2 on a softly lit model and draws ~44%
+    // fewer pixels; phones go to 1.25.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === "high" ? 1.5 : 1.25));
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.AgXToneMapping;
     renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
+    // Shadows are re-rendered only when something that casts them moves
+    // (see renderFrame), not on every frame.
+    renderer.shadowMap.autoUpdate = false;
+    const SHADOW_MAX = quality === "high" ? 1024 : 512;
     const canvas = renderer.domElement;
     canvas.style.cssText = "width:100%;height:100%;display:block;";
     host.appendChild(canvas);
@@ -173,16 +179,23 @@ export default function RoomSceneImpl({
       // A new model starts from where the scroll is, not from where the last
       // one's easing had got to (it would otherwise play backwards briefly).
       smoothP = progress();
+      renderer.shadowMap.needsUpdate = true;
       renderOnce();
       if (!announced) {
         announced = true;
         onReadyRef.current?.();
-        // Then prepare the other models this canvas will be asked for.
-        (preloadRef.current ?? []).forEach((pv, i) => {
-          window.setTimeout(() => {
-            if (!disposed) void ensure(pv);
-          }, 600 * (i + 1));
-        });
+      }
+      // Then quietly prepare whichever model this canvas will be asked for
+      // next (only that one — building them all at once cost memory and
+      // main-thread time while the visitor was still scrolling).
+      const next = (preloadRef.current ?? []).filter((pv) => !ready.has(pv));
+      if (next.length) {
+        const idle =
+          (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number })
+            .requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 800));
+        idle(() => {
+          if (!disposed) next.forEach((pv) => void ensure(pv));
+        }, { timeout: 2500 });
       }
     };
 
@@ -194,6 +207,14 @@ export default function RoomSceneImpl({
         const b = BUILDERS[v](lux, quality);
         b.setTheme(isDark());
         cache.set(v, b);
+        // Cap shadow maps: a 2048² map per light was the largest per-frame
+        // cost, and at these canvas sizes 1024² is visually the same.
+        [b.root, ...b.lights].forEach((o) =>
+          o.traverse((n) => {
+            const l = n as THREE.Light & { shadow?: THREE.LightShadow };
+            if (l.shadow && l.shadow.mapSize.x > SHADOW_MAX) l.shadow.mapSize.set(SHADOW_MAX, SHADOW_MAX);
+          })
+        );
         const staging = new THREE.Scene();
         staging.environment = scene.environment;
         staging.environmentIntensity = scene.environmentIntensity;
@@ -250,6 +271,7 @@ export default function RoomSceneImpl({
     };
     const themeObserver = new MutationObserver(() => {
       applyTheme();
+      renderer.shadowMap.needsUpdate = true;
       renderOnce();
     });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -265,6 +287,7 @@ export default function RoomSceneImpl({
     resize();
     const ro = new ResizeObserver(() => {
       resize();
+      renderer.shadowMap.needsUpdate = true;
       renderOnce();
     });
     ro.observe(host);
@@ -308,20 +331,44 @@ export default function RoomSceneImpl({
     let smoothP = progress();
     let time = 0;
     let lastLabel: string | undefined;
+    // What the shadows were last drawn for, and when the last frame was drawn.
+    let shadowP = -1;
+    let shadowPx = 0;
+    let shadowPy = 0;
+    let framesSinceShadow = 0;
+    let sinceDraw = 1;
 
-    function renderFrame(dt: number) {
+    function renderFrame(dt: number, force = true) {
       const b = current;
       if (!b) return;
       const target = progress();
+      const px = interactive && !reduced ? pointer.x : 0;
+      const py = interactive && !reduced ? pointer.y : 0;
+      // Settled (no scroll easing left, pointer still): the scene only has
+      // its slow idle drift, so draw at ~20fps instead of every frame.
+      sinceDraw += dt;
+      const settled = Math.abs(target - smoothP) < 0.0004 && Math.abs(px - shadowPx) + Math.abs(py - shadowPy) < 0.002;
+      if (!force && settled && sinceDraw < 0.05) return;
+      sinceDraw = 0;
       smoothP = reduced ? target : damp(smoothP, target, 6, dt);
+      // Shadows follow the sun (progress) and the model (pointer sway); the
+      // idle drift alone only refreshes them every few draws.
+      framesSinceShadow++;
+      if (Math.abs(smoothP - shadowP) > 0.0015 || Math.abs(px - shadowPx) + Math.abs(py - shadowPy) > 0.004 || framesSinceShadow > 8) {
+        renderer.shadowMap.needsUpdate = true;
+        shadowP = smoothP;
+        shadowPx = px;
+        shadowPy = py;
+        framesSinceShadow = 0;
+      }
       placeCamera(b, smoothP);
       const caption = b.update(
         {
           p: smoothP,
           t: time,
           dt,
-          px: interactive && !reduced ? pointer.x : 0,
-          py: interactive && !reduced ? pointer.y : 0,
+          px,
+          py,
           ndc: pointerNdc(),
         },
         camera
@@ -336,7 +383,8 @@ export default function RoomSceneImpl({
       }
     }
     function renderOnce() {
-      renderFrame(1 / 60);
+      renderer.shadowMap.needsUpdate = true;
+      renderFrame(1 / 60, true);
     }
 
     let stop: (() => void) | null = null;
@@ -346,7 +394,7 @@ export default function RoomSceneImpl({
           stop = onFrame((_, dt) => {
             if (document.hidden) return;
             time += dt;
-            renderFrame(dt);
+            renderFrame(dt, false);
           });
         } else if (!entry.isIntersecting && stop) {
           stop();

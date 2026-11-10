@@ -64,7 +64,7 @@ export function FeaturedProjects({
   return (
     <section
       id="work"
-      className="relative w-full flex flex-col px-4 sm:px-8 md:px-12 h-[100svh] min-h-[560px] pt-[72px] pb-4 md:h-auto md:min-h-0 md:pt-28 md:pb-24 bg-transparent"
+      className="relative w-full flex flex-col px-4 sm:px-8 md:px-12 h-[100svh] min-h-[560px] pt-[72px] pb-4 md:min-h-[640px] md:pt-24 md:pb-7 bg-transparent"
     >
       {/* Background drafting marks, drifting at their own depth */}
       <ParallaxField items={WORK_ART} range={120} />
@@ -105,9 +105,9 @@ export function FeaturedProjects({
         </a>
       </div>
 
-      {/* Desktop and tablet: equal cards, five (or three) across, sized from
-          their width so they stay a calm 2:3 rather than viewport-tall slivers. */}
-      <div className="fq-work-track relative z-10 w-full hidden md:block" data-cursor-label="View project">
+      {/* Desktop and tablet: equal cards, five (or three) across, filling the
+          height the viewport leaves between header and footnote. */}
+      <div className="relative z-10 w-full hidden md:block md:flex-1 md:min-h-0" data-cursor-label="View project">
         <AccordionGallery
           items={items}
           defaultIndex={1}

@@ -13,7 +13,7 @@
   min-height: 0;
   display: flex;
   align-items: stretch;
-  gap: 12px;
+  gap: 10px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
@@ -32,12 +32,11 @@
   --ps-drift: 0%;
   --ps-veil: 0;
   position: relative;
-  /* Fills the height the screen leaves; width follows at 4:5, never more
-     than 84% of the screen so the next card always peeks in. */
-  flex: 0 0 auto;
+  /* Uses the screen: the full height left by the header and controls, and
+     nearly the full width, leaving a sliver of the next card to invite a swipe. */
+  flex: 0 0 calc(100vw - 56px);
+  max-width: 560px;
   height: 100%;
-  aspect-ratio: 4 / 5;
-  max-width: 84vw;
   overflow: hidden;
   scroll-snap-align: center;
   background: #0b0b0b;

@@ -87,12 +87,16 @@ export function FourFacesStage({
           <span className="ff-count-line" style={{ background: slide?.accent }} />
           {pad2(index + 1)} <i>/ {pad2(n)}</i>
         </div>
-        <h2 key={`t-${index}`} className="ff-title" aria-label={title}>
+        {/* Every face begins with F, so the big outlined F stays put and only
+            the rest of the word changes beside it. */}
+        <h2 className="ff-title" aria-label={title}>
           <span className="ff-lead" aria-hidden="true">
             {lead}
           </span>
-          <span className="ff-rest" aria-hidden="true">
-            {rest}
+          <span className="ff-rest-clip" aria-hidden="true">
+            <span key={`t-${index}`} className="ff-rest">
+              {rest}
+            </span>
           </span>
         </h2>
         <p key={`s-${index}`} className="ff-sub">

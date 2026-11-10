@@ -166,7 +166,7 @@ export function ServicesSection({
             variant={model}
             trackRef={sectionRef}
             mapProgress={mapProgress}
-            preload={models.filter((m, i) => i !== 0 && models.indexOf(m) === i)}
+            preload={models[active + 1] ? [models[active + 1]] : []}
             label={MODEL_LABEL[model]}
             onState={({ p, label }) => {
               const local = Math.min(1, Math.max(0, p));
