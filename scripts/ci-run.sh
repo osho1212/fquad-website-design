@@ -21,6 +21,9 @@ if curl -s -o /dev/null -m 2 "http://localhost:$PORT"; then
   exit 1
 fi
 
+# The Google sign-in token check, on its own (no emulator or network needed).
+node --experimental-strip-types scripts/test-google-token.mjs
+
 npm run build
 
 npx next start -p "$PORT" > server.log 2>&1 &
