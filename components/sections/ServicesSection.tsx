@@ -60,8 +60,8 @@ function suiteStage(p: number) {
  * to lamplight, sketch to styled, morning to lanterns), holds the finished,
  * fully lit state for HOLD_MS, then hands over to the next.
  */
-const PLAY_MS = 7000;
-const HOLD_MS = 1800;
+const PLAY_MS = 2350;
+const HOLD_MS = 600;
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 

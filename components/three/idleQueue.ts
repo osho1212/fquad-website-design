@@ -7,8 +7,8 @@
  * visitor who never pauses still gets their models.
  */
 
-const QUIET_MS = 250;
-const MAX_WAIT_MS = 6000;
+const QUIET_MS = 120;
+const MAX_WAIT_MS = 2000;
 
 type Job = { run: () => void; queuedAt: number; cancelled: boolean };
 
@@ -18,7 +18,7 @@ let lastInput = 0;
 let bound = false;
 
 type IdleDeadline = { timeRemaining: () => number; didTimeout: boolean };
-const ric = (cb: (d: IdleDeadline) => void, timeout = 500) => {
+const ric = (cb: (d: IdleDeadline) => void, timeout = 200) => {
   const w = window as Window & {
     requestIdleCallback?: (cb: (d: IdleDeadline) => void, o?: { timeout: number }) => number;
   };
@@ -50,7 +50,7 @@ function pump() {
     const now = performance.now();
     const quiet = now - lastInput > QUIET_MS && !document.hidden;
     if (!quiet && now - job.queuedAt < MAX_WAIT_MS) {
-      window.setTimeout(() => ric(step), 120);
+      window.setTimeout(() => ric(step), 16);
       return;
     }
     queue.shift();
@@ -60,7 +60,7 @@ function pump() {
       console.error(err);
     }
     // One heavy job per idle slot; give the page a couple of frames between.
-    window.setTimeout(() => ric(step), 40);
+    window.setTimeout(() => ric(step), 16);
   };
   ric(step);
 }

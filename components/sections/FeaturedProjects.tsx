@@ -23,7 +23,7 @@ const WORK_ART: ParallaxItem[] = [
  */
 const ACCORDION_COUNT = 7;
 /** How long each project stays open before the next one opens. */
-const AUTOPLAY_MS = 4200;
+const AUTOPLAY_MS = 1400;
 const IMAGE_SIZES = "(min-width: 1024px) 55vw, 70vw";
 
 export interface FeaturedProject {

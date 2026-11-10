@@ -12,7 +12,9 @@ import { Magnetic } from "@/components/motion/Reveal";
 /**
  * The hero is a scroll-scrubbed film: a building going from pencil sketch to
  * clay model to finished render (public/assets/hero, exported from the studio
- * video). `d-` frames are 1440px wide for desktop, `m-` 800px for phones.
+ * video). `d-` frames are 1440px wide for desktop, `m-` 800px for slow
+ * connections. Phones held upright get their own portrait film, `p-`
+ * (720×1280), which opens on the clay model and needs no letterboxing.
  */
 const FRAME_COUNT = 189;
 /**
@@ -27,6 +29,15 @@ const PRIORITY_FRAMES = 20;
 const MODEL_FROM_INDEX = 22;
 const RENDER_FROM_INDEX = 56;
 const PHASES = ["Sketch", "Model", "Render"] as const;
+
+/** Each frame set is its own cut, with its own length and phase points. */
+type Film = { count: number; modelFrom: number; renderFrom: number };
+const FILMS: Record<"d" | "m" | "p", Film> = {
+  d: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
+  m: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
+  // Clay model from the first frame; the render has taken over by ~28.
+  p: { count: 167, modelFrom: 0, renderFrom: 28 },
+};
 
 /**
  * Furniture and drafting marks at the edges of the stage. Faint on purpose:
@@ -235,14 +246,17 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
-    // Phones, data-saver and slow connections get the small frame set; on
-    // data-saver / 2g / 3g every other frame is skipped (the scrub holds the
-    // nearest loaded frame, so motion stays continuous).
+    // Upright phones get the portrait film; data-saver and slow connections
+    // elsewhere get the small landscape set. On data-saver / 2g / 3g every
+    // other frame is skipped (the scrub holds the nearest loaded frame, so
+    // motion stays continuous).
     const conn = (navigator as Navigator & {
       connection?: { saveData?: boolean; effectiveType?: string };
     }).connection;
     const slow = Boolean(conn?.saveData) || /(^|-)(2g|3g)$/.test(conn?.effectiveType ?? "");
-    const prefix = slow || window.matchMedia("(max-width: 767px)").matches ? "m" : "d";
+    const phone = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+    const prefix = phone ? "p" : slow ? "m" : "d";
+    const film = FILMS[prefix];
     // Flipped to "avif" once the probe confirms support, before any frame is
     // requested. WebP stays the default so an unsupported browser never pays
     // a failed request.
@@ -250,8 +264,8 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     const stride = slow ? 2 : 1;
     const maxInflight = slow ? 3 : 6;
 
-    const images: (HTMLImageElement | undefined)[] = new Array(FRAME_COUNT);
-    const started: boolean[] = new Array(FRAME_COUNT).fill(false);
+    const images: (HTMLImageElement | undefined)[] = new Array(film.count);
+    const started: boolean[] = new Array(film.count).fill(false);
     const seq = { frame: 0 };
     let wasRender = false;
     let lastDrawn = -1;
@@ -263,11 +277,11 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     window.__fqHero = { loaded: 0, total: priorityTotal };
 
     const render = () => {
-      const frameIdx = Math.min(FRAME_COUNT - 1, Math.max(0, Math.round(seq.frame)));
+      const frameIdx = Math.min(film.count - 1, Math.max(0, Math.round(seq.frame)));
 
       // Only re-render React when the boundary is actually crossed — render()
       // runs on every scroll tick.
-      const isRender = frameIdx >= RENDER_FROM_INDEX;
+      const isRender = frameIdx >= film.renderFrom;
       if (isRender !== wasRender) {
         wasRender = isRender;
         setOnRender(isRender);
@@ -291,13 +305,17 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       if (img) {
         const iw = img.naturalWidth;
         const ih = img.naturalHeight;
-        // Portrait screens: a 16:9 film cropped to cover a tall phone shows
-        // only a sliver of the building. There the whole frame is drawn at
-        // full width, above the headline, and the bands above and below take
-        // the frame's own edge colours, feathered in, so it reads as one image.
+        // Screens taller than the film: cropping it to cover would cut the
+        // building's sides (a sliver of it, for the 16:9 film on a portrait
+        // tablet; the edges of the 9:16 phone film on a 19.5:9 phone). There
+        // the whole frame is drawn at full width and the bands above and
+        // below take the frame's own edge colours, feathered in, so it reads
+        // as one image. The landscape film keeps covering any landscape
+        // screen; it sits above the headline on a portrait one.
         const vw = window.innerWidth;
         const vh = window.innerHeight;
-        const portrait = vw / vh < 1;
+        const upright = ih > iw;
+        const portrait = upright ? vw / vh < iw / ih - 0.01 : vw / vh < 1;
         const cw = iw;
         const ch = portrait ? Math.round((iw * vh) / vw) : ih;
         if (canvas.width !== cw || canvas.height !== ch) {
@@ -309,7 +327,9 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
           if (!portrait) {
             ctx.drawImage(img, 0, 0);
           } else {
-            const dy = Math.max(0, Math.round(ch * 0.4 - ih / 2));
+            const dy = upright
+              ? Math.round((ch - ih) * 0.45)
+              : Math.max(0, Math.round(ch * 0.4 - ih / 2));
             const top = edgeColour(img, 0);
             const bottom = edgeColour(img, ih - 2);
             ctx.fillStyle = top;
@@ -336,14 +356,14 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
 
       // Live drawing readout.
       if (hudFrameRef.current) {
-        hudFrameRef.current.textContent = `${pad3(frameIdx + 1)} / ${FRAME_COUNT}`;
+        hudFrameRef.current.textContent = `${pad3(frameIdx + 1)} / ${film.count}`;
       }
       if (hudPhaseRef.current) {
         hudPhaseRef.current.textContent =
-          PHASES[frameIdx >= RENDER_FROM_INDEX ? 2 : frameIdx >= MODEL_FROM_INDEX ? 1 : 0];
+          PHASES[frameIdx >= film.renderFrom ? 2 : frameIdx >= film.modelFrom ? 1 : 0];
       }
       if (hudBarRef.current) {
-        hudBarRef.current.style.transform = `scaleX(${(seq.frame / (FRAME_COUNT - 1)).toFixed(4)})`;
+        hudBarRef.current.style.transform = `scaleX(${(seq.frame / (film.count - 1)).toFixed(4)})`;
       }
     };
 
@@ -361,7 +381,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       const cur = Math.round(seq.frame);
       for (let d = 0; d <= AHEAD; d++) {
         const fwd = cur + d;
-        if (fwd < FRAME_COUNT && !started[fwd] && fwd % stride === 0) return fwd;
+        if (fwd < film.count && !started[fwd] && fwd % stride === 0) return fwd;
         if (d > 0 && d <= BEHIND) {
           const back = cur - d;
           if (back >= 0 && !started[back] && back % stride === 0) return back;
@@ -463,7 +483,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     });
 
     tl.to(seq, {
-      frame: FRAME_COUNT - 1,
+      frame: film.count - 1,
       ease: "none",
       duration: 0.5,
       onUpdate: render,
@@ -506,7 +526,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   return (
     <section id="top" ref={containerRef} className="relative h-[600vh] bg-black">
       <div
-        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
+        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
         }`}
       >
