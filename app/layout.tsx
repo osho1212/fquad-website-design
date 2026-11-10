@@ -12,6 +12,8 @@ import { Cursor } from "@/components/motion/Cursor";
 import { SITE, siteUrl } from "@/lib/site";
 import { jsonLd } from "@/lib/seo";
 import { SOCIAL_FALLBACKS } from "@/lib/social";
+import { LaunchGate } from "@/components/launch/LaunchGate";
+import { launchGateScript } from "@/lib/launch";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -69,8 +71,11 @@ export const viewport: Viewport = {
  *  - `data-intro="loading"` is set only for the first home-page visit of a
  *    session (and never under reduced motion). It is what shows the
  *    preloader and holds the hero copy back; returning visitors skip it.
+ *
+ * Behind the launch gate it stands down entirely: the gate is the intro, and
+ * two curtains in a row would only make the launch wait on a second one.
  */
-const motionInitScript = `(function(){var d=document.documentElement;d.classList.add('js');try{if(location.pathname==='/'&&!sessionStorage.getItem('fq-intro')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){d.setAttribute('data-intro','loading');}}catch(e){}})();`;
+const motionInitScript = `(function(){var d=document.documentElement;d.classList.add('js');try{if(d.getAttribute('data-launch')==='locked')return;if(location.pathname==='/'&&!sessionStorage.getItem('fq-intro')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){d.setAttribute('data-intro','loading');}}catch(e){}})();`;
 
 export default async function RootLayout({
   children,
@@ -124,6 +129,9 @@ export default async function RootLayout({
       <head>
         {/* Sets data-theme before first paint to avoid a flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* Locks the launch gate before first paint. Must run before the
+            motion script, which steps aside when the gate is up. */}
+        <script dangerouslySetInnerHTML={{ __html: launchGateScript }} />
         <script dangerouslySetInnerHTML={{ __html: motionInitScript }} />
         {/* Headings, the loader and the backdrop all set in Good Times: fetch
             it with the HTML instead of after the CSS, so it never swaps in late. */}
@@ -159,6 +167,9 @@ export default async function RootLayout({
 
           {/* Global Start A Project Modal */}
           <StartProjectModal />
+
+          {/* Holds the site back until 11:11, then opens it (lib/launch.ts) */}
+          <LaunchGate />
         </StartProjectProvider>
       </body>
     </html>
