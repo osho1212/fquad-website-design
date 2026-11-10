@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminUsers } from '@/lib/db';
-import { adminAuth } from '@/lib/firebase';
+import { firebaseProjectId, usingAuthEmulator } from '@/lib/firebase';
+import { verifyFirebaseIdToken } from '@/lib/google-token';
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
 import { clientIp, requestHostAllowed } from '@/lib/forms';
 import { passwordFingerprint } from '@/lib/session-check';
@@ -49,18 +50,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error }, { status });
   };
 
-  let decoded;
+  let identity;
   try {
-    decoded = await adminAuth().verifyIdToken(idToken);
+    identity = await verifyFirebaseIdToken(idToken, { projectId: firebaseProjectId(), emulator: usingAuthEmulator() });
   } catch {
     return refuse(401, 'Google sign-in could not be verified. Please try again.');
   }
 
-  const email = typeof decoded.email === 'string' ? decoded.email.toLowerCase().trim() : '';
-  if (decoded.firebase?.sign_in_provider !== 'google.com' || !email || decoded.email_verified !== true) {
+  const email = identity.email.toLowerCase().trim();
+  if (identity.provider !== 'google.com' || !email || !identity.emailVerified) {
     return refuse(401, 'Sign in with a Google account that has a verified email address.');
   }
-  if (Math.floor(Date.now() / 1000) - decoded.auth_time > MAX_TOKEN_AGE_SECONDS) {
+  if (Math.floor(Date.now() / 1000) - identity.authTime > MAX_TOKEN_AGE_SECONDS) {
     return refuse(401, 'That sign-in has expired. Please try again.');
   }
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     return refuse(403, `${email} is not on the admin list. Ask a SUPERADMIN to add this address under Admin Team.`);
   }
 
-  await adminUsers.touchLogin(user.id, user.name ? null : typeof decoded.name === 'string' ? decoded.name.slice(0, 100) : null);
+  await adminUsers.touchLogin(user.id, user.name ? null : identity.name ? identity.name.slice(0, 100) : null);
 
   const token = await createSessionToken({
     userId: user.id,

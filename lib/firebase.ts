@@ -1,5 +1,4 @@
 import { cert, getApp, getApps, initializeApp, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
@@ -83,7 +82,20 @@ export function bucket() {
   return getStorage(app()).bucket();
 }
 
-/** Firebase Authentication, used only to check the Google ID token at sign-in. */
-export function adminAuth() {
-  return getAuth(app());
+/**
+ * The Firebase project this site talks to, for checking who a Google sign-in
+ * token was issued for. (The token itself is checked in lib/google-token.ts, not
+ * with firebase-admin/auth, which crashes on Node versions before 22.12.)
+ */
+export function firebaseProjectId(): string {
+  return (
+    credentials()?.projectId ||
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    process.env.GCLOUD_PROJECT ||
+    'demo-fquad'
+  );
 }
+
+/** True when sign-in tokens come from the local Auth emulator (unsigned). Never in production. */
+export const usingAuthEmulator = () => usingEmulator() && Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST);
