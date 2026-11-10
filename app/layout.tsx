@@ -11,6 +11,7 @@ import { ScrollProgress } from "@/components/motion/ScrollProgress";
 import { Cursor } from "@/components/motion/Cursor";
 import { SITE, siteUrl } from "@/lib/site";
 import { jsonLd } from "@/lib/seo";
+import { SOCIAL_FALLBACKS } from "@/lib/social";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -43,6 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
       ...(ogImageUrl ? { images: [ogImageUrl] } : {}),
     },
     twitter: { card: "summary_large_image", title, description },
+    // Proves ownership to Google Search Console: set GOOGLE_SITE_VERIFICATION
+    // to the token it shows (the content of its meta tag).
+    ...(process.env.GOOGLE_SITE_VERIFICATION
+      ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+      : {}),
   };
 }
 
@@ -83,7 +89,7 @@ export default async function RootLayout({
     alternateName: SITE.shortName,
     description: SITE.description,
     url: origin,
-    logo: `${origin}/icon.svg`,
+    logo: `${origin}/icon-512.png`,
     foundingDate: "2005",
     slogan: SITE.tagline,
     address: {
@@ -91,6 +97,10 @@ export default async function RootLayout({
       addressLocality: SITE.city,
       addressRegion: SITE.region,
       addressCountry: SITE.country,
+      // Filled in once the studio enters a street address in Admin → Settings.
+      ...(settings?.address && settings.address.trim() !== SITE.fallback.address
+        ? { streetAddress: settings.address.trim() }
+        : {}),
     },
     geo: {
       "@type": "GeoCoordinates",
@@ -101,7 +111,12 @@ export default async function RootLayout({
     knowsAbout: ["Architecture", "Interior design", "Interior styling", "Farmhouse design"],
     ...(settings?.email ? { email: settings.email } : {}),
     ...(settings?.phone ? { telephone: settings.phone } : {}),
-    ...(settings?.instagramUrl ? { sameAs: [settings.instagramUrl] } : {}),
+    // LinkedIn is left out until its address is confirmed (lib/social.ts).
+    sameAs: [
+      settings?.instagramUrl || SOCIAL_FALLBACKS.instagram,
+      SOCIAL_FALLBACKS.youtube,
+      SOCIAL_FALLBACKS.facebook,
+    ],
   };
 
   return (

@@ -78,7 +78,9 @@ export default async function PastProjectDetailPage(
             description: project.tagline,
             url: `${siteUrl()}/past-projects/${project.slug}`,
             creator: { "@type": "ProfessionalService", name: "F.QUAD Studio", url: siteUrl() },
-            ...(project.images[0] ? { image: project.images[0] } : {}),
+            ...(project.images[0]
+              ? { image: project.images[0].startsWith("/") ? `${siteUrl()}${project.images[0]}` : project.images[0] }
+              : {}),
             ...(project.location ? { locationCreated: { "@type": "Place", name: project.location } } : {}),
           }),
         }}
@@ -157,6 +159,7 @@ export default async function PastProjectDetailPage(
             images={project.images}
             alt={project.name}
             aspect="aspect-[16/9]"
+            sizes="100vw"
           />
         </section>
       )}

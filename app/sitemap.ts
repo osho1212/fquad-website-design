@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   return [
-    ...STATIC_ROUTES.map((r) => ({
+    ...STATIC_ROUTES.filter((r) => r.path !== "/blog" || posts.length > 0).map((r) => ({
       url: `${origin}${r.path}`,
       lastModified: now,
       priority: r.priority,

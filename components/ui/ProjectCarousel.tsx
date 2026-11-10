@@ -1,24 +1,35 @@
 "use client";
 
 import React, { useState } from "react";
+import { responsive } from "@/lib/img";
 
 interface ProjectCarouselProps {
   images: string[];
   alt: string;
   /** Tailwind aspect ratio utility for the frame. */
   aspect?: string;
+  /** How wide the frame is drawn, so the browser picks the smallest adequate file. */
+  sizes?: string;
 }
 
 export function ProjectCarousel({
   images,
   alt,
   aspect = "aspect-[16/10]",
+  sizes = "(min-width: 1024px) 50vw, 100vw",
 }: ProjectCarouselProps) {
   const [index, setIndex] = useState(0);
   const slides = images.length > 0 ? images : [""];
 
   const go = (dir: 1 | -1) =>
     setIndex((i) => (i + dir + slides.length) % slides.length);
+
+  // Only the slide on show and its neighbours are fetched; the rest load when
+  // the visitor gets close, instead of every photo of every project at once.
+  const isNear = (i: number) => {
+    const d = Math.abs(i - index);
+    return Math.min(d, slides.length - d) <= 1;
+  };
 
   return (
     <div className="group/car relative w-full">
@@ -35,13 +46,16 @@ export function ProjectCarousel({
             aria-hidden={i !== index}
           >
             {src ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={src}
-                alt={`${alt} — view ${i + 1}`}
-                loading="lazy"
-                className="w-full h-full object-cover block transition-transform duration-[1200ms] ease-out group-hover/car:scale-[1.03]"
-              />
+              isNear(i) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  {...responsive(src, sizes)}
+                  alt={`${alt} — view ${i + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover block transition-transform duration-[1200ms] ease-out group-hover/car:scale-[1.03]"
+                />
+              )
             ) : (
               <div className="w-full h-full bg-[repeating-linear-gradient(125deg,#1a1a1a_0px,#1a1a1a_1px,transparent_1px,transparent_18px)]" />
             )}

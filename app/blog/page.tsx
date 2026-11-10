@@ -15,12 +15,18 @@ import { SITE, siteUrl } from "@/lib/site";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = pageMetadata({
-  title: "Journal",
-  description:
-    "Notes from F.QUAD Studio on interior design and architecture: materials, light, small-space planning and the craft of making rooms work.",
-  path: "/blog",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  // Until the first post is published the page is only an empty state: keep
+  // it out of search results (and the sitemap) so it is not a thin page.
+  const posts = await orEmpty(getBlogPosts());
+  return pageMetadata({
+    title: "Journal",
+    description:
+      "Notes from F.QUAD Studio on interior design and architecture: materials, light, small-space planning and the craft of making rooms work.",
+    path: "/blog",
+    noIndex: posts.length === 0,
+  });
+}
 
 export default async function BlogPage() {
   const [posts, content] = await Promise.all([

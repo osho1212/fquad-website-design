@@ -12,10 +12,12 @@ interface StatItem {
 }
 
 function StatCard({ item, index }: { item: StatItem; index: number }) {
-  const [count, setCount] = useState(0);
+  const target = Number(item.value) || 0;
+  // Starts at the real figure so the server-rendered HTML (search engines,
+  // no-JS visitors, the moment before hydration) never shows "0".
+  const [count, setCount] = useState(target);
   const ref = useRef<HTMLDivElement>(null);
   const hasAnimated = useRef(false);
-  const target = Number(item.value) || 0;
 
   useEffect(() => {
     const el = ref.current;
@@ -25,6 +27,13 @@ function StatCard({ item, index }: { item: StatItem; index: number }) {
       setCount(target);
       return;
     }
+
+    // Already on screen at load: keep the real figure rather than replaying.
+    const box = el.getBoundingClientRect();
+    if (box.top < window.innerHeight && box.bottom > 0) return;
+
+    // Below the fold: reset out of sight, then climb when it scrolls into view.
+    setCount(0);
 
     let raf = 0;
     const observer = new IntersectionObserver(
