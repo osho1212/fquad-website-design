@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { InView } from "@/components/motion/InView";
 import { Magnetic, RevealText } from "@/components/motion/Reveal";
 import { RoomScene } from "@/components/three/RoomScene";
+import Magnet, { FRAME_MAGNET } from "@/components/ui/Magnet";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 import { Footer } from "@/components/layout/Footer";
 import { withDefaults, toLines } from "@/lib/cms/schema";
@@ -29,7 +30,6 @@ export function ContactFooter({
 }) {
   const { openModal } = useStartProjectModal();
   // Name of the material in focus, written from the 3D scene's frame loop.
-  const materialRef = useRef<HTMLSpanElement>(null);
   const cta = withDefaults("home", "cta", content);
 
   const whatsapp = settings?.whatsapp || SOCIAL_FALLBACKS.whatsapp;
@@ -85,25 +85,22 @@ export function ContactFooter({
             </div>
           </div>
 
+          <Magnet {...FRAME_MAGNET} style={{ display: "block", width: "100%" }}>
           <div className="fq-fade relative h-[44vh] sm:h-[50vh] lg:h-[min(58vh,540px)]" style={{ ["--i" as string]: 3 }}>
             <RoomScene
               variant="lounge"
               className="absolute inset-0"
               label="The studio's material library: travertine, marble, oak, walnut, brass, bouclé, velvet and terrazzo samples orbit a leather chair in a lit arched niche; the sample nearest your pointer comes forward"
-              onState={({ label }) => {
-                if (label && materialRef.current && materialRef.current.textContent !== label) {
-                  materialRef.current.textContent = label;
-                }
-              }}
             />
             <div
               aria-hidden="true"
               className="absolute left-0 right-0 bottom-0 flex justify-between gap-4 text-[11px] tracking-[0.22em] uppercase text-white/55 pointer-events-none"
             >
-              <span>Material library</span>
-              <span ref={materialRef} className="text-right text-white/80">Travertino Navona</span>
+              <span>Selected work</span>
+              <span className="text-right text-white/80">F.QUAD Studio</span>
             </div>
           </div>
+          </Magnet>
         </InView>
       </div>
     </section>
