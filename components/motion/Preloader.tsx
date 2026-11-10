@@ -63,7 +63,7 @@ export function Preloader() {
       return;
     }
 
-    html.style.overflow = "hidden";
+    html.style.overflow = "clip";
     const started = performance.now();
     /**
      * While the launch gate is up this intro draws itself behind it, against
