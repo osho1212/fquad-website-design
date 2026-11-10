@@ -15,7 +15,7 @@ const MAX_IMAGE_BYTES = 40 * 1024 * 1024;
 const UPLOAD_ID = /^[A-Za-z0-9]{10,40}$/;
 
 export async function GET() {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   return NextResponse.json({ media: await media.list() });
@@ -26,7 +26,7 @@ export async function GET() {
  * (see upload-url); this makes the sizes, stores them and records the image.
  */
 export async function POST(req: NextRequest) {
-  const denied = await requireAdmin();
+  const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
   let body: any;

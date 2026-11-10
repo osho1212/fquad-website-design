@@ -160,7 +160,7 @@ The admin login can offer **Continue with Google** next to the password form. A 
 
    Use the exact address of the Google account you will sign in with. (Setting `ADMIN_PASSWORD` too makes an account that can use either.)
 
-6. **Add teammates.** Sign in, then *Admin Team → Add teammate*: their Google email, an optional name, and a role (*Admin* edits content, the media library and enquiries; *Superadmin* also manages team, testimonials, awards, journal, settings and this page). Tell them to open `/admin/login` and choose **Continue with Google**. Changing a role or removing someone takes effect on their next request. The page refuses to remove your own access or the last Superadmin.
+6. **Add teammates.** Sign in, then *Admin Team → Add teammate*: their Google email, an optional name, and a role (*Admin* works the enquiries inbox and manages their own account, and sees nothing else; *Superadmin* also manages website content, the media library, team, testimonials, awards, journal, settings and this page). Tell them to open `/admin/login` and choose **Continue with Google**. Changing a role or removing someone takes effect on their next request. The page refuses to remove your own access or the last Superadmin.
 
    (*Team*, in the sidebar, is the people shown on the website; *Admin Team* is the people who can sign in.)
 

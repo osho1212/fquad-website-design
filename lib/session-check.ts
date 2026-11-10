@@ -3,7 +3,8 @@ import { cookies } from 'next/headers';
 import { adminUsers } from './db';
 import { SESSION_COOKIE_NAME, getSessionKey, verifySessionToken } from './auth';
 
-export type AdminRole = 'SUPERADMIN' | 'ADMIN';
+import type { AdminRole } from './admin-roles';
+export type { AdminRole };
 
 export interface AdminSession {
   userId: string;

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { awards as awardsRepo, blogPosts, enquiries, media as mediaRepo, teamMembers, testimonials as testimonialsRepo } from '@/lib/db';
 import { CMS_PAGES } from '@/lib/cms/schema';
+import { requireSection } from '@/lib/admin-page-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,8 @@ async function counts() {
 }
 
 export default async function AdminDashboard() {
+  // Landing page of a SUPERADMIN. An ADMIN is sent on to Enquiries.
+  await requireSection('dashboard');
   const stats = await counts();
   const sectionCount = CMS_PAGES.reduce((total, page) => total + page.sections.length, 0);
 

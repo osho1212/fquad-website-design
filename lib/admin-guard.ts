@@ -14,8 +14,11 @@ export async function getAdminSession(): Promise<AdminSession | null> {
  * from an open CMS, so each handler checks again itself: the session must
  * still match the account (see lib/session-check.ts), any `Origin` header
  * must be this site (CSRF), and — where asked — the account must be a
- * SUPERADMIN. Handlers for team, testimonials, awards, the journal and site
- * settings ask for that, matching what the ADMIN role sees in the sidebar.
+ * SUPERADMIN. Every handler asks for that except enquiries, enquiry files and
+ * the account's own password: an ADMIN works the enquiries inbox and nothing
+ * else (see lib/admin-roles.ts), so website content, the media library, the
+ * journal, team, testimonials, awards, settings and admin users are all closed
+ * to them here, whatever the sidebar shows.
  *
  * Usage, first lines of a handler:
  *   const denied = await requireAdmin();            // any signed-in admin
