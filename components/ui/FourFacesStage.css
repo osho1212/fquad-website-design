@@ -116,20 +116,25 @@
   line-height: 0.86;
   text-transform: uppercase;
   letter-spacing: -0.01em;
-  overflow: hidden;
   padding-bottom: 0.06em;
 }
 .ff-lead {
   font-size: clamp(5rem, 11vw, 10.5rem);
   color: transparent;
   -webkit-text-stroke: 1.5px #fff;
-  animation: ff-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+/* The word after the F rises inside its own mask; the F never moves. */
+.ff-rest-clip {
+  display: inline-block;
+  overflow: hidden;
+  margin-left: 0.04em;
+  padding-bottom: 0.08em;
+  font-size: clamp(2.2rem, 5.2vw, 5rem);
 }
 .ff-rest {
-  font-size: clamp(2.2rem, 5.2vw, 5rem);
+  display: inline-block;
   color: #fff;
-  margin-left: 0.04em;
-  animation: ff-rise 0.9s 0.08s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: ff-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .ff-sub {
   margin: 22px 0 0;
@@ -150,6 +155,16 @@
   color: rgba(255, 255, 255, 0.82);
   animation: ff-fade 0.9s 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+/* The copy is anchored to the bottom, so lines that wrap differently from
+   face to face would lift the F. Reserve their height: subtitle two lines,
+   description three. */
+.ff-sub {
+  min-height: calc(2 * 1.6em);
+}
+.ff-desc {
+  min-height: calc(3 * 1.75em);
+}
+
 @keyframes ff-rise {
   from { transform: translateY(105%); opacity: 0; }
   to { transform: none; opacity: 1; }
@@ -292,7 +307,7 @@
     font-size: clamp(4.2rem, 24vw, 6rem);
     -webkit-text-stroke-width: 1.2px;
   }
-  .ff-rest {
+  .ff-rest-clip {
     font-size: clamp(1.6rem, 8.6vw, 2.4rem);
   }
   .ff-sub {
@@ -303,6 +318,7 @@
   .ff-desc {
     font-size: 14px;
     line-height: 1.65;
+    min-height: calc(4 * 1.65em);
   }
   .ff-segs {
     left: 20px;
@@ -325,7 +341,6 @@
   .ff-photo.is-active {
     transform: none;
   }
-  .ff-lead,
   .ff-rest,
   .ff-sub,
   .ff-desc,

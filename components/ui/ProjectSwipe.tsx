@@ -21,7 +21,17 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
  * it eases back in scale and its photo drifts the other way, which gives the
  * strip depth without any JS-driven scrolling (the swipe itself stays native).
  */
-export function ProjectSwipe({ items }: { items: ProjectSwipeItem[] }) {
+export function ProjectSwipe({
+  items,
+  autoplayMs,
+}: {
+  items: ProjectSwipeItem[];
+  /**
+   * Glide to the next card on this interval while the carousel is on
+   * screen; any touch pauses it for a few seconds.
+   */
+  autoplayMs?: number;
+}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const total = items.length;
@@ -70,6 +80,37 @@ export function ProjectSwipe({ items }: { items: ProjectSwipeItem[] }) {
     };
   }, [items]);
 
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || !autoplayMs || items.length < 2 || prefersReducedMotion()) return;
+    let visible = false;
+    let touchedAt = 0;
+    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { threshold: 0.5 });
+    io.observe(track);
+    const touch = () => (touchedAt = Date.now());
+    track.addEventListener("pointerdown", touch, { passive: true });
+    track.addEventListener("touchstart", touch, { passive: true });
+    track.addEventListener("wheel", touch, { passive: true });
+    const id = window.setInterval(() => {
+      if (!visible || document.hidden || Date.now() - touchedAt < 6000) return;
+      const cards = Array.from(track.querySelectorAll<HTMLElement>(".ps-card"));
+      const mid = track.scrollLeft + track.clientWidth / 2;
+      let cur = 0;
+      cards.forEach((c, i) => {
+        if (Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid) < Math.abs(cards[cur].offsetLeft + cards[cur].offsetWidth / 2 - mid)) cur = i;
+      });
+      const next = cards[(cur + 1) % cards.length];
+      track.scrollTo({ left: next.offsetLeft - (track.clientWidth - next.offsetWidth) / 2, behavior: "smooth" });
+    }, autoplayMs);
+    return () => {
+      window.clearInterval(id);
+      io.disconnect();
+      track.removeEventListener("pointerdown", touch);
+      track.removeEventListener("touchstart", touch);
+      track.removeEventListener("wheel", touch);
+    };
+  }, [autoplayMs, items]);
+
   const go = (dir: 1 | -1) => {
     const track = trackRef.current;
     const card = track?.querySelector<HTMLElement>(".ps-card");
@@ -78,7 +119,12 @@ export function ProjectSwipe({ items }: { items: ProjectSwipeItem[] }) {
   };
 
   return (
-    <div className="ps" role="region" aria-roledescription="carousel" aria-label="Featured projects">
+    <div
+      className="ps"
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Featured projects"
+    >
       <div ref={trackRef} className="ps-track">
         {items.map((item, i) => (
           <a

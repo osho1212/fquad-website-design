@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { swatchSet, type Lux } from "./materials";
 import { decorAt, mainAt } from "./suiteStages";
 import { buildFarmhouse, buildResidence } from "./exteriors";
+import { buildAtelier, buildSkyLounge } from "./interiors2";
 
 export { BEDROOM_PIECES, bedroomPlaced } from "./suiteStages";
 import {
@@ -49,7 +50,16 @@ import {
  * built in four stages); lounge — the material library; residence —
  * Architecture; farmhouse — Farmhouses.
  */
-export type SceneVariant = "living" | "bedroom" | "lounge" | "residence" | "farmhouse";
+export type SceneVariant =
+  | "living"
+  | "bedroom"
+  | "lounge"
+  | "residence"
+  | "farmhouse"
+  /** Interior Design on the What We Do stage — a futuristic penthouse. */
+  | "skylounge"
+  /** Interior Styling on the What We Do stage — a gallery room being styled. */
+  | "atelier";
 
 export interface SceneState {
   p: number;
@@ -714,10 +724,16 @@ export function buildSuite(L: Lux, quality: "high" | "low"): Built {
   const zen = new THREE.Color();
   const hor = new THREE.Color();
 
+  // Real finishes go on during the scroll; compile them with the rest so
+  // the switch never stalls a frame.
+  const finishes = new Set<THREE.Material>([ghost, ...archOrig.flat()]);
+  pieces.forEach((pc) => pc.meshes.forEach(({ orig }) => (Array.isArray(orig) ? orig : [orig]).forEach((m) => finishes.add(m))));
+
   return {
     root,
     lights: [hemi, sun, target],
     restP: 1,
+    precompile: [...finishes],
     frame: (p) => ({
       pos: new THREE.Vector3(6.3 - p * 0.3, 4.6 - p * 0.15, 7.3),
       look: new THREE.Vector3(0, 0.95, -0.1),
@@ -955,4 +971,6 @@ export const BUILDERS: Record<SceneVariant, (L: Lux, q: "high" | "low") => Built
   lounge: buildLibrary,
   residence: buildResidence,
   farmhouse: buildFarmhouse,
+  skylounge: buildSkyLounge,
+  atelier: buildAtelier,
 };

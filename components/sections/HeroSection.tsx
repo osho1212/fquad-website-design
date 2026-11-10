@@ -12,7 +12,9 @@ import { Magnetic } from "@/components/motion/Reveal";
 /**
  * The hero is a scroll-scrubbed film: a building going from pencil sketch to
  * clay model to finished render (public/assets/hero, exported from the studio
- * video). `d-` frames are 1440px wide for desktop, `m-` 800px for phones.
+ * video). `d-` frames are 1440px wide for desktop, `m-` 800px for slow
+ * connections. Phones held upright get their own portrait film, `p-`
+ * (720×1280), which opens on the clay model and needs no letterboxing.
  */
 const FRAME_COUNT = 189;
 /**
@@ -27,6 +29,15 @@ const PRIORITY_FRAMES = 20;
 const MODEL_FROM_INDEX = 22;
 const RENDER_FROM_INDEX = 56;
 const PHASES = ["Sketch", "Model", "Render"] as const;
+
+/** Each frame set is its own cut, with its own length and phase points. */
+type Film = { count: number; modelFrom: number; renderFrom: number };
+const FILMS: Record<"d" | "m" | "p", Film> = {
+  d: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
+  m: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
+  // Clay model from the first frame; the render has taken over by ~28.
+  p: { count: 167, modelFrom: 0, renderFrom: 28 },
+};
 
 /**
  * Furniture and drafting marks at the edges of the stage. Faint on purpose:
@@ -78,6 +89,22 @@ const supportsAvif = (): Promise<boolean> => {
 
 const pad3 = (n: number) => String(n).padStart(3, "0");
 
+/** Average colour of a 2px row of a frame (for the portrait bands). */
+let probe: CanvasRenderingContext2D | null = null;
+function edgeColour(img: HTMLImageElement, y: number): string {
+  if (!probe) {
+    const c = document.createElement("canvas");
+    c.width = c.height = 1;
+    probe = c.getContext("2d", { willReadFrequently: true });
+  }
+  if (!probe) return "rgb(245,243,238)";
+  probe.clearRect(0, 0, 1, 1);
+  probe.drawImage(img, 0, Math.max(0, y), img.naturalWidth, 2, 0, 0, 1, 1);
+  const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;
+  return `rgb(${r},${g},${b})`;
+}
+const transparentOf = (rgb: string) => rgb.replace("rgb(", "rgba(").replace(")", ",0)");
+
 const STENCIL = {
   landscape: {
     viewBox: "0 0 1920 1080",
@@ -106,7 +133,7 @@ const STENCIL = {
 
 /**
  * The finale artwork: paper everywhere except a F.QUAD-shaped window onto the
- * film, with a hairline around the window and two plain lines beneath. The
+ * film (no outline around the letters), and two plain lines beneath. The
  * mask holds only the title — a window that thin shows nothing legible.
  */
 function StencilArt({
@@ -157,18 +184,6 @@ function StencilArt({
         height="5000"
         mask={`url(#${id})`}
       />
-      <text
-        className="fq-hero-stencil-line"
-        x={s.cx}
-        y={s.titleY}
-        dominantBaseline="central"
-        fontWeight="bold"
-        fontSize={s.titleSize}
-        letterSpacing="0.08em"
-        {...font}
-      >
-        {title}
-      </text>
       <text
         className="fq-hero-stencil-sub"
         x={s.cx}
@@ -231,14 +246,17 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
-    // Phones, data-saver and slow connections get the small frame set; on
-    // data-saver / 2g / 3g every other frame is skipped (the scrub holds the
-    // nearest loaded frame, so motion stays continuous).
+    // Upright phones get the portrait film; data-saver and slow connections
+    // elsewhere get the small landscape set. On data-saver / 2g / 3g every
+    // other frame is skipped (the scrub holds the nearest loaded frame, so
+    // motion stays continuous).
     const conn = (navigator as Navigator & {
       connection?: { saveData?: boolean; effectiveType?: string };
     }).connection;
     const slow = Boolean(conn?.saveData) || /(^|-)(2g|3g)$/.test(conn?.effectiveType ?? "");
-    const prefix = slow || window.matchMedia("(max-width: 767px)").matches ? "m" : "d";
+    const phone = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+    const prefix = phone ? "p" : slow ? "m" : "d";
+    const film = FILMS[prefix];
     // Flipped to "avif" once the probe confirms support, before any frame is
     // requested. WebP stays the default so an unsupported browser never pays
     // a failed request.
@@ -246,8 +264,8 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     const stride = slow ? 2 : 1;
     const maxInflight = slow ? 3 : 6;
 
-    const images: (HTMLImageElement | undefined)[] = new Array(FRAME_COUNT);
-    const started: boolean[] = new Array(FRAME_COUNT).fill(false);
+    const images: (HTMLImageElement | undefined)[] = new Array(film.count);
+    const started: boolean[] = new Array(film.count).fill(false);
     const seq = { frame: 0 };
     let wasRender = false;
     let lastDrawn = -1;
@@ -259,11 +277,11 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     window.__fqHero = { loaded: 0, total: priorityTotal };
 
     const render = () => {
-      const frameIdx = Math.min(FRAME_COUNT - 1, Math.max(0, Math.round(seq.frame)));
+      const frameIdx = Math.min(film.count - 1, Math.max(0, Math.round(seq.frame)));
 
       // Only re-render React when the boundary is actually crossed — render()
       // runs on every scroll tick.
-      const isRender = frameIdx >= RENDER_FROM_INDEX;
+      const isRender = frameIdx >= film.renderFrom;
       if (isRender !== wasRender) {
         wasRender = isRender;
         setOnRender(isRender);
@@ -285,13 +303,52 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
         }
       }
       if (img) {
-        if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
+        // Screens taller than the film: cropping it to cover would cut the
+        // building's sides (a sliver of it, for the 16:9 film on a portrait
+        // tablet; the edges of the 9:16 phone film on a 19.5:9 phone). There
+        // the whole frame is drawn at full width and the bands above and
+        // below take the frame's own edge colours, feathered in, so it reads
+        // as one image. The landscape film keeps covering any landscape
+        // screen; it sits above the headline on a portrait one.
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const upright = ih > iw;
+        const portrait = upright ? vw / vh < iw / ih - 0.01 : vw / vh < 1;
+        const cw = iw;
+        const ch = portrait ? Math.round((iw * vh) / vw) : ih;
+        if (canvas.width !== cw || canvas.height !== ch) {
+          canvas.width = cw;
+          canvas.height = ch;
           lastDrawn = -1;
         }
         if (shown !== lastDrawn) {
-          ctx.drawImage(img, 0, 0);
+          if (!portrait) {
+            ctx.drawImage(img, 0, 0);
+          } else {
+            const dy = upright
+              ? Math.round((ch - ih) * 0.45)
+              : Math.max(0, Math.round(ch * 0.4 - ih / 2));
+            const top = edgeColour(img, 0);
+            const bottom = edgeColour(img, ih - 2);
+            ctx.fillStyle = top;
+            ctx.fillRect(0, 0, cw, dy + 2);
+            ctx.fillStyle = bottom;
+            ctx.fillRect(0, dy + ih - 2, cw, ch - dy - ih + 2);
+            ctx.drawImage(img, 0, dy);
+            const feather = Math.round(ih * 0.14);
+            const g1 = ctx.createLinearGradient(0, dy, 0, dy + feather);
+            g1.addColorStop(0, top);
+            g1.addColorStop(1, transparentOf(top));
+            ctx.fillStyle = g1;
+            ctx.fillRect(0, dy, cw, feather);
+            const g2 = ctx.createLinearGradient(0, dy + ih - feather, 0, dy + ih);
+            g2.addColorStop(0, transparentOf(bottom));
+            g2.addColorStop(1, bottom);
+            ctx.fillStyle = g2;
+            ctx.fillRect(0, dy + ih - feather, cw, feather);
+          }
           lastDrawn = shown;
         }
       }
@@ -299,14 +356,14 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
 
       // Live drawing readout.
       if (hudFrameRef.current) {
-        hudFrameRef.current.textContent = `${pad3(frameIdx + 1)} / ${FRAME_COUNT}`;
+        hudFrameRef.current.textContent = `${pad3(frameIdx + 1)} / ${film.count}`;
       }
       if (hudPhaseRef.current) {
         hudPhaseRef.current.textContent =
-          PHASES[frameIdx >= RENDER_FROM_INDEX ? 2 : frameIdx >= MODEL_FROM_INDEX ? 1 : 0];
+          PHASES[frameIdx >= film.renderFrom ? 2 : frameIdx >= film.modelFrom ? 1 : 0];
       }
       if (hudBarRef.current) {
-        hudBarRef.current.style.transform = `scaleX(${(seq.frame / (FRAME_COUNT - 1)).toFixed(4)})`;
+        hudBarRef.current.style.transform = `scaleX(${(seq.frame / (film.count - 1)).toFixed(4)})`;
       }
     };
 
@@ -324,7 +381,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       const cur = Math.round(seq.frame);
       for (let d = 0; d <= AHEAD; d++) {
         const fwd = cur + d;
-        if (fwd < FRAME_COUNT && !started[fwd] && fwd % stride === 0) return fwd;
+        if (fwd < film.count && !started[fwd] && fwd % stride === 0) return fwd;
         if (d > 0 && d <= BEHIND) {
           const back = cur - d;
           if (back >= 0 && !started[back] && back % stride === 0) return back;
@@ -426,7 +483,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
     });
 
     tl.to(seq, {
-      frame: FRAME_COUNT - 1,
+      frame: film.count - 1,
       ease: "none",
       duration: 0.5,
       onUpdate: render,
@@ -448,7 +505,15 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       });
     }
 
+    // Rotating a phone flips between the cover and the full-width layouts.
+    const onResize = () => {
+      lastDrawn = -1;
+      render();
+    };
+    window.addEventListener("resize", onResize);
+
     return () => {
+      window.removeEventListener("resize", onResize);
       formatSettled = true;
       stopDepth?.();
       releasePointer?.();
@@ -461,7 +526,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   return (
     <section id="top" ref={containerRef} className="relative h-[600vh] bg-black">
       <div
-        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
+        className={`fq-hero-stage sticky top-0 h-screen w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
         }`}
       >
@@ -491,20 +556,20 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
           className="fq-hero-copy absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center pointer-events-auto"
         >
           <h1
-            className="fq-intro-item fq-hero-h1 m-0 font-bold text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight uppercase"
+            className="fq-intro-item fq-hero-h1 m-0 font-bold text-[clamp(1rem,6.1vw,1.5rem)] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight uppercase"
             style={{ ["--i" as string]: 0 }}
           >
             {c.headline}
           </h1>
 
           <div
-            className="fq-intro-item flex items-center gap-3.5 mt-5 sm:mt-6"
+            className="fq-intro-item flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 mt-5 sm:mt-6"
             style={{ ["--i" as string]: 1 }}
           >
             <Magnetic strength={0.22}>
               <a
                 href={c.primaryCtaHref}
-                className="btn-metallic text-[11px] sm:text-xs py-2 px-6 tracking-[0.2em] uppercase font-semibold"
+                className="btn-metallic min-h-[44px] text-[11px] sm:text-xs py-2 px-5 sm:px-6 tracking-[0.16em] sm:tracking-[0.2em] uppercase font-semibold"
               >
                 {c.primaryCtaLabel}
               </a>
@@ -513,7 +578,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
               <button
                 type="button"
                 onClick={() => openModal()}
-                className="fq-hero-ghost text-[11px] tracking-[0.2em] px-4 py-2 uppercase cursor-pointer"
+                className="fq-hero-ghost min-h-[44px] text-[11px] tracking-[0.16em] sm:tracking-[0.2em] px-4 py-2 uppercase cursor-pointer"
               >
                 {c.secondaryCtaLabel}
               </button>
@@ -580,13 +645,6 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
             subtitle={c.stencilSubtitle}
             byline={c.stencilByline}
           />
-
-          {/* Concentric drafting arcs, as on a layout sheet */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
-            <div className="w-[75vw] max-w-4xl aspect-square border border-white/25 rounded-full" />
-            <div className="absolute w-[50vw] max-w-2xl aspect-square border border-white/20 rounded-full" />
-            <div className="absolute w-[30vw] max-w-md aspect-square border border-dashed border-white/25 rounded-full" />
-          </div>
         </div>
 
         {/* Layer 3: settled navigation cue */}

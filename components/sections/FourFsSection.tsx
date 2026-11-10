@@ -67,12 +67,24 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
   }, [activeIndex]);
 
   useEffect(() => {
-    const handleScroll = () => {
+    // Read on the next frame, at most once per frame, and only re-render when
+    // the face or a whole percent of progress changes (it used to set state
+    // on every scroll event, re-rendering the stage dozens of times a second).
+    let raf = 0;
+    let lastPinned: boolean | null = null;
+    let lastIdx = -1;
+    let lastPct = -1;
+    const measure = () => {
+      raf = 0;
       const el = containerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
-      setIsPinned(rect.top <= 0 && rect.bottom >= vh);
+      const pinned = rect.top <= 0 && rect.bottom >= vh;
+      if (pinned !== lastPinned) {
+        lastPinned = pinned;
+        setIsPinned(pinned);
+      }
       const totalScrollable = rect.height - vh;
       if (totalScrollable <= 0) return;
 
@@ -82,16 +94,29 @@ export function FourFsSection({ content }: { content?: Record<string, any> }) {
       // Calculate active slide index (0, 1, 2, 3)
       const exactIndex = p * numSlides;
       const currentIdx = Math.min(numSlides - 1, Math.floor(exactIndex));
-      setActiveIndex(currentIdx);
+      if (currentIdx !== lastIdx) {
+        lastIdx = currentIdx;
+        setActiveIndex(currentIdx);
+      }
 
       // Calculate progress percentage within the active slide (0% -> 100%)
       const segmentProgress = (exactIndex - currentIdx) * 100;
-      setSlideProgress(Math.max(0, Math.min(100, segmentProgress)));
+      const pct = Math.round(Math.max(0, Math.min(100, segmentProgress)));
+      if (pct !== lastPct) {
+        lastPct = pct;
+        setSlideProgress(pct);
+      }
+    };
+    const handleScroll = () => {
+      if (!raf) raf = requestAnimationFrame(measure);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    measure();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [numSlides]);
 
   const handleNavigate = useCallback(

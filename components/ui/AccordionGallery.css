@@ -260,6 +260,38 @@
   }
 }
 
+/* Even track (desktop): equal cards that snap to whole positions, labels
+   always on, a slow photo zoom on hover in place of the width change. */
+.accordion-gallery--even {
+  perspective: none;
+  scroll-snap-type: x mandatory;
+}
+.accordion-gallery--even .ag-panel {
+  scroll-snap-align: start;
+  transform: none !important;
+}
+.accordion-gallery--even .ag-panel__media {
+  width: 100%;
+}
+.accordion-gallery--even .ag-panel__media img {
+  transition: transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.accordion-gallery--even .ag-panel:hover .ag-panel__media img,
+.accordion-gallery--even .ag-panel:focus-within .ag-panel__media img {
+  transform: scale(1.06);
+}
+.accordion-gallery--even .ag-panel__overlay {
+  transition: background-color 0.4s ease;
+}
+.accordion-gallery--even .ag-panel__bar,
+.accordion-gallery--even .ag-panel__text {
+  opacity: 1 !important;
+  transform: none !important;
+}
+.accordion-gallery--even .ag-panel__text {
+  font-size: clamp(0.95rem, 1.05vw, 1.2rem);
+}
+
 .accordion-gallery--compact {
   perspective: none;
   scroll-snap-type: x mandatory;

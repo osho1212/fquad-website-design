@@ -3,11 +3,17 @@
 
 .ps {
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .ps-track {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
-  gap: 12px;
+  align-items: stretch;
+  gap: 10px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
@@ -26,9 +32,11 @@
   --ps-drift: 0%;
   --ps-veil: 0;
   position: relative;
-  flex: 0 0 min(82vw, 420px);
-  aspect-ratio: 4 / 5;
-  max-height: 66svh;
+  /* Uses the screen: the full height left by the header and controls, and
+     nearly the full width, leaving a sliver of the next card to invite a swipe. */
+  flex: 0 0 calc(100vw - 56px);
+  max-width: 560px;
+  height: 100%;
   overflow: hidden;
   scroll-snap-align: center;
   background: #0b0b0b;
@@ -139,7 +147,8 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 14px;
-  margin-top: 18px;
+  margin-top: 12px;
+  flex: 0 0 auto;
 }
 .ps-count {
   font-family: var(--font-good-times);

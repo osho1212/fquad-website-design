@@ -900,6 +900,7 @@ html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
   height: 100%;
 }
 
+
 /* Shown while a 3D model loads: the room in hairline, gently breathing. */
 .fq-scene-placeholder {
   display: flex;

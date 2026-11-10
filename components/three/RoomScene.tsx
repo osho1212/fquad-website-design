@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { RoomSceneProps } from "./RoomSceneImpl";
+import { whenIdle } from "./idleQueue";
 
 const loadImpl = () => import("./RoomSceneImpl");
 
@@ -62,12 +63,19 @@ export function RoomScene(props: RoomSceneProps) {
           io.disconnect();
         }
       },
-      // A screen and a half ahead: building and compiling happen before the
-      // visitor arrives rather than while they watch.
-      { rootMargin: "150% 0px" }
+      // Three screens ahead: the idle queue then has time to set the model up
+      // during quiet moments before the visitor arrives.
+      { rootMargin: "300% 0px" }
     );
     io.observe(el);
-    return () => io.disconnect();
+    // Also queue the mount from page load: the idle queue then sets every
+    // model up during quiet moments while the visitor is still on the hero,
+    // so none of that work is left for the moment they scroll to it.
+    const job = whenIdle(() => setNear(true));
+    return () => {
+      io.disconnect();
+      job.cancel();
+    };
   }, []);
 
   const handleReady = useCallback(() => {
