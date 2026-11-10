@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { getAdminSession, requireAdmin } from '@/lib/admin-guard';
+import { createSessionToken, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
+import { passwordFingerprint } from '@/lib/session-check';
 import { passwordProblem } from '@/lib/passwords';
 import { clearHits, isLimited, recordHit } from '@/lib/rate-limit';
 
@@ -46,11 +48,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Your current password is not correct.' }, { status: 400 });
   }
 
-  await prisma.adminUser.update({
-    where: { id: user.id },
-    data: { passwordHash: await bcrypt.hash(newPassword, 12) },
-  });
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.adminUser.update({ where: { id: user.id }, data: { passwordHash } });
   clearHits(limitKey);
 
-  return NextResponse.json({ success: true });
+  // Every other login is now invalid (it was tied to the old password). Give
+  // this one a fresh cookie so the person changing it stays signed in.
+  const res = NextResponse.json({ success: true });
+  res.cookies.set(
+    SESSION_COOKIE_NAME,
+    await createSessionToken({ userId: user.id, email: user.email, pv: passwordFingerprint(passwordHash) }),
+    {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: SESSION_MAX_AGE,
+    }
+  );
+  return res;
 }

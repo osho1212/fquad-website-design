@@ -123,6 +123,8 @@ export const aboutPage: PageDef = {
       label: 'Meet the Founders',
       fields: [
         { key: 'eyebrow', label: 'Eyebrow', type: 'text' },
+        { key: 'groupPhoto', label: 'Founders photo', type: 'image', help: 'A joint photo shown above the founder cards. Leave empty to hide it.' },
+        { key: 'groupPhotoAlt', label: 'Founders photo alt text', type: 'text' },
         {
           key: 'people',
           label: 'Founders',
@@ -140,6 +142,8 @@ export const aboutPage: PageDef = {
       ],
       defaults: {
         eyebrow: 'MEET THE FOUNDERS',
+        groupPhoto: '/assets/images/founders/amit-ashmi-1800.webp',
+        groupPhotoAlt: 'Amit Shah and Ashmi Shah, founders of F.QUAD Studio, standing side by side',
         people: [
           {
             name: 'Amit Shah',

@@ -31,6 +31,12 @@ yarn-error.log*
 # files customers upload through the Start a Project form (private, admin-only)
 /private-uploads/
 
+# the CMS database and media library are live content, not source code: they
+# live on the server (see SERVER_SETUP.md), never in git
+*.db
+*.db-journal
+/public/uploads/
+
 # vercel
 .vercel
 

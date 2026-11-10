@@ -37,7 +37,7 @@ agreement. The file is gitignored — create it on the server, never commit it.
 | `RESEND_API_KEY` | yes | emails for the contact and project forms |
 | `MAIL_FROM`, `ENQUIRY_TO` | no | defaults: `F.QUAD Studio <contact@fquad.com>` and `admin@fquad.com`. The sender domain must be verified in Resend (SPF + DKIM) |
 | `GOOGLE_SITE_VERIFICATION` | optional | the token Google Search Console shows for the "HTML tag" method; add it, deploy, then verify and submit `/sitemap.xml` |
-| `MEDIA_DIR`, `MEDIA_URL_PREFIX` | recommended | `/var/data/fquad/media` and `/uploads` — Nginx serves it (§6) |
+| `MEDIA_DIR`, `MEDIA_URL_PREFIX` | recommended | `/var/data/fquad/media` and `/uploads` — the app serves it at `/uploads`; Nginx may too (§6) |
 | `PRIVATE_UPLOAD_DIR` | recommended | `/var/data/fquad/private-uploads` — plans attached to the project form; only an admin can download them |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | first run only | used by `npm run db:seed`; there is no default password; remove after |
 
@@ -63,6 +63,26 @@ sudo chmod 700 /var/data/fquad /var/data/fquad/private-uploads
 - `/var/data/fquad/media` — the CMS media library
 - `/var/data/fquad/private-uploads` — customers' plans and drawings
 
+**None of these are in git.** `prisma/dev.db` and `public/uploads` used to be committed; they are now
+gitignored, because a `git pull` on the server would otherwise overwrite live content (and live enquiries).
+
+### Getting the existing content onto the server (once)
+
+From the machine that has the current content (the working copy with the studio's edits):
+
+```bash
+scp prisma/dev.db <deploy-user>@<server>:/var/data/fquad/app.db
+rsync -av public/uploads/ <deploy-user>@<server>:/var/data/fquad/media/
+```
+
+No working copy any more? The last committed versions are in git history:
+`git show <last-commit-that-had-it>:prisma/dev.db > app.db` (find the commit with
+`git log --oneline -- prisma/dev.db`), and the same for each folder of `public/uploads`.
+
+**The old database still contains the default admin login** (`admin@fquad.com` / `changeme123`, public in
+git history). Before the site is reachable, set a new password on the server with
+`npm run admin:password` (§4).
+
 ---
 
 ## 4. First-time setup commands
@@ -72,8 +92,26 @@ From the project folder, after `.env` is in place:
 ```bash
 npm ci
 npx prisma generate
-npx prisma db push        # creates the tables from prisma/schema.prisma
+npm run db:migrate       # applies prisma/migrations to the database in DATABASE_URL
+```
+
+**Brand-new, empty database:** create the first admin and the default settings:
+
+```bash
 ADMIN_EMAIL=you@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run db:seed
+```
+
+**Database copied from the existing site (§3):** it already has the tables, so tell Prisma the first
+migration is applied (once only), then replace the old default password:
+
+```bash
+npx prisma migrate resolve --applied 0_init
+ADMIN_EMAIL=admin@fquad.com ADMIN_PASSWORD='a-long-unique-password' npm run admin:password
+```
+
+The database must be in place **before** the build, because the project pages are generated from it:
+
+```bash
 npm run build
 ```
 
@@ -104,7 +142,7 @@ Redeploy:
 ```bash
 git pull
 npm ci
-npx prisma db push          # only if prisma/schema.prisma changed
+npm run db:migrate          # applies any new migration (does nothing if none)
 npm run build
 pm2 restart fquad
 ```
@@ -128,7 +166,9 @@ server {
 
     client_max_body_size 32m;            # project plans are up to 30 MB
 
-    # CMS media, straight from disk (matches MEDIA_DIR)
+    # CMS media, straight from disk (matches MEDIA_DIR). Optional speed-up: the app
+    # itself serves /uploads from MEDIA_DIR (the image optimiser reads it that way),
+    # so the site is correct without this block; it just spares Node the file reads.
     location /uploads/ {
         alias /var/data/fquad/media/;
         access_log off;
@@ -172,6 +212,12 @@ redirect the other to it; set `NEXT_PUBLIC_SITE_URL` to the main one.
 - `/admin/login` is public; everything else under `/admin` and `/api/admin`
   needs a session. This is enforced twice: by `middleware.ts` and again inside
   every admin API handler (`lib/admin-guard.ts`).
+- Changing a password (Admin → Account) signs out every other session at once, and
+  deleting an account ends its sessions; the person changing it stays signed in.
+  An **ADMIN** account can edit page content, the media library and enquiries; a
+  **SUPERADMIN** can also manage team, testimonials, awards, the journal and
+  site settings. Links entered in the editors must be https, mailto, tel or
+  a page of this site.
 - Sessions last 24 hours. Login allows 5 wrong passwords per account and 10 per
   address per 15 minutes, then blocks for the rest of the window.
 - The contact and project forms allow 5 submissions per address per 10 minutes,

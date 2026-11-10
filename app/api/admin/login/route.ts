@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth';
 import { clientIp, requestHostAllowed } from '@/lib/forms';
+import { passwordFingerprint } from '@/lib/session-check';
 import { clearHits, isLimited, recordHit } from '@/lib/rate-limit';
 
 const WINDOW_MS = 15 * 60_000;
@@ -56,7 +57,11 @@ export async function POST(req: NextRequest) {
 
   clearHits(accountKey);
 
-  const token = await createSessionToken({ userId: user.id, email: user.email });
+  const token = await createSessionToken({
+    userId: user.id,
+    email: user.email,
+    pv: passwordFingerprint(user.passwordHash),
+  });
 
   const res = NextResponse.json({ success: true });
   res.cookies.set(SESSION_COOKIE_NAME, token, {
