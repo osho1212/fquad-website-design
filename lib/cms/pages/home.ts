@@ -204,7 +204,7 @@ export const homePage: PageDef = {
       description: 'The single pull-quote near the bottom of the page.',
       fields: [
         { key: 'eyebrow', label: 'Eyebrow', type: 'text', half: true },
-        { key: 'quote', label: 'Quote', type: 'textarea', help: 'Quotation marks are added automatically.' },
+        { key: 'quote', label: 'Quote', type: 'textarea', help: 'No quotation marks needed — an oversized opening mark is drawn behind the text.' },
         { key: 'attribution', label: 'Attribution', type: 'text' },
       ],
       defaults: {

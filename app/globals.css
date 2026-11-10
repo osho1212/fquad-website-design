@@ -789,6 +789,20 @@ html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
   -webkit-text-stroke: 1px rgb(var(--fq-fg) / 0.55);
 }
 
+/* The oversized opening mark on the testimonial. Good Times draws a quote as
+   two angular slabs, which — hollowed out by .fq-outline at display size —
+   read as empty boxes rather than punctuation, so this one mark opts out of
+   the display face and uses a serif's conventional comma shape instead. The
+   hairline stroke is kept so it still belongs to the drafting language. */
+.fq-quote-mark {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-weight: 400;
+  /* Slightly heavier than .fq-outline's hairline: a serif quote's ink is only
+     about a quarter of its em box, so at display size a 1px stroke reads as
+     too faint against the type beside it. */
+  -webkit-text-stroke-width: 1.5px;
+}
+
 /* Underline that draws in from the left and retracts to the right. */
 .fq-link {
   position: relative;

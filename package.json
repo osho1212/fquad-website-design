@@ -8,7 +8,8 @@
     "start": "next start -p 3002",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "cms:prune": "tsx prisma/prune-legacy-content.ts"
+    "cms:prune": "tsx prisma/prune-legacy-content.ts",
+    "hero:avif": "node scripts/encode-hero-avif.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
