@@ -1,7 +1,8 @@
 name: CI
 
-# Type check, production build and a smoke test of the built site, on every
-# pull request and every push to main. Uses a throwaway database.
+# Type check, production build, then a smoke test and an end-to-end test of the
+# built site against the Firebase emulators (Firestore and Cloud Storage), so no
+# real Firebase project or credentials are involved.
 on:
   pull_request:
   push:
@@ -13,10 +14,8 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
-      DATABASE_URL: "file:./ci.db"
-      SESSION_SECRET: "ci-only-secret-0123456789-abcdefghijklmnopqrstuvwxyz"
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
@@ -26,25 +25,19 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      # The Firestore emulator is a Java program.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
 
-      - name: Create the throwaway database
-        run: npx prisma db push --skip-generate
+      - run: npm ci
 
       - name: Type check
         run: npm run typecheck
 
-      - name: Build
-        run: npm run build
-
-      - name: Smoke test the built site
-        run: |
-          npx next start -p 3002 > server.log 2>&1 &
-          for i in $(seq 1 40); do
-            curl -sf http://localhost:3002/api/health > /dev/null && break
-            sleep 2
-          done
-          bash scripts/smoke-test.sh http://localhost:3002
+      - name: Build, serve and test against the Firebase emulators
+        run: npx firebase emulators:exec --only firestore,storage --project demo-fquad "bash scripts/ci-run.sh"
 
       - name: Server log (on failure)
         if: failure()

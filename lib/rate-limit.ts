@@ -1,47 +1,44 @@
+import { createHash } from 'crypto';
+import { Timestamp } from 'firebase-admin/firestore';
+import { firestore } from './firebase';
+
 /**
- * Small in-memory rate limiter for the public forms and the admin login.
+ * Rate limits for the public forms and the admin login, kept in Firestore.
  *
- * It lives in this Node process only, which is exactly the deployment the
- * site uses (one PM2 instance behind Nginx — see SERVER_SETUP.md). If the app
- * is ever run as several instances, move this to a shared store or enforce
- * the limits in Nginx (`limit_req`) instead.
+ * They cannot live in server memory: on Vercel every request may run on a
+ * different short-lived instance, so an in-memory count would never add up.
+ * One small document per key holds the timestamps of recent hits.
+ *
+ * Enable a Firestore TTL policy on the `rateLimits` collection's `expiresAt`
+ * field so old keys are removed automatically (see DEPLOY.md).
  */
 
-type Bucket = { hits: number[]; windowMs: number };
+const COLLECTION = 'rateLimits';
 
-const g = globalThis as typeof globalThis & { __fqRateBuckets?: Map<string, Bucket>; __fqRateSweep?: number };
-const buckets: Map<string, Bucket> = (g.__fqRateBuckets ??= new Map());
-
-function live(bucket: Bucket | undefined, now: number): number[] {
-  if (!bucket) return [];
-  return bucket.hits.filter((t) => now - t < bucket.windowMs);
-}
-
-function sweep(now: number) {
-  if (now - (g.__fqRateSweep ?? 0) < 60_000) return;
-  g.__fqRateSweep = now;
-  buckets.forEach((bucket, key) => {
-    if (live(bucket, now).length === 0) buckets.delete(key);
-  });
-}
+const refFor = (key: string) =>
+  firestore().collection(COLLECTION).doc(createHash('sha256').update(key).digest('hex').slice(0, 40));
 
 /** True when `key` has already used up `limit` hits inside the window. */
-export function isLimited(key: string, limit: number, windowMs: number): boolean {
+export async function isLimited(key: string, limit: number, windowMs: number): Promise<boolean> {
+  const snap = await refFor(key).get();
+  if (!snap.exists) return false;
+  const hits: number[] = snap.data()?.hits ?? [];
   const now = Date.now();
-  sweep(now);
-  const existing = buckets.get(key);
-  const hits = live(existing ? { hits: existing.hits, windowMs } : undefined, now);
-  return hits.length >= limit;
+  return hits.filter((t) => now - t < windowMs).length >= limit;
 }
 
 /** Counts one hit against `key`. */
-export function recordHit(key: string, windowMs: number): void {
-  const now = Date.now();
-  const hits = live(buckets.get(key) ? { hits: buckets.get(key)!.hits, windowMs } : undefined, now);
-  hits.push(now);
-  buckets.set(key, { hits, windowMs });
+export async function recordHit(key: string, windowMs: number): Promise<void> {
+  const ref = refFor(key);
+  await firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const now = Date.now();
+    const hits = ((snap.data()?.hits ?? []) as number[]).filter((t) => now - t < windowMs);
+    hits.push(now);
+    tx.set(ref, { hits: hits.slice(-200), windowMs, expiresAt: Timestamp.fromMillis(now + windowMs) });
+  });
 }
 
-export function clearHits(key: string): void {
-  buckets.delete(key);
+export async function clearHits(key: string): Promise<void> {
+  await refFor(key).delete();
 }

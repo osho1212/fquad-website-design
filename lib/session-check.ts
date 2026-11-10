@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
-import { prisma } from './prisma';
+import { adminUsers } from './db';
 import { SESSION_COOKIE_NAME, getSessionKey, verifySessionToken } from './auth';
 
 export type AdminRole = 'SUPERADMIN' | 'ADMIN';
@@ -31,10 +31,7 @@ export async function currentAdmin(): Promise<AdminSession | null> {
   // Logins made before this check existed carry no fingerprint: sign in again.
   if (!session || !session.pv) return null;
 
-  const user = await prisma.adminUser.findUnique({
-    where: { id: session.userId },
-    select: { id: true, email: true, role: true, passwordHash: true },
-  });
+  const user = await adminUsers.findById(session.userId);
   if (!user) return null;
 
   const expected = Buffer.from(passwordFingerprint(user.passwordHash));

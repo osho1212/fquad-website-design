@@ -3,8 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
-  // Packages with native binaries stay out of the server bundle.
-  serverExternalPackages: ['ffmpeg-static', 'ffprobe-static', 'fluent-ffmpeg', 'sharp'],
+  // sharp ships a native binary, so it stays out of the server bundle.
+  serverExternalPackages: ['sharp'],
   images: {
     unoptimized: false,
     formats: ['image/avif', 'image/webp'],

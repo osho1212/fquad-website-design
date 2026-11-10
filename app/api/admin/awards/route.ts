@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { awards } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function GET() {
   const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
-  const awards = await prisma.award.findMany({
-    orderBy: [{ year: 'desc' }, { order: 'asc' }],
-  });
-  return NextResponse.json({ awards });
+  return NextResponse.json({ awards: await awards.list() });
 }
 
 export async function POST(req: NextRequest) {
@@ -35,16 +32,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Body is required' }, { status: 400 });
   }
 
-  const maxOrder = await prisma.award.aggregate({ _max: { order: true } });
-  const order = (maxOrder._max.order ?? -1) + 1;
-
-  const award = await prisma.award.create({
-    data: {
-      year: Number(year),
-      title: title.trim(),
-      body: awardBody.trim(),
-      order,
-    },
+  const award = await awards.create({
+    year: Number(year),
+    title: title.trim(),
+    body: awardBody.trim(),
   });
 
   return NextResponse.json({ award }, { status: 201 });

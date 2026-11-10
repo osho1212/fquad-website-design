@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { uploadMedia } from '@/lib/upload-client';
 
 export interface MediaVariant {
   id: string;
@@ -159,22 +160,11 @@ export default function MediaPicker({
     for (let i = 0; i < files.length; i++) {
       setUploadProgress({ current: i + 1, total: files.length });
 
-      const formData = new FormData();
-      formData.append('file', files[i]);
-      if (targetFolder) {
-        formData.append('folderId', targetFolder);
-      }
-
       try {
-        const res = await fetch(`/api/admin/media${background ? '?bg=1' : ''}`, { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || `Upload failed for ${files[i].name}.`);
-        } else {
-          uploadedMediaList.push(data.media);
-        }
-      } catch {
-        setError(`Upload failed for ${files[i].name} — check your connection and try again.`);
+        const data = await uploadMedia(files[i], { folderId: targetFolder || null, background });
+        uploadedMediaList.push(data.media);
+      } catch (err) {
+        setError(err instanceof Error && err.message ? err.message : `Upload failed for ${files[i].name} — check your connection and try again.`);
       }
     }
 
@@ -485,7 +475,7 @@ export default function MediaPicker({
                     ref={fileInputRef}
                     type="file"
                     multiple={multiple}
-                    accept={accept === 'image' ? 'image/*' : 'image/*,video/*'}
+                    accept="image/*"
                     onChange={handleUpload}
                     disabled={uploading}
                     style={{ display: 'none' }}

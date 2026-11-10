@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/prisma';
+import { pageContent } from '@/lib/db';
 import { getPageDef, getSectionDef, mergeSection } from '@/lib/cms/schema';
 import { requireAdmin } from '@/lib/admin-guard';
 import { HREF_HELP, isSafeHref } from '@/lib/forms';
@@ -20,10 +20,7 @@ export async function GET(_req: NextRequest, props: { params: Promise<{ page: st
     return NextResponse.json({ error: 'Unknown page' }, { status: 404 });
   }
 
-  const rows = await prisma.pageContent.findMany({
-    where: { page: params.page },
-    select: { section: true, data: true, updatedAt: true },
-  });
+  const rows = await pageContent.forPage(params.page);
 
   const saved = new Map<string, Record<string, unknown>>();
   const updatedAt: Record<string, string> = {};
@@ -96,11 +93,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ page: s
     }
   }
 
-  const updated = await prisma.pageContent.upsert({
-    where: { page_section: { page: params.page, section } },
-    update: { data: JSON.stringify(clean) },
-    create: { page: params.page, section, data: JSON.stringify(clean) },
-  });
+  const updated = await pageContent.upsert(params.page, section, JSON.stringify(clean));
 
   revalidateFor(pageDef.path);
 
@@ -128,9 +121,7 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ page: 
     return NextResponse.json({ error: 'Unknown section' }, { status: 404 });
   }
 
-  await prisma.pageContent
-    .delete({ where: { page_section: { page: params.page, section } } })
-    .catch(() => null); // already at defaults
+  await pageContent.remove(params.page, section).catch(() => null); // already at defaults
 
   revalidateFor(pageDef.path);
 

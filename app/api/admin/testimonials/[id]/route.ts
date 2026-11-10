@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { testimonials, NotFoundError } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -53,12 +53,13 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     data.order = body.order;
   }
 
-  const testimonial = await prisma.testimonial.update({
-    where: { id: params.id },
-    data,
-  });
-
-  return NextResponse.json({ testimonial });
+  try {
+    const testimonial = await testimonials.update(params.id, data);
+    return NextResponse.json({ testimonial });
+  } catch (err) {
+    if (err instanceof NotFoundError) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    throw err;
+  }
 }
 
 export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -66,6 +67,6 @@ export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: s
   const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
-  await prisma.testimonial.delete({ where: { id: params.id } });
+  await testimonials.remove(params.id);
   return NextResponse.json({ success: true });
 }

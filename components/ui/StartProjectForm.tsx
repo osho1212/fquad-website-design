@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useId } from 'react';
+import { sendFile } from '@/lib/upload-client';
 
 const PROJECT_TYPES = [
   'Residential Architecture',
@@ -156,27 +157,40 @@ export function StartProjectForm({
           ? customProjectType.trim()
           : projectType;
 
-      const formData = new FormData();
-      formData.append('name', name.trim());
-      formData.append('email', email.trim());
-      formData.append('phone', phone.trim());
-      formData.append('whatsapp', whatsapp ? 'true' : 'false');
-      formData.append('projectType', finalProjectType);
-      formData.append('sftArea', sftArea.trim());
-      formData.append('location', location.trim());
-      formData.append('stage', stage);
-      formData.append('timeline', timeline);
-      formData.append('budget', budget);
-      formData.append('notes', notes.trim());
-      formData.append('fq_hp_url', honeypot);
-
+      // A plan goes straight to storage first (the app cannot take large
+      // uploads); the brief then names it.
+      let planFileId: string | undefined;
       if (planFile) {
-        formData.append('planFile', planFile);
+        const ticketRes = await fetch('/api/start-project/upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: planFile.name, size: planFile.size }),
+        });
+        const ticket = await ticketRes.json().catch(() => ({}));
+        if (!ticketRes.ok) throw new Error(ticket.error || 'Could not attach the file. Please try again.');
+        await sendFile(ticket.upload, planFile);
+        planFileId = ticket.fileId;
       }
 
       const res = await fetch('/api/start-project', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          whatsapp,
+          projectType: finalProjectType,
+          sftArea: sftArea.trim(),
+          location: location.trim(),
+          stage,
+          timeline,
+          budget,
+          notes: notes.trim(),
+          fq_hp_url: honeypot,
+          planFileId,
+          planFileName: planFile?.name,
+        }),
       });
 
       const data = await res.json();

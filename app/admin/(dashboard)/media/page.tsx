@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { uploadMedia } from '@/lib/upload-client';
 
 interface MediaVariant {
   id: string;
@@ -89,18 +90,10 @@ export default function MediaLibraryPage() {
     for (let i = 0; i < files.length; i++) {
       setUploadProgress({ current: i + 1, total: files.length });
 
-      const formData = new FormData();
-      formData.append('file', files[i]);
-      if (targetFolder) formData.append('folderId', targetFolder);
-
       try {
-        const res = await fetch('/api/admin/media', { method: 'POST', body: formData });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setError(data.error || `Upload failed for ${files[i].name}.`);
-        }
-      } catch {
-        setError(`Upload failed for ${files[i].name} — check your connection and try again.`);
+        await uploadMedia(files[i], { folderId: targetFolder || null });
+      } catch (err) {
+        setError(err instanceof Error && err.message ? err.message : `Upload failed for ${files[i].name} — check your connection and try again.`);
       }
     }
 
@@ -222,9 +215,9 @@ export default function MediaLibraryPage() {
       <div style={{ flex: 1, minWidth: 0 }}>
         <h1 style={{ fontSize: 28, marginBottom: 8 }}>Media Library</h1>
         <p style={{ color: '#7A7870', marginBottom: 24, fontSize: 15, maxWidth: 560, lineHeight: 1.7 }}>
-          Upload images or video — images get resized into thumb/medium/full + WebP
-          versions automatically (and watermarked), and video gets compressed with a
-          poster frame generated. Large videos may take a minute to process.
+          Upload images — they get resized into thumb/medium/full + WebP versions
+          automatically (and watermarked). Photos go straight to storage, so large
+          originals are fine.
         </p>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
@@ -240,7 +233,7 @@ export default function MediaLibraryPage() {
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*,video/*"
+              accept="image/*"
               onChange={handleUpload}
               disabled={uploading}
               style={{ display: 'none' }}
@@ -278,7 +271,7 @@ export default function MediaLibraryPage() {
           <p style={{ color: '#9C9890' }}>Loading…</p>
         ) : filteredMedia.length === 0 ? (
           <p style={{ color: '#9C9890' }}>
-            {selectedFolder ? 'No media in this folder.' : 'No media yet — upload your first image or video above.'}
+            {selectedFolder ? 'No media in this folder.' : 'No media yet — upload your first image above.'}
           </p>
         ) : (
           <div

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { prisma } from '@/lib/prisma';
+import { pageContent } from '@/lib/db';
 import { pagesByGroup } from '@/lib/cms/schema';
 
 export const dynamic = 'force-dynamic';
@@ -12,11 +12,7 @@ const GROUP_BLURB: Record<string, string> = {
 
 export default async function CmsIndexPage() {
   // How many sections of each page have been edited away from the shipped copy.
-  const rows = await prisma.pageContent
-    .groupBy({ by: ['page'], _count: { section: true } })
-    .catch(() => [] as { page: string; _count: { section: number } }[]);
-
-  const editedByPage = new Map(rows.map((row) => [row.page, row._count.section]));
+  const editedByPage = await pageContent.editedCounts().catch(() => new Map<string, number>());
 
   return (
     <div style={{ maxWidth: 980 }}>

@@ -1,126 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, unlink } from 'fs/promises';
-import os from 'os';
-import path from 'path';
-import { randomBytes } from 'crypto';
-import { prisma } from '@/lib/prisma';
-import { processImage, processVideo, deleteMediaFiles } from '@/lib/media';
+import { media } from '@/lib/db';
+import { processImage, deleteMediaFiles } from '@/lib/media';
+import { deleteObject, readObject, statObject } from '@/lib/storage';
 import { requireAdmin } from '@/lib/admin-guard';
+import { cleanLine } from '@/lib/forms';
 
-// The media library is never static: this route lists live uploads and runs
-// image/video processing. Marking it dynamic also keeps `next build` from
-// trying to evaluate it, which times out loading sharp and the ffmpeg binaries.
+// The media library is never static: it lists live uploads and runs image
+// processing.
 export const dynamic = 'force-dynamic';
+// Making the sizes of a large photo takes a few seconds.
+export const maxDuration = 60;
+
+const MAX_IMAGE_BYTES = 40 * 1024 * 1024;
+const UPLOAD_ID = /^[A-Za-z0-9]{10,40}$/;
 
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const media = await prisma.media.findMany({
-    include: { variants: true },
-    orderBy: { createdAt: 'desc' },
-  });
-  return NextResponse.json({ media });
+  return NextResponse.json({ media: await media.list() });
 }
 
+/**
+ * Step 3 of adding an image: the browser has sent the file to incoming/<id>/original
+ * (see upload-url); this makes the sizes, stores them and records the image.
+ */
 export async function POST(req: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  let formData: FormData;
+  let body: any;
   try {
-    formData = await req.formData();
+    body = await req.json();
   } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  const uploadId = typeof body?.uploadId === 'string' ? body.uploadId : '';
+  if (!UPLOAD_ID.test(uploadId)) {
     return NextResponse.json({ error: 'Invalid upload' }, { status: 400 });
   }
+  const filename = cleanLine(body?.filename, 200) || 'image';
+  const alt = typeof body?.alt === 'string' && body.alt.trim() ? cleanLine(body.alt, 300) : null;
+  const folderId = typeof body?.folderId === 'string' && body.folderId ? body.folderId : null;
+  const isBackground = body?.background === true;
 
-  const file = formData.get('file');
-  const alt = (formData.get('alt') as string | null) || null;
-  const folderId = (formData.get('folderId') as string | null) || null;
-  const isBackground = req.nextUrl.searchParams.get('bg') === '1';
-
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+  const incoming = `incoming/${uploadId}/original`;
+  const info = await statObject(incoming);
+  if (!info) {
+    return NextResponse.json({ error: 'The file did not arrive. Please try the upload again.' }, { status: 400 });
   }
-
-  const isImage = file.type.startsWith('image/');
-  const isVideo = file.type.startsWith('video/');
-
-  if (!isImage && !isVideo) {
-    return NextResponse.json(
-      { error: 'Unsupported file type — please upload an image or video.' },
-      { status: 400 }
-    );
+  if (info.size > MAX_IMAGE_BYTES) {
+    await deleteObject(incoming);
+    return NextResponse.json({ error: 'That file is too large (40 MB maximum).' }, { status: 413 });
   }
-
-  const maxBytes = isImage ? 40 * 1024 * 1024 : 400 * 1024 * 1024;
-  if (file.size > maxBytes) {
-    return NextResponse.json(
-      { error: `That file is too large (${isImage ? '40 MB' : '400 MB'} maximum).` },
-      { status: 413 }
-    );
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  // Create the row first so we have a stable ID to use as the folder name.
-  const media = await prisma.media.create({
-    data: {
-      type: isImage ? 'IMAGE' : 'VIDEO',
-      filename: file.name,
-      path: '',
-      alt,
-      folderId,
-    },
-  });
 
   try {
-    const result = isImage
-      ? await processImage(buffer, media.id, isBackground)
-      : await processVideoBuffer(buffer, media.id, file.name);
+    const original = await readObject(incoming);
+    const result = await processImage(original, uploadId, isBackground);
+    const main = result.variants.find((v) => v.label === 'full');
 
-    const mainVariant = result.variants.find((v) => v.label === (isImage ? 'full' : 'compressed'));
-
-    const updated = await prisma.media.update({
-      where: { id: media.id },
-      data: {
-        width: result.width,
-        height: result.height,
-        duration: result.duration,
-        path: mainVariant?.path || '',
-        variants: {
-          create: result.variants.map((v: any) => ({
-            label: v.label,
-            path: v.path,
-            width: v.width,
-            height: v.height,
-            format: v.format,
-          })),
-        },
+    const created = await media.create(
+      {
+        type: 'IMAGE',
+        filename,
+        path: main?.path || '',
+        alt,
+        folderId,
+        width: result.width ?? null,
+        height: result.height ?? null,
+        variants: result.variants.map((v) => ({
+          label: v.label,
+          path: v.path,
+          width: v.width ?? null,
+          height: v.height ?? null,
+          format: v.format,
+        })),
       },
-      include: { variants: true },
-    });
+      uploadId
+    );
 
-    return NextResponse.json({ media: updated }, { status: 201 });
+    await deleteObject(incoming);
+    return NextResponse.json({ media: created }, { status: 201 });
   } catch (err) {
     console.error('Media processing failed:', err);
-    await prisma.media.delete({ where: { id: media.id } }).catch(() => {});
-    await deleteMediaFiles(media.id).catch(() => {});
+    await deleteMediaFiles(uploadId).catch(() => {});
+    await deleteObject(incoming).catch(() => {});
     return NextResponse.json(
-      { error: 'Failed to process file. Check the file is a valid image/video and try again.' },
+      { error: 'Failed to process the file. Check it is a valid image and try again.' },
       { status: 500 }
     );
-  }
-}
-
-/** ffmpeg needs a real file path, so write the upload to a temp file first. */
-async function processVideoBuffer(buffer: Buffer, mediaId: string, originalFilename: string) {
-  const ext = path.extname(originalFilename) || '.mp4';
-  const tempPath = path.join(os.tmpdir(), `fquad-upload-${mediaId}-${randomBytes(4).toString('hex')}${ext}`);
-  await writeFile(tempPath, buffer);
-  try {
-    return await processVideo(tempPath, mediaId);
-  } finally {
-    await unlink(tempPath).catch(() => {});
   }
 }

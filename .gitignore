@@ -48,3 +48,11 @@ next-env.d.ts
 Untitled design-ezremove.mp4
 *.onetoc2
 
+
+# Firebase emulators
+.firebase-data/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+server.log

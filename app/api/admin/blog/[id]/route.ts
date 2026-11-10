@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { blogPosts, NotFoundError } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-guard';
 
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -17,7 +17,6 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
   const { title, excerpt, body: postBody, mediaId, published, order, publishedAt } = body;
 
   const data: any = {};
-
   if (title !== undefined) data.title = title;
   if (excerpt !== undefined) data.excerpt = excerpt;
   if (postBody !== undefined) data.body = postBody;
@@ -26,15 +25,11 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
 
   if (published !== undefined) {
     data.published = published;
-
     if (published === true) {
       if (publishedAt !== undefined) {
         data.publishedAt = publishedAt ? new Date(publishedAt) : null;
       } else {
-        const existingPost = await prisma.blogPost.findUnique({
-          where: { id: params.id },
-          select: { publishedAt: true },
-        });
+        const existingPost = await blogPosts.get(params.id);
         if (!existingPost?.publishedAt) {
           data.publishedAt = new Date();
         }
@@ -44,12 +39,13 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     data.publishedAt = publishedAt ? new Date(publishedAt) : null;
   }
 
-  const post = await prisma.blogPost.update({
-    where: { id: params.id },
-    data,
-  });
-
-  return NextResponse.json({ post });
+  try {
+    const post = await blogPosts.update(params.id, data);
+    return NextResponse.json({ post });
+  } catch (err) {
+    if (err instanceof NotFoundError) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    throw err;
+  }
 }
 
 export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -57,6 +53,6 @@ export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: s
   const denied = await requireAdmin({ superadmin: true });
   if (denied) return denied;
 
-  await prisma.blogPost.delete({ where: { id: params.id } });
+  await blogPosts.remove(params.id);
   return NextResponse.json({ success: true });
 }

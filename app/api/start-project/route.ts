@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import { prisma } from '@/lib/prisma';
+import { enquiries } from '@/lib/db';
 import { getResend, mailFrom, enquiryRecipient } from '@/lib/mail';
 import { clientIp, cleanLine, cleanText, escapeHtml, escapeHtmlMultiline, isEmail, requestHostAllowed } from '@/lib/forms';
 import { isLimited, recordHit } from '@/lib/rate-limit';
-import { MAX_PLAN_BYTES, PLAN_DIR, PLAN_EXTENSIONS, PLAN_FILE_ROUTE, looksLikePlan, newPlanName } from '@/lib/plan-files';
+import { MAX_PLAN_BYTES, PENDING_PREFIX, PLAN_FILE_ROUTE, PLAN_PREFIX, isSafePlanName, looksLikePlan } from '@/lib/plan-files';
+import { deleteObject, moveObject, readHead, statObject } from '@/lib/storage';
+
+export const dynamic = 'force-dynamic';
 
 const WINDOW_MS = 10 * 60_000;
 const MAX_SUBMISSIONS = 5;
-// A 30 MB plan plus the form's text fields.
-const MAX_REQUEST_BYTES = MAX_PLAN_BYTES + 1024 * 1024;
+const MAX_BODY_BYTES = 64 * 1024;
 
 // A submission that filled the hidden honeypot field came from a bot. Answer
 // as if it worked, so the bot learns nothing, but save and send nothing.
@@ -22,103 +23,74 @@ export async function POST(req: NextRequest) {
   }
 
   const limitKey = `form:${clientIp(req.headers)}`;
-  if (isLimited(limitKey, MAX_SUBMISSIONS, WINDOW_MS)) {
+  if (await isLimited(limitKey, MAX_SUBMISSIONS, WINDOW_MS)) {
     return NextResponse.json(
       { error: 'Too many submissions from this connection. Please try again in a few minutes.' },
       { status: 429, headers: { 'Retry-After': '600' } }
     );
   }
-  recordHit(limitKey, WINDOW_MS);
+  await recordHit(limitKey, WINDOW_MS);
 
+  // The form sends text only. A plan goes straight to storage first (see
+  // upload-url) and is named here.
   const declared = Number(req.headers.get('content-length') || 0);
-  if (declared > MAX_REQUEST_BYTES) {
-    return NextResponse.json({ error: 'That upload is too large (30 MB maximum).' }, { status: 413 });
+  if (declared > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: 'That submission is too large.' }, { status: 413 });
   }
 
   try {
-    let name = '';
-    let email = '';
-    let phone = '';
-    let whatsapp = false;
-    let projectType = '';
-    let sftArea = '';
-    let location = '';
-    let stage = '';
-    let timeline = '';
-    let budget = '';
-    let notes = '';
-    let planFileName: string | null = null;
-    let planFilePath: string | null = null;
-
-    const contentType = req.headers.get('content-type') || '';
-
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      if (cleanText(formData.get('fq_hp_url'), 200)) return botSuccess();
-      name = cleanLine(formData.get('name'), 120);
-      email = cleanLine(formData.get('email'), 254);
-      phone = cleanLine(formData.get('phone'), 40);
-      whatsapp = formData.get('whatsapp') === 'true' || formData.get('whatsapp') === '1';
-      projectType = cleanLine(formData.get('projectType'), 120);
-      sftArea = cleanLine(formData.get('sftArea'), 60);
-      location = cleanLine(formData.get('location'), 160);
-      stage = cleanLine(formData.get('stage'), 120);
-      timeline = cleanLine(formData.get('timeline'), 120);
-      budget = cleanLine(formData.get('budget'), 120);
-      notes = cleanText(formData.get('notes'), 5000);
-
-      const file = formData.get('planFile');
-      if (file && file instanceof File && file.size > 0) {
-        const ext = path.extname(file.name).toLowerCase();
-        const rejection = NextResponse.json(
-          { error: 'Please attach a PDF, JPG, PNG, DWG or DXF file of up to 30 MB.' },
-          { status: 400 }
-        );
-        if (!(PLAN_EXTENSIONS as readonly string[]).includes(ext) || file.size > MAX_PLAN_BYTES) {
-          return rejection;
-        }
-        const buffer = Buffer.from(await file.arrayBuffer());
-        if (!looksLikePlan(buffer, ext)) {
-          return rejection;
-        }
-
-        // Stored outside public/ under a random name; only the original name
-        // (as text) is kept for the admin to read.
-        const savedName = newPlanName(ext);
-        await mkdir(PLAN_DIR, { recursive: true });
-        await writeFile(path.join(PLAN_DIR, savedName), buffer);
-        planFileName = cleanLine(file.name, 120) || 'plan';
-        planFilePath = `${PLAN_FILE_ROUTE}/${savedName}`;
-      }
-    } else {
-      let body: Record<string, unknown>;
-      try {
-        body = await req.json();
-      } catch {
-        return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-      }
-      if (cleanText(body?.fq_hp_url, 200)) return botSuccess();
-      name = cleanLine(body?.name, 120);
-      email = cleanLine(body?.email, 254);
-      phone = cleanLine(body?.phone, 40);
-      whatsapp = body?.whatsapp === true || body?.whatsapp === 'true';
-      projectType = cleanLine(body?.projectType, 120);
-      sftArea = cleanLine(body?.sftArea, 60);
-      location = cleanLine(body?.location, 160);
-      stage = cleanLine(body?.stage, 120);
-      timeline = cleanLine(body?.timeline, 120);
-      budget = cleanLine(body?.budget, 120);
-      notes = cleanText(body?.notes, 5000);
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
+    if (cleanText(body?.fq_hp_url, 200)) return botSuccess();
+
+    const name = cleanLine(body?.name, 120);
+    const email = cleanLine(body?.email, 254);
+    const phone = cleanLine(body?.phone, 40);
+    const whatsapp = body?.whatsapp === true || body?.whatsapp === 'true';
+    const projectType = cleanLine(body?.projectType, 120);
+    const sftArea = cleanLine(body?.sftArea, 60);
+    const location = cleanLine(body?.location, 160);
+    const stage = cleanLine(body?.stage, 120);
+    const timeline = cleanLine(body?.timeline, 120);
+    const budget = cleanLine(body?.budget, 120);
+    const notes = cleanText(body?.notes, 5000);
+
     if (!name || !email || !phone) {
-      return NextResponse.json(
-        { error: 'Name, email, and phone number are required.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Name, email, and phone number are required.' }, { status: 400 });
     }
     if (!isEmail(email)) {
       return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+    }
+
+    // A plan the visitor sent to storage: check what it really is, then keep it.
+    let planFileName: string | null = null;
+    let planFilePath: string | null = null;
+    const planFileId = typeof body?.planFileId === 'string' ? body.planFileId : '';
+    if (planFileId) {
+      const rejection = NextResponse.json(
+        { error: 'Please attach a PDF, JPG, PNG, DWG or DXF file of up to 30 MB.' },
+        { status: 400 }
+      );
+      if (!isSafePlanName(planFileId)) return rejection;
+
+      const pending = `${PENDING_PREFIX}${planFileId}`;
+      const info = await statObject(pending);
+      if (!info) {
+        return NextResponse.json({ error: 'The attached file did not arrive. Please attach it again.' }, { status: 400 });
+      }
+      const ext = path.extname(planFileId).toLowerCase();
+      if (info.size > MAX_PLAN_BYTES || !looksLikePlan(await readHead(pending, 4096), ext)) {
+        await deleteObject(pending);
+        return rejection;
+      }
+      await moveObject(pending, `${PLAN_PREFIX}${planFileId}`);
+      planFileName = cleanLine(body?.planFileName, 120) || 'plan';
+      planFilePath = `${PLAN_FILE_ROUTE}/${planFileId}`;
     }
 
     // Build structured message for persistence
@@ -140,17 +112,12 @@ export async function POST(req: NextRequest) {
       messageLines.push(`\n• Additional Notes:\n${notes}`);
     }
 
-    const fullMessage = messageLines.join('\n');
-
-    // Save to database
-    const enquiry = await prisma.enquiry.create({
-      data: {
-        name,
-        email,
-        phone,
-        message: fullMessage,
-        whatsapp,
-      },
+    const enquiry = await enquiries.create({
+      name,
+      email,
+      phone,
+      message: messageLines.join('\n'),
+      whatsapp,
     });
 
     // Optional notification email via Resend

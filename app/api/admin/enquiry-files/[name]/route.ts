@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import path from 'path';
 import { requireAdmin } from '@/lib/admin-guard';
-import { PLAN_DIR, isSafePlanName } from '@/lib/plan-files';
+import { PLAN_PREFIX, isSafePlanName } from '@/lib/plan-files';
+import { readObject, statObject } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,16 +19,16 @@ export async function GET(_req: NextRequest, props: { params: Promise<{ name: st
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  let data: Buffer;
-  try {
-    data = await readFile(path.join(PLAN_DIR, params.name));
-  } catch {
+  const path = `${PLAN_PREFIX}${params.name}`;
+  if (!(await statObject(path))) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+  const data = await readObject(path);
 
   return new NextResponse(new Uint8Array(data), {
     headers: {
       'Content-Type': 'application/octet-stream',
+      'Content-Length': String(data.length),
       'Content-Disposition': `attachment; filename="${params.name}"`,
       'X-Content-Type-Options': 'nosniff',
       'Cache-Control': 'private, no-store',
