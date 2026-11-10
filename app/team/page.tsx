@@ -7,6 +7,7 @@ import { ClosingBand } from "@/components/pages/blog/ClosingBand";
 import { countLabel, orEmpty, responsiveImage } from "@/components/pages/blog/helpers";
 import { PrimaryAction, TextAction } from "@/components/pages/blog/ui";
 import { PersonCard, type Person } from "@/components/pages/team/PersonCard";
+import { FoundersBanner } from "@/components/pages/about/FoundersBanner";
 import { getPage } from "@/lib/cms/content";
 import { getSiteSettings, getTeamMembers } from "@/lib/public-content";
 import { pageMetadata } from "@/lib/seo";
@@ -47,18 +48,12 @@ export default async function TeamPage() {
   const studio = people.filter((p) => !p.featured);
 
   // With no published team members, the founders already written for the
-  // About page are the team. (`portrait` is '' until a photo is uploaded.)
-  const founders: Person[] = (
-    (about.founders?.people ?? []) as { name?: string; role?: string; portrait?: string; bio?: string }[]
+  // About page are the team, shown together in one banner with their joint photo.
+  const founders = (
+    (about.founders?.people ?? []) as { name?: string; role?: string; bio?: string }[]
   )
     .filter((f) => f?.name)
-    .map((f, i) => ({
-      id: `founder-${i}`,
-      name: f.name as string,
-      role: f.role ?? "",
-      bio: f.bio,
-      image: f.portrait ? { src: f.portrait } : null,
-    }));
+    .map((f) => ({ name: f.name as string, role: f.role ?? "", bio: f.bio ?? "" }));
 
   const hasTeam = people.length > 0;
   const intro =
@@ -131,16 +126,7 @@ export default async function TeamPage() {
               <span className="text-white/60">{countLabel(founders.length, "founder", "founders")}</span>
             }
           >
-            <ul
-              role="list"
-              className="m-0 p-0 list-none grid grid-cols-1 md:grid-cols-2 gap-x-10 lg:gap-x-16 gap-y-14 max-w-[1500px]"
-            >
-              {founders.map((person, i) => (
-                <li key={person.id} className="min-w-0">
-                  <PersonCard person={person} variant="lead" index={i} />
-                </li>
-              ))}
-            </ul>
+            <FoundersBanner photo={about.founders?.groupPhoto} photoAlt={about.founders?.groupPhotoAlt} people={founders} />
           </Section>
         )
       )}

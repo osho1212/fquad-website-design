@@ -111,9 +111,11 @@ export const studioPage: PageDef = {
       label: 'Meet the Founders',
       fields: [
         { key: 'eyebrow', label: 'Eyebrow', type: 'text' },
+        { key: 'groupPhoto', label: 'Founders photo', type: 'image', help: 'The joint photo in the founders banner. Leave empty to show just the names and descriptions.' },
+        { key: 'groupPhotoAlt', label: 'Founders photo alt text', type: 'text' },
         {
           key: 'people',
-          label: 'Founders',
+          label: 'Founders (names and descriptions, shown together in one banner)',
           type: 'list',
           itemLabel: 'Founder',
           itemTitleKey: 'name',
@@ -121,24 +123,23 @@ export const studioPage: PageDef = {
           fields: [
             { key: 'name', label: 'Name', type: 'text', half: true },
             { key: 'role', label: 'Role', type: 'text', half: true },
-            { key: 'portrait', label: 'Portrait', type: 'image', help: 'Leave empty to show the hatched placeholder.' },
             { key: 'bio', label: 'Bio', type: 'textarea' },
           ],
         },
       ],
       defaults: {
         eyebrow: 'MEET THE FOUNDERS',
+        groupPhoto: '/assets/images/founders/amit-ashmi-1800.webp',
+        groupPhotoAlt: 'Amit Shah and Ashmi Shah, founders of F.QUAD Studio, standing side by side',
         people: [
           {
             name: 'Amit Shah',
             role: 'PRINCIPAL ARCHITECT',
-            portrait: '',
             bio: '20+ years of architectural experience with expertise across residential, commercial, and institutional projects. Amit believes in creating spaces that balance innovation with functionality and is a regular speaker at leading architecture and design forums.',
           },
           {
             name: 'Ashmi Shah',
             role: 'PRINCIPAL INTERIOR DESIGNER',
-            portrait: '',
             bio: 'An accomplished interior designer with over two decades of experience, Ashmi focuses on creating client-centric interiors that seamlessly blend aesthetics with functionality. Beyond design, she actively champions accessibility, sustainability, and climate-conscious practices.',
           },
         ],

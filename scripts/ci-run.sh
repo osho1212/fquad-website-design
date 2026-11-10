@@ -18,6 +18,8 @@ fi
 
 # The Google sign-in token check, on its own (no emulator or network needed).
 node --experimental-strip-types scripts/test-google-token.mjs
+# Finding the public web API key through the service account (stubbed network).
+node --experimental-strip-types scripts/test-firebase-web-config.mjs
 
 # Built WITHOUT the Google sign-in settings, which are given only when the server
 # starts: the login page reads them as it is served, exactly as on Vercel when

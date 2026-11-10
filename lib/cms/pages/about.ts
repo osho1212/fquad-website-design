@@ -123,11 +123,11 @@ export const aboutPage: PageDef = {
       label: 'Meet the Founders',
       fields: [
         { key: 'eyebrow', label: 'Eyebrow', type: 'text' },
-        { key: 'groupPhoto', label: 'Founders photo', type: 'image', help: 'A joint photo shown above the founder cards. Leave empty to hide it.' },
+        { key: 'groupPhoto', label: 'Founders photo', type: 'image', help: 'The joint photo in the founders banner. Leave empty to show just the names and descriptions.' },
         { key: 'groupPhotoAlt', label: 'Founders photo alt text', type: 'text' },
         {
           key: 'people',
-          label: 'Founders',
+          label: 'Founders (names and descriptions, shown together in one banner)',
           type: 'list',
           itemLabel: 'Founder',
           itemTitleKey: 'name',
@@ -135,7 +135,6 @@ export const aboutPage: PageDef = {
           fields: [
             { key: 'name', label: 'Name', type: 'text', half: true },
             { key: 'role', label: 'Role', type: 'text', half: true },
-            { key: 'portrait', label: 'Portrait', type: 'image', help: 'Leave empty for the textured placeholder.' },
             { key: 'bio', label: 'Bio', type: 'textarea' },
           ],
         },
@@ -148,13 +147,11 @@ export const aboutPage: PageDef = {
           {
             name: 'Amit Shah',
             role: 'Principal Architect',
-            portrait: '',
             bio: '20+ years of architectural experience with expertise across residential, commercial, and institutional projects. Amit believes in creating spaces that balance innovation with functionality and is a regular speaker at leading architecture and design forums. His passion for design is complemented by his love for art, travel, and adventure.',
           },
           {
             name: 'Ashmi Shah',
             role: 'Principal Interior Designer',
-            portrait: '',
             bio: 'An accomplished interior designer with over two decades of experience, Ashmi focuses on creating client-centric interiors that seamlessly blend aesthetics with functionality. Beyond design, she actively champions accessibility, sustainability, and climate-conscious practices through her leadership initiatives.',
           },
         ],
