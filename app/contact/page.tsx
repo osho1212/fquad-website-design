@@ -75,7 +75,7 @@ export default async function ContactPage() {
       {/* ── Details (left) + Form (right) ───────────────────────── */}
       <section className="px-6 sm:px-14 py-16 grid grid-cols-1 lg:grid-cols-[0.8fr_1fr] gap-14 lg:gap-20 items-start">
         {/* Left — studio details. Sticky so it stays alongside the tall form. */}
-        <div className="lg:sticky lg:top-28">
+        <div className="fq-panel p-7 sm:p-10 lg:sticky lg:top-28">
           <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 mb-10">
             {info.heading}
           </h2>
@@ -86,7 +86,7 @@ export default async function ContactPage() {
                 key={d.label}
                 className="py-5 border-b border-white/15 first:pt-0"
               >
-                <dt className="text-[11px] tracking-[0.2em] uppercase text-white/40">
+                <dt className="text-[11px] tracking-[0.2em] uppercase text-white/60">
                   {d.label}
                 </dt>
                 <dd className="m-0 mt-2 text-sm sm:text-base text-white/80">
@@ -111,7 +111,7 @@ export default async function ContactPage() {
             ))}
 
             <div className="py-5 border-b border-white/15">
-              <dt className="text-[11px] tracking-[0.2em] uppercase text-white/40">
+              <dt className="text-[11px] tracking-[0.2em] uppercase text-white/60">
                 {info.hoursLabel}
               </dt>
               <dd className="m-0 mt-2 text-sm sm:text-base text-white/80">
@@ -121,7 +121,7 @@ export default async function ContactPage() {
           </dl>
 
           <div className="mt-8">
-            <div className="text-[11px] tracking-[0.2em] uppercase text-white/40 mb-3.5">
+            <div className="text-[11px] tracking-[0.2em] uppercase text-white/60 mb-3.5">
               {info.followLabel}
             </div>
             <SocialLinks
@@ -150,7 +150,7 @@ export default async function ContactPage() {
         </div>
 
         {/* Right — project intake, shared with the Start A Project modal */}
-        <div>
+        <div className="fq-panel p-6 sm:p-10">
           <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 mb-10">
             {form.heading}
           </h2>
@@ -160,29 +160,31 @@ export default async function ContactPage() {
 
       {/* ── Map ─────────────────────────────────────────────────── */}
       <section className="px-6 sm:px-14 pb-20 pt-4">
-        <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 mb-8">
-          {map.heading}
-        </h2>
-        <div className="w-full h-[380px] sm:h-[460px] border border-white/15 overflow-hidden bg-zinc-900">
-          <iframe
-            src={mapSrc}
-            title={`Map showing F.QUAD Studio — ${address}`}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-            className="w-full h-full block border-0 grayscale contrast-[1.05] brightness-[0.88]"
-          />
+        <div className="fq-panel p-6 sm:p-10">
+          <h2 className="m-0 font-normal uppercase text-[11px] tracking-[0.22em] text-white/55 mb-8">
+            {map.heading}
+          </h2>
+          <div className="w-full h-[380px] sm:h-[460px] border border-white/15 overflow-hidden bg-zinc-900">
+            <iframe
+              src={mapSrc}
+              title={`Map showing F.QUAD Studio — ${address}`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+              className="w-full h-full block border-0 grayscale contrast-[1.05] brightness-[0.88]"
+            />
+          </div>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              mapQuery
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center mt-4 min-h-[32px] text-[11px] tracking-[0.18em] uppercase text-accent hover:text-white transition-colors"
+          >
+            {map.linkLabel}
+          </a>
         </div>
-        <a
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            mapQuery
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center mt-4 min-h-[32px] text-[11px] tracking-[0.18em] uppercase text-accent hover:text-white transition-colors"
-        >
-          {map.linkLabel}
-        </a>
       </section>
     </PageShell>
   );
