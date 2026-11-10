@@ -35,6 +35,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
+    // Hidden honeypot field filled in: a bot. Pretend it worked, keep nothing.
+    if (cleanText(body?.fq_hp_url, 200)) {
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
     const name = cleanLine(body?.name, 120);
     const email = cleanLine(body?.email, 254);
     const phone = cleanLine(body?.phone, 40);
