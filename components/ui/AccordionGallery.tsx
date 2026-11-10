@@ -44,6 +44,12 @@ export interface AccordionGalleryProps {
   visibleCount?: number | VisibleCount;
   /** `sizes` for the card images, so the browser fetches the right width. */
   imageSizes?: string;
+  /**
+   * Fixed-width track only: let the active card grow (the accordion). Off,
+   * every card keeps the same width and spacing, labels stay visible, and
+   * hover is a photo zoom — so no card is ever pushed half off the edge.
+   */
+  grow?: boolean;
   /** Repeat the track so horizontal scrolling wraps around endlessly. */
   loop?: boolean;
 }
@@ -88,6 +94,7 @@ export default function AccordionGallery({
   visibleCount,
   loop = false,
   imageSizes,
+  grow: growActive = true,
 }: AccordionGalleryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLElement | null)[]>([]);
@@ -140,7 +147,7 @@ export default function AccordionGallery({
       // Fixed mode: the active card grows and the rest of ITS set shrink to
       // absorb it, so every set keeps the same width and the loop stays exact.
       // A compact (swipe) track keeps every card the same width instead.
-      const flat = compactRef.current;
+      const flat = compactRef.current || (scrollMode && !growActive);
       const grown = cardW * (1 + r);
       const shrunk =
         base > 1 ? cardW - (grown - cardW) / (base - 1) : cardW;
@@ -241,6 +248,7 @@ export default function AccordionGallery({
       prefersReduced,
       scrollMode,
       compact,
+      growActive,
     ]
   );
 
@@ -376,6 +384,7 @@ export default function AccordionGallery({
         vertical ? " accordion-gallery--vertical" : ""
       }${scrollMode ? " accordion-gallery--scroll" : ""}${
         scrollMode && compact ? " accordion-gallery--compact" : ""
+      }${scrollMode && !growActive && !compact ? " accordion-gallery--even" : ""
       }${className ? ` ${className}` : ""}`}
       style={
         {

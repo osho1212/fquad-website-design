@@ -64,14 +64,14 @@ export function FeaturedProjects({
   return (
     <section
       id="work"
-      className="relative w-full md:h-screen md:min-h-[640px] flex flex-col px-4 sm:px-8 md:px-12 pt-16 md:pt-24 pb-10 md:pb-8 bg-transparent"
+      className="relative w-full flex flex-col px-4 sm:px-8 md:px-12 h-[100svh] min-h-[560px] pt-[72px] pb-4 md:h-auto md:min-h-0 md:pt-28 md:pb-24 bg-transparent"
     >
       {/* Background drafting marks, drifting at their own depth */}
       <ParallaxField items={WORK_ART} range={120} />
 
       {/* Section header. Phones: the eyebrow alone on one line (the portfolio
           link moves to a full-width button under the carousel). */}
-      <InView className="relative z-10 flex justify-between items-baseline gap-4 pt-6 mb-6 w-full shrink-0">
+      <InView className="relative z-10 flex justify-between items-baseline gap-4 pt-5 mb-4 md:pt-6 md:mb-8 w-full shrink-0">
         <span
           aria-hidden="true"
           className="fq-rule absolute top-0 left-0 right-0 h-px bg-white/25"
@@ -91,22 +91,23 @@ export function FeaturedProjects({
         </a>
       </InView>
 
-      {/* Phones: a native swipe carousel built for touch. */}
-      <div className="relative z-10 md:hidden">
-        <ProjectSwipe items={items} />
+      {/* Phones: one screen — header, a swipe carousel that takes the height
+          that is left, its controls, and the portfolio button. */}
+      <div className="relative z-10 md:hidden flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0">
+          <ProjectSwipe items={items} />
+        </div>
         <a
           href={c.linkHref}
-          className="mt-7 flex min-h-[52px] items-center justify-center gap-3 border border-white/30 text-[11px] tracking-[0.22em] uppercase text-white/90 active:bg-white/10"
+          className="mt-3 flex min-h-[48px] shrink-0 items-center justify-center gap-3 border border-white/30 text-[11px] tracking-[0.22em] uppercase text-white/90 active:bg-white/10"
         >
           {c.linkLabel}
         </a>
-        <div className="mt-4 text-center text-[11px] tracking-[0.2em] uppercase text-white/60">
-          {c.footnoteRight}
-        </div>
       </div>
 
-      {/* Desktop and tablet: the five-up slider fills the remaining height. */}
-      <div className="relative z-10 w-full hidden md:block md:flex-1 md:min-h-0" data-cursor-label="View project">
+      {/* Desktop and tablet: equal cards, five (or three) across, sized from
+          their width so they stay a calm 2:3 rather than viewport-tall slivers. */}
+      <div className="fq-work-track relative z-10 w-full hidden md:block" data-cursor-label="View project">
         <AccordionGallery
           items={items}
           defaultIndex={1}
@@ -115,7 +116,8 @@ export function FeaturedProjects({
           visibleCount={VISIBLE}
           imageSizes={IMAGE_SIZES}
           loop
-          gap={14}
+          grow={false}
+          gap={16}
           radius={0}
           accentColor="var(--fq-accent)"
           overlayColor="#000000"

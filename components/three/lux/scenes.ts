@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { swatchSet, type Lux } from "./materials";
 import { decorAt, mainAt } from "./suiteStages";
 import { buildFarmhouse, buildResidence } from "./exteriors";
+import { buildAtelier, buildSkyLounge } from "./interiors2";
 
 export { BEDROOM_PIECES, bedroomPlaced } from "./suiteStages";
 import {
@@ -49,7 +50,16 @@ import {
  * built in four stages); lounge — the material library; residence —
  * Architecture; farmhouse — Farmhouses.
  */
-export type SceneVariant = "living" | "bedroom" | "lounge" | "residence" | "farmhouse";
+export type SceneVariant =
+  | "living"
+  | "bedroom"
+  | "lounge"
+  | "residence"
+  | "farmhouse"
+  /** Interior Design on the What We Do stage — a futuristic penthouse. */
+  | "skylounge"
+  /** Interior Styling on the What We Do stage — a gallery room being styled. */
+  | "atelier";
 
 export interface SceneState {
   p: number;
@@ -955,4 +965,6 @@ export const BUILDERS: Record<SceneVariant, (L: Lux, q: "high" | "low") => Built
   lounge: buildLibrary,
   residence: buildResidence,
   farmhouse: buildFarmhouse,
+  skylounge: buildSkyLounge,
+  atelier: buildAtelier,
 };

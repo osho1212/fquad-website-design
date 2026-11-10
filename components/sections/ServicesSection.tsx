@@ -18,11 +18,11 @@ export interface ServiceCard {
 /** Which model tells each practice's story. */
 const MODEL_FOR_SLUG: Record<string, SceneVariant> = {
   architecture: "residence",
-  "interior-design": "living",
-  "interior-styling": "bedroom",
+  "interior-design": "skylounge",
+  "interior-styling": "atelier",
   farmhouse: "farmhouse",
 };
-const FALLBACK_ORDER: SceneVariant[] = ["residence", "living", "bedroom", "farmhouse"];
+const FALLBACK_ORDER: SceneVariant[] = ["residence", "skylounge", "atelier", "farmhouse"];
 
 const MODEL_NAME: Record<SceneVariant, string> = {
   residence: "The Residence",
@@ -30,6 +30,8 @@ const MODEL_NAME: Record<SceneVariant, string> = {
   bedroom: "The Suite",
   farmhouse: "The Farmhouse",
   lounge: "Material Library",
+  skylounge: "The Sky Lounge",
+  atelier: "The Atelier",
 };
 
 const MODEL_LABEL: Record<SceneVariant, string> = {
@@ -42,6 +44,10 @@ const MODEL_LABEL: Record<SceneVariant, string> = {
   farmhouse:
     "A weekend farmhouse estate lit from morning to a lantern-lit evening",
   lounge: "A material library of stone, timber, metal and fabric swatches",
+  skylounge:
+    "A penthouse living room behind a glazed wall onto the city — Nero marble floor with inlaid light lines, a floating stair, a halo light and a calacatta bar — from afternoon sun to a night of city lights as its own lights come on one by one",
+  atelier:
+    "A dark gallery room being styled — an onyx wall, lit arched niches and a glass cabinet — first empty, then furnished, then filled object by object, then lit for the evening by track spots",
 };
 
 /** The suite reports no caption of its own; name its stage from progress. */

@@ -78,6 +78,22 @@ const supportsAvif = (): Promise<boolean> => {
 
 const pad3 = (n: number) => String(n).padStart(3, "0");
 
+/** Average colour of a 2px row of a frame (for the portrait bands). */
+let probe: CanvasRenderingContext2D | null = null;
+function edgeColour(img: HTMLImageElement, y: number): string {
+  if (!probe) {
+    const c = document.createElement("canvas");
+    c.width = c.height = 1;
+    probe = c.getContext("2d", { willReadFrequently: true });
+  }
+  if (!probe) return "rgb(245,243,238)";
+  probe.clearRect(0, 0, 1, 1);
+  probe.drawImage(img, 0, Math.max(0, y), img.naturalWidth, 2, 0, 0, 1, 1);
+  const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;
+  return `rgb(${r},${g},${b})`;
+}
+const transparentOf = (rgb: string) => rgb.replace("rgb(", "rgba(").replace(")", ",0)");
+
 const STENCIL = {
   landscape: {
     viewBox: "0 0 1920 1080",
@@ -106,7 +122,7 @@ const STENCIL = {
 
 /**
  * The finale artwork: paper everywhere except a F.QUAD-shaped window onto the
- * film, with a hairline around the window and two plain lines beneath. The
+ * film (no outline around the letters), and two plain lines beneath. The
  * mask holds only the title — a window that thin shows nothing legible.
  */
 function StencilArt({
@@ -157,18 +173,6 @@ function StencilArt({
         height="5000"
         mask={`url(#${id})`}
       />
-      <text
-        className="fq-hero-stencil-line"
-        x={s.cx}
-        y={s.titleY}
-        dominantBaseline="central"
-        fontWeight="bold"
-        fontSize={s.titleSize}
-        letterSpacing="0.08em"
-        {...font}
-      >
-        {title}
-      </text>
       <text
         className="fq-hero-stencil-sub"
         x={s.cx}
@@ -285,13 +289,46 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
         }
       }
       if (img) {
-        if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
+        // Portrait screens: a 16:9 film cropped to cover a tall phone shows
+        // only a sliver of the building. There the whole frame is drawn at
+        // full width, above the headline, and the bands above and below take
+        // the frame's own edge colours, feathered in, so it reads as one image.
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const portrait = vw / vh < 1;
+        const cw = iw;
+        const ch = portrait ? Math.round((iw * vh) / vw) : ih;
+        if (canvas.width !== cw || canvas.height !== ch) {
+          canvas.width = cw;
+          canvas.height = ch;
           lastDrawn = -1;
         }
         if (shown !== lastDrawn) {
-          ctx.drawImage(img, 0, 0);
+          if (!portrait) {
+            ctx.drawImage(img, 0, 0);
+          } else {
+            const dy = Math.max(0, Math.round(ch * 0.4 - ih / 2));
+            const top = edgeColour(img, 0);
+            const bottom = edgeColour(img, ih - 2);
+            ctx.fillStyle = top;
+            ctx.fillRect(0, 0, cw, dy + 2);
+            ctx.fillStyle = bottom;
+            ctx.fillRect(0, dy + ih - 2, cw, ch - dy - ih + 2);
+            ctx.drawImage(img, 0, dy);
+            const feather = Math.round(ih * 0.14);
+            const g1 = ctx.createLinearGradient(0, dy, 0, dy + feather);
+            g1.addColorStop(0, top);
+            g1.addColorStop(1, transparentOf(top));
+            ctx.fillStyle = g1;
+            ctx.fillRect(0, dy, cw, feather);
+            const g2 = ctx.createLinearGradient(0, dy + ih - feather, 0, dy + ih);
+            g2.addColorStop(0, transparentOf(bottom));
+            g2.addColorStop(1, bottom);
+            ctx.fillStyle = g2;
+            ctx.fillRect(0, dy + ih - feather, cw, feather);
+          }
           lastDrawn = shown;
         }
       }
@@ -448,7 +485,15 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       });
     }
 
+    // Rotating a phone flips between the cover and the full-width layouts.
+    const onResize = () => {
+      lastDrawn = -1;
+      render();
+    };
+    window.addEventListener("resize", onResize);
+
     return () => {
+      window.removeEventListener("resize", onResize);
       formatSettled = true;
       stopDepth?.();
       releasePointer?.();
@@ -491,20 +536,20 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
           className="fq-hero-copy absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center pointer-events-auto"
         >
           <h1
-            className="fq-intro-item fq-hero-h1 m-0 font-bold text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight uppercase"
+            className="fq-intro-item fq-hero-h1 m-0 font-bold text-[clamp(1rem,6.1vw,1.5rem)] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight uppercase"
             style={{ ["--i" as string]: 0 }}
           >
             {c.headline}
           </h1>
 
           <div
-            className="fq-intro-item flex items-center gap-3.5 mt-5 sm:mt-6"
+            className="fq-intro-item flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 mt-5 sm:mt-6"
             style={{ ["--i" as string]: 1 }}
           >
             <Magnetic strength={0.22}>
               <a
                 href={c.primaryCtaHref}
-                className="btn-metallic text-[11px] sm:text-xs py-2 px-6 tracking-[0.2em] uppercase font-semibold"
+                className="btn-metallic min-h-[44px] text-[11px] sm:text-xs py-2 px-5 sm:px-6 tracking-[0.16em] sm:tracking-[0.2em] uppercase font-semibold"
               >
                 {c.primaryCtaLabel}
               </a>
@@ -513,7 +558,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
               <button
                 type="button"
                 onClick={() => openModal()}
-                className="fq-hero-ghost text-[11px] tracking-[0.2em] px-4 py-2 uppercase cursor-pointer"
+                className="fq-hero-ghost min-h-[44px] text-[11px] tracking-[0.16em] sm:tracking-[0.2em] px-4 py-2 uppercase cursor-pointer"
               >
                 {c.secondaryCtaLabel}
               </button>
@@ -580,13 +625,6 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
             subtitle={c.stencilSubtitle}
             byline={c.stencilByline}
           />
-
-          {/* Concentric drafting arcs, as on a layout sheet */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
-            <div className="w-[75vw] max-w-4xl aspect-square border border-white/25 rounded-full" />
-            <div className="absolute w-[50vw] max-w-2xl aspect-square border border-white/20 rounded-full" />
-            <div className="absolute w-[30vw] max-w-md aspect-square border border-dashed border-white/25 rounded-full" />
-          </div>
         </div>
 
         {/* Layer 3: settled navigation cue */}
