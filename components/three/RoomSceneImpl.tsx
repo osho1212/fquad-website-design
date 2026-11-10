@@ -319,13 +319,116 @@ export default function RoomSceneImpl({
       return { x: ((x - r.left) / r.width) * 2 - 1, y: -(((y - r.top) / r.height) * 2 - 1) };
     };
 
-    // Scenes are framed for a ~5:4 box; narrower boxes (a tall column, a
-    // phone) pull the camera back along the same line so nothing is cropped.
+    /*
+     * Auto-fit. Each model is measured once (its visible geometry, not the
+     * shadow-only blockers) and the camera is pulled back along the scene's
+     * own viewing direction until every corner of that box sits inside the
+     * frame with a margin — whatever the canvas size or shape. The scene's
+     * framing still sets the angle and its motion over the scroll; only the
+     * distance and the aim point come from the model itself, so a model can
+     * never be clipped by its frame.
+     */
+    const MARGIN_X = 0.9;
+    const MARGIN_Y = 0.86;
+    const fits = new WeakMap<Built, { center: THREE.Vector3; corners: THREE.Vector3[]; aspect: number; ratio: number }>();
+    const probeCam = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
+    const tmpBox = new THREE.Box3();
+    const tmpV = new THREE.Vector3();
+
+    function measure(b: Built) {
+      const box = new THREE.Box3();
+      const rot = b.root.rotation.clone();
+      b.root.rotation.set(0, 0, 0);
+      b.root.updateMatrixWorld(true);
+      // Corners of every mesh's own box, not one box around everything: a
+      // cut-away room's overall box has empty corners (the missing walls)
+      // that would hold the camera needlessly far back.
+      const corners: THREE.Vector3[] = [];
+      b.root.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh || m.material === lux.shadowOnly) return;
+        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        tmpBox.copy(m.geometry.boundingBox!).applyMatrix4(m.matrixWorld);
+        box.union(tmpBox);
+        for (let i = 0; i < 8; i++) {
+          corners.push(new THREE.Vector3(i & 1 ? tmpBox.max.x : tmpBox.min.x, i & 2 ? tmpBox.max.y : tmpBox.min.y, i & 4 ? tmpBox.max.z : tmpBox.min.z));
+        }
+      });
+      b.root.rotation.copy(rot);
+      b.root.updateMatrixWorld(true);
+      return { center: box.getCenter(new THREE.Vector3()), corners };
+    }
+
+    /** Does the model fit when the camera sits `d` from its centre along `dir`? */
+    function fitsAt(center: THREE.Vector3, corners: THREE.Vector3[], dir: THREE.Vector3, d: number) {
+      probeCam.aspect = camera.aspect;
+      probeCam.fov = camera.fov;
+      probeCam.updateProjectionMatrix();
+      probeCam.position.copy(center).addScaledVector(dir, d);
+      probeCam.lookAt(center);
+      probeCam.updateMatrixWorld(true);
+      const tanV = Math.tan((probeCam.fov * Math.PI) / 360);
+      const tanH = tanV * probeCam.aspect;
+      for (const c of corners) {
+        tmpV.copy(c).applyMatrix4(probeCam.matrixWorldInverse);
+        const z = -tmpV.z;
+        if (z < 0.2) return false;
+        if (Math.abs(tmpV.x / z) > tanH * MARGIN_X || Math.abs(tmpV.y / z) > tanV * MARGIN_Y) return false;
+      }
+      return true;
+    }
+
+    function fitFor(b: Built) {
+      let fit = fits.get(b);
+      if (fit && Math.abs(fit.aspect - camera.aspect) < 1e-3) return fit;
+      const m = fit ?? measure(b);
+      const f = b.frame(b.restP);
+      const dir = f.pos.clone().sub(f.look);
+      const base = dir.length();
+      dir.normalize();
+      // Smallest distance that fits (fitting is monotonic in distance); then
+      // re-aim at the middle of the model's on-screen extent and fit again,
+      // so the margin is even on all sides.
+      const center = m.center.clone();
+      const solve = () => {
+        let lo = 0.5;
+        let hi = 120;
+        for (let i = 0; i < 22; i++) {
+          const mid = (lo + hi) / 2;
+          if (fitsAt(center, m.corners, dir, mid)) hi = mid;
+          else lo = mid;
+        }
+        return hi;
+      };
+      for (let pass = 0; pass < 2; pass++) {
+        const d = solve();
+        probeCam.position.copy(center).addScaledVector(dir, d);
+        probeCam.lookAt(center);
+        probeCam.updateMatrixWorld(true);
+        let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        for (const c of m.corners) {
+          tmpV.copy(c).applyMatrix4(probeCam.matrixWorldInverse);
+          const z = -tmpV.z;
+          x0 = Math.min(x0, tmpV.x / z);
+          x1 = Math.max(x1, tmpV.x / z);
+          y0 = Math.min(y0, tmpV.y / z);
+          y1 = Math.max(y1, tmpV.y / z);
+        }
+        const right = new THREE.Vector3().setFromMatrixColumn(probeCam.matrixWorld, 0);
+        const up = new THREE.Vector3().setFromMatrixColumn(probeCam.matrixWorld, 1);
+        center.addScaledVector(right, ((x0 + x1) / 2) * d).addScaledVector(up, ((y0 + y1) / 2) * d);
+      }
+      fit = { center, corners: m.corners, aspect: camera.aspect, ratio: solve() / base };
+      fits.set(b, fit);
+      return fit;
+    }
+
     function placeCamera(b: Built, p: number) {
+      const fit = fitFor(b);
       const f = b.frame(p);
-      const fit = camera.aspect < 1.25 ? Math.pow(1.25 / camera.aspect, 0.85) : 1;
-      camera.position.copy(f.look).add(f.pos.sub(f.look).multiplyScalar(fit));
-      camera.lookAt(f.look);
+      const dir = f.pos.sub(f.look);
+      camera.position.copy(fit.center).addScaledVector(dir, fit.ratio);
+      camera.lookAt(fit.center);
     }
 
     let smoothP = progress();
