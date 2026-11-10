@@ -29,7 +29,6 @@ export function ContactFooter({
 }) {
   const { openModal } = useStartProjectModal();
   // Name of the material in focus, written from the 3D scene's frame loop.
-  const materialRef = useRef<HTMLSpanElement>(null);
   const cta = withDefaults("home", "cta", content);
 
   const whatsapp = settings?.whatsapp || SOCIAL_FALLBACKS.whatsapp;
@@ -90,18 +89,13 @@ export function ContactFooter({
               variant="lounge"
               className="absolute inset-0"
               label="The studio's material library: travertine, marble, oak, walnut, brass, bouclé, velvet and terrazzo samples orbit a leather chair in a lit arched niche; the sample nearest your pointer comes forward"
-              onState={({ label }) => {
-                if (label && materialRef.current && materialRef.current.textContent !== label) {
-                  materialRef.current.textContent = label;
-                }
-              }}
             />
             <div
               aria-hidden="true"
               className="absolute left-0 right-0 bottom-0 flex justify-between gap-4 text-[11px] tracking-[0.22em] uppercase text-white/55 pointer-events-none"
             >
-              <span>Material library</span>
-              <span ref={materialRef} className="text-right text-white/80">Travertino Navona</span>
+              <span>Selected work</span>
+              <span className="text-right text-white/80">F.QUAD Studio</span>
             </div>
           </div>
         </InView>
