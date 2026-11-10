@@ -561,6 +561,29 @@ html[data-launch='locked'] .fq-lg {
   text-transform: uppercase;
   color: rgb(var(--fq-fg) / 0.45);
 }
+/* How much of the site is already loaded behind the gate. A hairline, the
+   same weight as the rules between the clock's units — present if you look
+   for it, invisible if you don't. */
+.fq-lg-warm {
+  width: min(240px, 46vw);
+  height: 1px;
+  margin: clamp(14px, 2vh, 20px) auto 0;
+  background: rgb(var(--fq-fg) / 0.12);
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 600ms var(--ease-out);
+}
+.fq-lg-warm[data-on='true'] {
+  opacity: 1;
+}
+.fq-lg-warm span {
+  display: block;
+  height: 100%;
+  background: rgb(var(--fq-fg) / 0.55);
+  transform-origin: left;
+  transition: transform 400ms var(--ease-out);
+}
+
 .fq-lg-sr {
   position: absolute;
   width: 1px;
@@ -704,6 +727,11 @@ html[data-launch='locked'] .fq-lg {
 .fq-lg[data-phase='split'] {
   background: transparent;
   pointer-events: none;
+}
+/* Handing over to the intro: it is already on screen underneath, so the
+   quadrants part onto the spiral rather than onto the page itself. */
+html[data-intro='loading'] .fq-preloader {
+  z-index: 290;
 }
 .fq-lg[data-phase='split'] .fq-lg-veil,
 .fq-lg[data-phase='split'] .fq-lg-light {

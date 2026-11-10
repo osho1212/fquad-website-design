@@ -6,6 +6,7 @@ import "./LaunchGate.css";
 import { LAUNCH_AT_MS, LAUNCH_STAMP, LAUNCH_TIME_LABEL } from "@/lib/launch";
 import { SITE } from "@/lib/site";
 import { prefersReducedMotion } from "@/lib/motion";
+import { watchSiteReady } from "@/lib/site-ready";
 
 /** The sequence, in order. `idle` counts; the rest is the launch. */
 type Phase = "idle" | "arm" | "mark" | "split" | "done";
@@ -15,6 +16,14 @@ const BEATS = {
   full: { arm: 1100, mark: 1900, split: 1600 },
   reduced: { arm: 260, mark: 620, split: 700 },
 } as const;
+
+/**
+ * How long 11:11 may stay on screen waiting for the page behind to finish
+ * loading before the quadrants part anyway. The gate has normally been up
+ * for far longer than any page needs, so this is only ever reached by
+ * someone who arrived seconds before launch.
+ */
+const HOLD_CEILING_MS = 15000;
 
 type Remaining = { d: number; h: number; m: number; s: number } | null;
 
@@ -75,6 +84,10 @@ export function LaunchGate() {
   const [left, setLeft] = useState<Remaining>(null);
   const [showDev, setShowDev] = useState(false);
   const [flash, setFlash] = useState(false);
+  /** True once the page behind the gate has fully loaded (lib/site-ready). */
+  const [warm, setWarm] = useState(0);
+  const [holding, setHolding] = useState(false);
+  const readyRef = useRef(false);
   const timers = useRef<number[]>([]);
   const launchedRef = useRef(false);
 
@@ -108,22 +121,63 @@ export function LaunchGate() {
 
     after(beats.arm, () => setPhase("mark"));
 
-    after(beats.arm + beats.mark, () => {
+    // The quadrants part onto the live site, so it had better be finished.
+    // The gate has normally been up long enough for lib/site-ready.ts to
+    // have warmed everything; if not, 11:11 holds on screen until it has.
+    const openUp = () => {
       setPhase("split");
-      // The site is uncovered, so hand it back: scrolling, pointers, focus and
-      // the arrival animation all start with the quadrants parting.
-      html.setAttribute("data-launch", "arriving");
-      releasePage();
-      setFlash(true);
-    });
 
-    after(beats.arm + beats.mark + beats.split, () => {
-      setPhase("done");
-      html.removeAttribute("data-launch");
-      setFlash(false);
-      // Land the keyboard at the top of the page the gate just opened.
-      const main = document.getElementById("main");
-      if (main) main.focus({ preventScroll: true });
+      // On the home page the intro has been drawing itself behind the gate
+      // all along, against the same loading. Rather than reveal the page
+      // over its head, the quadrants part onto *it* — already full from the
+      // countdown — and it opens the page itself a moment later. Everywhere
+      // else there is no intro, so the gate reveals the page directly.
+      const intro =
+        html.getAttribute("data-intro") === "loading" &&
+        document.querySelector(".fq-preloader");
+
+      if (!intro) {
+        html.setAttribute("data-launch", "arriving");
+        setFlash(true);
+        releasePage();
+      }
+
+      after(beats.split, () => {
+        setPhase("done");
+        setFlash(false);
+        // Dropping "locked" is the handover, and it waits until the gate is
+        // actually gone: that is the first moment the intro is unobstructed,
+        // so it is where the intro's own showing time should start counting.
+        html.removeAttribute("data-launch");
+        if (intro) {
+          releasePage();
+          return;
+        }
+        // The page was laid out under a locked scrollbar; one resize puts
+        // ScrollTrigger and Lenis back in agreement with it.
+        window.dispatchEvent(new Event("resize"));
+        // Land the keyboard at the top of the page the gate just opened.
+        const main = document.getElementById("main");
+        if (main) main.focus({ preventScroll: true });
+      });
+    };
+
+    after(beats.arm + beats.mark, () => {
+      if (readyRef.current) {
+        openUp();
+        return;
+      }
+      // Hold, and say so, until the page is warm or the ceiling is reached.
+      setHolding(true);
+      const deadline = performance.now() + HOLD_CEILING_MS;
+      const poll = window.setInterval(() => {
+        if (readyRef.current || performance.now() > deadline) {
+          window.clearInterval(poll);
+          setHolding(false);
+          openUp();
+        }
+      }, 120);
+      timers.current.push(poll);
     });
   }, [after, releasePage]);
 
@@ -156,6 +210,16 @@ export function LaunchGate() {
       /* not running yet; the CSS scroll lock is holding the page anyway */
     }
     rootRef.current?.focus({ preventScroll: true });
+
+    // The page is mounted and idle behind the gate, which is the best chance
+    // it will ever get to load: pull the whole hero film, every image and the
+    // 3D scenes down now, so the reveal opens onto a page that scrolls
+    // without a stutter.
+    const stopWatching = watchSiteReady((state) => {
+      readyRef.current = state.ready;
+      setWarm(state.progress);
+    });
+    return stopWatching;
   }, [gated, releasePage]);
 
   // ── The clock ───────────────────────────────────────────────────────────
@@ -204,7 +268,10 @@ export function LaunchGate() {
   // Clear every pending beat if the gate goes away mid-sequence.
   useEffect(
     () => () => {
-      timers.current.forEach(window.clearTimeout);
+      timers.current.forEach((id) => {
+        window.clearTimeout(id);
+        window.clearInterval(id);
+      });
       timers.current = [];
     },
     [],
@@ -253,7 +320,7 @@ export function LaunchGate() {
         {/* The hour itself, on the way out */}
         <div className="fq-lg-mark" aria-hidden={phase === "idle"}>
           <b>11:11</b>
-          <em>Welcome home</em>
+          <em>{holding ? "One moment — setting the room" : "Welcome home"}</em>
         </div>
 
         <div className="fq-lg-shell">
@@ -307,6 +374,17 @@ export function LaunchGate() {
             <p className="fq-lg-stamp fq-lg-in" style={{ "--i": 4 } as React.CSSProperties}>
               Doors open {LAUNCH_STAMP}
             </p>
+
+            {/* How much of the site is already standing behind the gate.
+                It only shows once there is something real to show. */}
+            <div
+              className="fq-lg-warm fq-lg-in"
+              style={{ "--i": 5 } as React.CSSProperties}
+              data-on={warm > 0.02 ? "true" : "false"}
+              aria-hidden="true"
+            >
+              <span style={{ transform: `scaleX(${warm.toFixed(4)})` }} />
+            </div>
 
             {/* Announced once, not on every tick. */}
             <p className="fq-lg-sr" aria-live="polite">

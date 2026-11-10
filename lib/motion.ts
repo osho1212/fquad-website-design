@@ -5,8 +5,25 @@ declare global {
   interface Window {
     /** Set by <SmoothScroll /> while Lenis is driving the page. */
     __fqLenis?: Lenis;
-    /** Hero frame-sequence loading progress, read by the preloader. */
-    __fqHero?: { loaded: number; total: number };
+    /**
+     * Hero frame-sequence loading, read by the intro (lib/site-ready.ts).
+     * `loaded`/`total` is the opening handful the film needs to start;
+     * `filmLoaded`/`filmTotal` is every frame. `preloadAll()` asks the hero
+     * to fetch and decode the whole film instead of a window around the
+     * current frame.
+     */
+    __fqHero?: {
+      loaded: number;
+      total: number;
+      filmLoaded?: number;
+      filmTotal?: number;
+      preloadAll?: () => void;
+    };
+    /**
+     * How many 3D scenes are on the page and how many have drawn their first
+     * frame, so the intro can wait for them too (lib/site-ready.ts).
+     */
+    __fqScenes?: { total: number; ready: number };
   }
 }
 

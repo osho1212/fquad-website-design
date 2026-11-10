@@ -72,10 +72,12 @@ export const viewport: Viewport = {
  *    session (and never under reduced motion). It is what shows the
  *    preloader and holds the hero copy back; returning visitors skip it.
  *
- * Behind the launch gate it stands down entirely: the gate is the intro, and
- * two curtains in a row would only make the launch wait on a second one.
+ * It runs behind the launch gate too, drawing its spiral against the same
+ * loading the gate is already doing. The gate holds it from finishing, so
+ * when the quadrants part they uncover a spiral that is already full, which
+ * then opens onto the page. See LaunchGate's handoff.
  */
-const motionInitScript = `(function(){var d=document.documentElement;d.classList.add('js');try{if(d.getAttribute('data-launch')==='locked')return;if(location.pathname==='/'&&!sessionStorage.getItem('fq-intro')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){d.setAttribute('data-intro','loading');}}catch(e){}})();`;
+const motionInitScript = `(function(){var d=document.documentElement;d.classList.add('js');try{if(location.pathname==='/'&&!sessionStorage.getItem('fq-intro')&&!matchMedia('(prefers-reduced-motion: reduce)').matches){d.setAttribute('data-intro','loading');}}catch(e){}})();`;
 
 export default async function RootLayout({
   children,
