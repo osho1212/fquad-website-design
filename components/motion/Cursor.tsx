@@ -52,6 +52,7 @@ export function Cursor() {
         visible = true;
         x = tx;
         y = ty;
+        ring.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
         ring.style.opacity = "1";
       }
       setState(e.target instanceof Element ? e.target : null);
@@ -79,7 +80,16 @@ export function Cursor() {
     window.addEventListener("scroll", onScroll, { passive: true });
     document.documentElement.addEventListener("pointerleave", onLeave);
 
+    // Settled ring = no style writes: the loop idles instead of restyling
+    // the ring 60 times a second while the pointer is still.
     const stop = onFrame((_, dt) => {
+      if (
+        Math.abs(tx - x) < 0.05 &&
+        Math.abs(ty - y) < 0.05 &&
+        Math.abs(targetScale - scale) < 0.001
+      ) {
+        return;
+      }
       x = damp(x, tx, 16, dt);
       y = damp(y, ty, 16, dt);
       scale = damp(scale, targetScale, 14, dt);
