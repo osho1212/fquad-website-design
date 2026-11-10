@@ -1,65 +1,41 @@
 import * as THREE from "three";
 import { swatchSet, type Lux } from "./materials";
 import { decorAt, mainAt } from "./suiteStages";
-import { buildFarmhouse, buildResidence } from "./exteriors";
-import { buildAtelier, buildSkyLounge } from "./interiors2";
 
 export { BEDROOM_PIECES, bedroomPlaced } from "./suiteStages";
 import {
-  archShape,
   clamp01,
-  contactShadow,
   disposeTree,
-  glow,
   keyed,
   keyedColor,
   mesh,
-  reededPanel,
-  rbox,
   seg,
   wallWithOpenings,
 } from "./kit";
 import {
   archLed,
-  artwork,
   barrelChair,
   bedLux,
   benchLux,
-  curvedSofa,
   drumTable,
   floatingNightstand,
   globeCluster,
-  globeFloorLamp,
   headboardWall,
   mushroomLamp,
   oliveTree,
-  pictureLight,
   reededWardrobe,
-  ringChandelier,
   rug,
-  sculpture,
   sheer,
   swatch,
-  travertineTable,
   vaseBranches,
   type Fixture,
 } from "./pieces";
 
 /**
- * living — Interior Design (the salon); bedroom — Interior Styling (the suite
- * built in four stages); lounge — the material library; residence —
- * Architecture; farmhouse — Farmhouses.
+ * The two 3D scenes the site shows: bedroom — How We Work (the suite built in
+ * four stages as you scroll); lounge — the material library in the footer.
  */
-export type SceneVariant =
-  | "living"
-  | "bedroom"
-  | "lounge"
-  | "residence"
-  | "farmhouse"
-  /** Interior Design on the What We Do stage — a futuristic penthouse. */
-  | "skylounge"
-  /** Interior Styling on the What We Do stage — a gallery room being styled. */
-  | "atelier";
+export type SceneVariant = "bedroom" | "lounge";
 
 export interface SceneState {
   p: number;
@@ -93,7 +69,6 @@ export interface Built {
   dispose: () => void;
 }
 
-const D2R = Math.PI / 180;
 
 /* ── shared room shell ──────────────────────────────────────────────────── */
 
@@ -197,334 +172,6 @@ function skyPane(shape: THREE.Shape) {
     (geo.attributes.color as THREE.BufferAttribute).needsUpdate = true;
   };
   return { mesh: m, setSky };
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   SALON — a living room told from noon to night as you scroll
-   ═══════════════════════════════════════════════════════════════════════════ */
-export function buildSalon(L: Lux, quality: "high" | "low"): Built {
-  const root = new THREE.Group();
-  const W = 5.6;
-  const D = 4.6;
-  const H = 3.0;
-  const tBack = 0.2;
-  const tLeft = 0.34;
-  const shared = new Set<THREE.Material>(Object.values(L).filter((v): v is THREE.Material => v instanceof THREE.Material));
-
-  // Window on the back wall (world x = 1.45); niche in the left wall (world z = −0.15).
-  const winX = 1.45;
-  const winW = 1.5;
-  const winH = 2.45;
-  const winY = 0.32;
-  const nicheZ = -0.15;
-  const nicheW = 1.05;
-  const nicheH = 2.15;
-  const nicheY = 0.4;
-  const sh = shell(L, {
-    W,
-    D,
-    H,
-    tBack,
-    tLeft,
-    floorMat: L.oakSmoked,
-    back: [{ kind: "arch", x: winX + W / 2 + tLeft, y: winY, w: winW, h: winH }],
-    left: [{ kind: "arch", x: D / 2 - nicheZ, y: nicheY, w: nicheW, h: nicheH }],
-  });
-  root.add(sh.group);
-
-  /* window: bronze frame, glass, sky, sheers */
-  const zWin = -D / 2 - tBack;
-  const frameMat = L.bronze;
-  const frameGeo = new THREE.ExtrudeGeometry(
-    (() => {
-      const outer = archShape(winW, winH, winX, winY);
-      const hole = archShape(winW - 0.07, winH - 0.035, winX, winY + 0.035);
-      outer.holes.push(hole);
-      return outer;
-    })(),
-    { depth: 0.05, bevelEnabled: false, curveSegments: 40 }
-  );
-  const frame = mesh(frameGeo, frameMat, 0, 0, zWin + tBack / 2 - 0.025);
-  root.add(frame);
-  root.add(mesh(new THREE.BoxGeometry(0.03, winH - 0.05, 0.04), frameMat, winX, winY + (winH - 0.05) / 2, zWin + tBack / 2));
-  root.add(mesh(new THREE.BoxGeometry(winW - 0.06, 0.03, 0.04), frameMat, winX, winY + winH * 0.62, zWin + tBack / 2));
-  const glassPane = new THREE.Mesh(new THREE.ShapeGeometry(archShape(winW, winH, winX, winY), 40), L.glass);
-  glassPane.position.z = zWin + tBack / 2;
-  root.add(glassPane);
-  // sized to stay hidden behind the wall from the elevated camera
-  const sky = skyPane(archShape(winW + 0.3, winH + 0.15, winX, winY - 0.1));
-  sky.mesh.position.z = zWin - 0.6;
-  root.add(sky.mesh);
-  for (const s of [-1, 1]) {
-    const c = sheer(L, 0.55, H - 0.12, 8);
-    c.position.set(winX + s * (winW / 2 + 0.36), 0, -D / 2 + 0.14);
-    root.add(c);
-  }
-
-  /* reeded walnut wall + art + picture light */
-  const panelW = W / 2 + winX - winW / 2 - 0.45;
-  const panel = reededPanel(panelW, 2.62, Math.round(panelW * 11), 0.028, L.walnut);
-  panel.position.set(-W / 2 + panelW / 2, 0, -D / 2 + 0.02);
-  root.add(panel);
-  const artCx = -W / 2 + panelW / 2 + 0.1;
-  const art = artwork(L, L.art, 1.15, 1.42);
-  art.position.set(artCx, 1.62, -D / 2 + 0.055);
-  root.add(art);
-  const pic = pictureLight(L, 1.15);
-  pic.group.position.set(artCx, 2.46, -D / 2 + 0.06);
-  root.add(pic.group);
-
-  /* niche: deep plaster recess, travertine shelves, collected objects, cove LED */
-  const nx = -W / 2 - tLeft;
-  const nicheBack = mesh(rbox(0.06, nicheH + 0.1, nicheW + 0.1, 0.005), L.plasterDeep, nx - 0.03, nicheY + nicheH / 2, nicheZ);
-  root.add(nicheBack);
-  for (const y of [nicheY + 0.75, nicheY + 1.38]) {
-    root.add(mesh(new THREE.BoxGeometry(tLeft + 0.04, 0.045, nicheW), L.travertine, nx + tLeft / 2, y, nicheZ));
-  }
-  const v1 = vaseBranches(L, 0.34, 4);
-  v1.position.set(nx + 0.16, nicheY + 0.775, nicheZ - 0.2);
-  root.add(v1);
-  root.add(mesh(new THREE.SphereGeometry(0.09, 32, 20), L.bronze, nx + 0.16, nicheY + 1.49, nicheZ + 0.25));
-  root.add(mesh(rbox(0.22, 0.05, 0.16, 0.005), L.linen, nx + 0.17, nicheY + 1.43, nicheZ - 0.18));
-  root.add(mesh(rbox(0.2, 0.04, 0.15, 0.005), L.velvetOlive, nx + 0.17, nicheY + 1.475, nicheZ - 0.19));
-  const nicheLed = archLed(L, nicheW - 0.08, nicheH - 0.06, 0);
-  nicheLed.mesh.rotation.y = Math.PI / 2;
-  nicheLed.mesh.position.set(nx + 0.04, nicheY + 0.03, nicheZ);
-  root.add(nicheLed.mesh);
-  const nicheArea = new THREE.RectAreaLight(0xffcf96, 0, 0.5, nicheW * 0.8);
-  nicheArea.position.set(nx + 0.12, nicheY + nicheH - 0.25, nicheZ);
-  nicheArea.lookAt(nx + 0.5, nicheY, nicheZ);
-  root.add(nicheArea);
-  const nicheGlow = glow(L, 1.6);
-  nicheGlow.position.set(nx + 0.2, nicheY + 1.1, nicheZ);
-  root.add(nicheGlow);
-
-  /* furniture */
-  const C = new THREE.Vector3(-0.55, 0, 0.3);
-  root.add(rug(L, 3.7, 2.8, 0.25).translateX(C.x).translateZ(C.z + 0.05));
-  const sofa = curvedSofa(L);
-  sofa.position.copy(C);
-  root.add(sofa);
-  const sofaShadow = contactShadow(L, 4.4, 2.6, 0.45);
-  sofaShadow.position.set(C.x, 0.004, C.z - 1.2);
-  root.add(sofaShadow);
-  const table = travertineTable(L);
-  table.position.copy(C);
-  root.add(table);
-
-  const chairPos = new THREE.Vector3(1.62, 0, 1.0);
-  const chair = barrelChair(L);
-  chair.position.copy(chairPos);
-  chair.rotation.y = Math.atan2(C.x - chairPos.x, C.z - chairPos.z);
-  root.add(chair);
-  const side = drumTable(L, L.nero, 0.5, 0.21);
-  side.position.set(2.3, 0, 0.42);
-  root.add(side);
-  const tableLamp = mushroomLamp(L);
-  tableLamp.group.position.set(2.3, 0.5, 0.42);
-  root.add(tableLamp.group);
-
-  const floorLamp = globeFloorLamp(L);
-  floorLamp.group.position.set(-2.38, 0, -1.25);
-  root.add(floorLamp.group);
-
-  const chandelier = ringChandelier(L, 0.62, H - 2.28);
-  chandelier.group.position.set(C.x, 2.28, C.z);
-  root.add(chandelier.group);
-
-  const tree = oliveTree(L, 2.25);
-  tree.position.set(2.42, 0, -1.72);
-  root.add(tree);
-
-  const sculpt = sculpture(L);
-  sculpt.group.position.set(-2.32, 0, 1.6);
-  root.add(sculpt.group);
-
-  /* sun, shafts and dust */
-  const hemi = new THREE.HemisphereLight(0xdfe9f5, 0x8a7560, 0.9);
-  const sun = sunLight(quality);
-  const target = new THREE.Object3D();
-  target.position.set(0.4, 0, 0);
-  sun.target = target;
-  const fixtures: Fixture[] = [chandelier, floorLamp, tableLamp, pic];
-
-  const shaftMats: THREE.MeshBasicMaterial[] = [];
-  const shafts: THREE.Mesh[] = [];
-  const shaftGeo = new THREE.ShapeGeometry(archShape(winW - 0.07, winH - 0.04, 0, 0), 32);
-  for (let i = 0; i < 6; i++) {
-    const m = new THREE.MeshBasicMaterial({
-      color: 0xffc98a,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      toneMapped: false,
-      side: THREE.DoubleSide,
-    });
-    shaftMats.push(m);
-    const s = new THREE.Mesh(shaftGeo, m);
-    s.renderOrder = 2;
-    shafts.push(s);
-    root.add(s);
-  }
-
-  const DUST = quality === "high" ? 220 : 90;
-  const dustGeo = new THREE.BufferGeometry();
-  const dustPos = new Float32Array(DUST * 3);
-  const dustSeed = Array.from({ length: DUST }, () => [Math.random(), Math.random(), Math.random(), Math.random()]);
-  dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
-  const dustMat = new THREE.PointsMaterial({
-    size: 0.028,
-    map: L.glowTex,
-    color: 0xffe0b8,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    toneMapped: false,
-  });
-  const dust = new THREE.Points(dustGeo, dustMat);
-  root.add(dust);
-
-  const sunDir = new THREE.Vector3();
-  const zen = new THREE.Color();
-  const hor = new THREE.Color();
-  const col = new THREE.Color();
-
-  return {
-    root,
-    lights: [hemi, sun, target],
-    restP: 0.55,
-    frame: (p) => ({
-      pos: new THREE.Vector3(7.5 - p * 0.5, 4.75 - p * 0.25, 8.2 - p * 0.3),
-      look: new THREE.Vector3(0.05, 1.05, -0.15),
-    }),
-    exposure: (p) => keyed(p, [
-      { at: 0, v: 0.92 },
-      { at: 0.55, v: 0.98 },
-      { at: 0.8, v: 1.25 },
-      { at: 1, v: 1.4 },
-    ]),
-    env: (p) => keyed(p, [
-      { at: 0, v: 0.38 },
-      { at: 0.6, v: 0.3 },
-      { at: 0.85, v: 0.12 },
-      { at: 1, v: 0.08 },
-    ]),
-    update: ({ p, t, px, py }) => {
-      // ── time of day ───────────────────────────────────────────────────
-      const el = keyed(p, [
-        { at: 0, v: 54 },
-        { at: 0.55, v: 17 },
-        { at: 0.74, v: 7 },
-        { at: 1, v: 1 },
-      ]) * D2R;
-      const az = keyed(p, [
-        { at: 0, v: -4 },
-        { at: 1, v: -16 },
-      ]) * D2R;
-      // the sun sits behind the back wall; as it drops, the window's light
-      // stretches across the herringbone toward the chair
-      sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
-      sun.position.copy(target.position).addScaledVector(sunDir, 14);
-      sun.intensity = keyed(p, [
-        { at: 0, v: 5 },
-        { at: 0.4, v: 5.6 },
-        { at: 0.58, v: 6.4 },
-        { at: 0.74, v: 2 },
-        { at: 0.88, v: 0 },
-      ]);
-      keyedColor(p, [
-        { at: 0, c: 0xfff1df },
-        { at: 0.38, c: 0xffe0b8 },
-        { at: 0.58, c: 0xffa95f },
-        { at: 0.76, c: 0xff7444 },
-      ], sun.color);
-      // Low fill so the sunlit patch reads against the shade.
-      hemi.intensity = keyed(p, [
-        { at: 0, v: 0.5 },
-        { at: 0.55, v: 0.34 },
-        { at: 0.74, v: 0.2 },
-        { at: 0.9, v: 0.1 },
-        { at: 1, v: 0.08 },
-      ]);
-      keyedColor(p, [
-        { at: 0, c: 0xdfe9f5 },
-        { at: 0.55, c: 0xffd7b0 },
-        { at: 0.78, c: 0x6a74a8 },
-        { at: 1, c: 0x2b3352 },
-      ], hemi.color);
-      keyedColor(p, [
-        { at: 0, c: 0x8bbce6 },
-        { at: 0.55, c: 0xe2a978 },
-        { at: 0.74, c: 0x6d6aa0 },
-        { at: 0.9, c: 0x26335e },
-        { at: 1, c: 0x0f1630 },
-      ], zen);
-      keyedColor(p, [
-        { at: 0, c: 0xeaf4fb },
-        { at: 0.55, c: 0xffd9a8 },
-        { at: 0.74, c: 0xff9a68 },
-        { at: 0.9, c: 0x7c5476 },
-        { at: 1, c: 0x232a44 },
-      ], hor);
-      sky.setSky(zen, hor);
-
-      // ── interior lights come on through dusk ─────────────────────────
-      const night = keyed(p, [
-        { at: 0, v: 0 },
-        { at: 0.52, v: 0.06 },
-        { at: 0.68, v: 0.55 },
-        { at: 0.84, v: 1 },
-      ]);
-      fixtures.forEach((f) => f.set(night));
-      nicheArea.intensity = night * 6;
-      nicheLed.mat.color.setHex(0xffd6a0).multiplyScalar(0.15 + night * 1.6);
-      (nicheGlow.material as THREE.SpriteMaterial).opacity = night * 0.55;
-
-      // ── sunbeams + dust, strongest at golden hour ────────────────────
-      const beam = keyed(p, [
-        { at: 0, v: 0.18 },
-        { at: 0.36, v: 0.45 },
-        { at: 0.56, v: 1 },
-        { at: 0.72, v: 0.4 },
-        { at: 0.84, v: 0 },
-      ]);
-      col.copy(sun.color);
-      const travel = sunDir.clone().negate();
-      shafts.forEach((s, i) => {
-        const d = 0.18 + i * 0.42;
-        s.position.set(winX, winY + 0.02, zWin + tBack / 2).addScaledVector(travel, d);
-        shaftMats[i].color.copy(col);
-        shaftMats[i].opacity = beam * 0.055 * (1 - i / shafts.length);
-        s.visible = beam > 0.01;
-      });
-      for (let i = 0; i < DUST; i++) {
-        const [a, b, c, ph] = dustSeed[i];
-        const d = 0.2 + a * 2.2;
-        const x = winX + (b - 0.5) * (winW - 0.2) + Math.sin(t * 0.3 + ph * 9) * 0.04;
-        const y = winY + 0.1 + c * (winH - 0.4) + Math.sin(t * 0.21 + ph * 7) * 0.05;
-        dustPos[i * 3] = x + travel.x * d;
-        dustPos[i * 3 + 1] = y + travel.y * d;
-        dustPos[i * 3 + 2] = zWin + tBack / 2 + travel.z * d;
-      }
-      (dustGeo.attributes.position as THREE.BufferAttribute).needsUpdate = true;
-      dustMat.opacity = beam * 0.85;
-      dust.visible = beam > 0.01;
-
-      sculpt.knot.rotation.y = t * 0.15;
-      root.rotation.y = px * 0.16 + Math.sin(t * 0.12) * 0.02;
-      root.rotation.x = py * 0.025;
-
-      const mins = Math.round((12 * 60 + p * 10 * 60) / 5) * 5;
-      return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
-    },
-    setTheme: () => {},
-    dispose: () => {
-      disposeTree(root, shared);
-      sun.shadow.map?.dispose();
-    },
-  };
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -966,11 +613,6 @@ export function buildLibrary(L: Lux, quality: "high" | "low"): Built {
 }
 
 export const BUILDERS: Record<SceneVariant, (L: Lux, q: "high" | "low") => Built> = {
-  living: buildSalon,
   bedroom: buildSuite,
   lounge: buildLibrary,
-  residence: buildResidence,
-  farmhouse: buildFarmhouse,
-  skylounge: buildSkyLounge,
-  atelier: buildAtelier,
 };
