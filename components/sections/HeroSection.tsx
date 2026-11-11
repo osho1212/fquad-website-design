@@ -14,7 +14,8 @@ import { Magnetic } from "@/components/motion/Reveal";
  * clay model to finished render (public/assets/hero, exported from the studio
  * video). `d-` frames are 1440px wide for desktop, `m-` 800px for slow
  * connections. Phones held upright get their own portrait film, `p-`
- * (720×1280), which opens on the clay model and needs no letterboxing.
+ * (720×1280, 171 frames at 18fps from the 9:16 phone cut), which runs the
+ * same sketch → model → render story and needs no letterboxing.
  */
 const FRAME_COUNT = 189;
 /**
@@ -22,7 +23,7 @@ const FRAME_COUNT = 189;
  * (next.config.js), so a new film needs new URLs or returning visitors would
  * see old and new frames mixed. The poster class on the stage repeats it.
  */
-const FILM_VERSION = "2";
+const FILM_VERSION = "3";
 /** Frames the preloader waits on — the opening of the scrub, not all 189. */
 const PRIORITY_FRAMES = 20;
 /** First frame of the clay model / of the finished render. */
@@ -35,8 +36,8 @@ type Film = { count: number; modelFrom: number; renderFrom: number };
 const FILMS: Record<"d" | "m" | "p", Film> = {
   d: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
   m: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
-  // Clay model from the first frame; the render has taken over by ~28.
-  p: { count: 167, modelFrom: 0, renderFrom: 28 },
+  // Pencil sketch first; shading starts ~18, the full render with sky by ~41.
+  p: { count: 171, modelFrom: 18, renderFrom: 41 },
 };
 
 /**
@@ -608,7 +609,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   return (
     <section id="top" ref={containerRef} className="relative h-[340vh] bg-black">
       <div
-        className={`fq-hero-stage sticky top-0 h-[100svh] w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=2')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=2')] bg-cover bg-center flex flex-col justify-center items-center${
+        className={`fq-hero-stage sticky top-0 h-[100svh] w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=3')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=3')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
         }`}
       >
