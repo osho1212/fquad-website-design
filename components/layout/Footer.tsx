@@ -51,7 +51,7 @@ export function Footer({
     "fq-link self-start inline-block py-1.5 text-sm text-white/75 hover:text-white transition-colors";
 
   return (
-    <footer className="relative px-6 sm:px-11 pt-12 sm:pt-14 pb-8">
+    <footer className="relative px-6 sm:px-11 pt-12 sm:pt-14 pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1.2fr] gap-10 items-start text-white">
         {/* Logo lockup */}
         <div className="flex flex-col items-start gap-5">

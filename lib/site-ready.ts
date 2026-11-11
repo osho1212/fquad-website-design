@@ -11,16 +11,35 @@
  * and reports honest progress so the intro can wait for it:
  *
  *   fonts    document.fonts.ready — so nothing re-flows after the reveal
- *   film     all 189 hero frames, fetched *and decoded* (the heavy one)
+ *   film     the opening half of the hero film, fetched *and decoded*
+           (the heavy one; the rest streams in behind the reveal)
  *   images   every <img> on the page, lazy ones included, decoded
- *   scenes   the three.js module and its first build
+ *   scenes   reported in `detail` only; the intro no longer waits on it
  *
  * Nothing here blocks forever: `watchSiteReady` reports, and the caller
  * decides how long to honour it (see the ceilings in Preloader.tsx).
  */
 
-/** How much of the bar each stage is worth. The film dominates the bytes. */
-const WEIGHTS = { fonts: 0.04, film: 0.62, images: 0.26, scenes: 0.08 };
+/**
+ * How much of the bar each stage is worth. The film dominates the bytes.
+ *
+ * The 3D scene is not waited on. It lives in the contact footer, a dozen
+ * screens below the hero, and only starts after the window's load event and
+ * two idle callbacks, so holding the intro for it added ~6 s to every first
+ * visit (measured on fquadstudio.com: film ready at 2.9 s, scene at 9.1 s,
+ * intro lifted at 10.9 s). The idle queue still builds it in a quiet moment
+ * long before anyone scrolls that far.
+ */
+const WEIGHTS = { fonts: 0.05, film: 0.67, images: 0.28 };
+
+/**
+ * Share of the film the intro waits for. Frames are fetched in order from
+ * the playhead, so this is the opening stretch of the scrub. The rest keeps
+ * streaming in at full concurrency while the visitor reads the headline;
+ * holding the intro for every last frame doubled the wait for a part of the
+ * film nobody reaches in the first few seconds.
+ */
+const FILM_GATE = 0.5;
 
 /**
  * The longest any single image may hold the intro. A large source photo
@@ -120,7 +139,7 @@ export function watchSiteReady(
     }
     // Before the hero has published film counts, fall back to the opening
     // frames so the bar still moves.
-    if (hero.filmTotal) return settled((hero.filmLoaded ?? 0) / hero.filmTotal);
+    if (hero.filmTotal) return settled((hero.filmLoaded ?? 0) / (hero.filmTotal * FILM_GATE));
     return settled(hero.loaded / Math.max(1, hero.total)) * 0.2;
   };
 
@@ -144,11 +163,8 @@ export function watchSiteReady(
     // something appears.
     const imagesKnown = imgTotal > 0;
     const progress =
-      fonts * WEIGHTS.fonts +
-      film * WEIGHTS.film +
-      (imagesKnown ? images : 0) * WEIGHTS.images +
-      scenes * WEIGHTS.scenes;
-    const ready = fonts === 1 && film >= 1 && imagesKnown && images >= 1 && scenes >= 1;
+      fonts * WEIGHTS.fonts + film * WEIGHTS.film + (imagesKnown ? images : 0) * WEIGHTS.images;
+    const ready = fonts === 1 && film >= 1 && imagesKnown && images >= 1;
     onChange({ progress, ready, detail: { fonts, film, images: imagesKnown ? images : 0, scenes } });
   };
 
