@@ -150,9 +150,9 @@ export function FeaturedProjects({
 
       {/* Phones: one screen — header, a swipe carousel that takes the height
           that is left, its controls, and the portfolio button. */}
-      <div className="relative z-10 md:hidden flex-1 min-h-0 flex flex-col">
-        <div className="flex-1 min-h-0">
-          <ProjectSwipe items={items} autoplayMs={AUTOPLAY_MS} />
+      <div className="relative z-10 md:hidden flex-1 min-h-0 min-w-0 flex flex-col">
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col">
+          <ProjectSwipe items={items} autoplayMs={3600} />
         </div>
         <a
           href={c.linkHref}

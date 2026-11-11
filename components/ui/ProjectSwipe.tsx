@@ -33,6 +33,7 @@ export function ProjectSwipe({
   autoplayMs?: number;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const touchedAtRef = useRef(0);
   const [active, setActive] = useState(0);
   const total = items.length;
 
@@ -84,16 +85,19 @@ export function ProjectSwipe({
     const track = trackRef.current;
     if (!track || !autoplayMs || items.length < 2 || prefersReducedMotion()) return;
     let visible = false;
-    let touchedAt = 0;
     const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { threshold: 0.5 });
     io.observe(track);
-    const touch = () => (touchedAt = Date.now());
+    const touch = () => {
+      touchedAtRef.current = Date.now();
+    };
     track.addEventListener("pointerdown", touch, { passive: true });
     track.addEventListener("touchstart", touch, { passive: true });
+    track.addEventListener("touchmove", touch, { passive: true });
     track.addEventListener("wheel", touch, { passive: true });
     const id = window.setInterval(() => {
-      if (!visible || document.hidden || Date.now() - touchedAt < 6000) return;
+      if (!visible || document.hidden || Date.now() - touchedAtRef.current < 6000) return;
       const cards = Array.from(track.querySelectorAll<HTMLElement>(".ps-card"));
+      if (cards.length === 0) return;
       const mid = track.scrollLeft + track.clientWidth / 2;
       let cur = 0;
       cards.forEach((c, i) => {
@@ -107,15 +111,23 @@ export function ProjectSwipe({
       io.disconnect();
       track.removeEventListener("pointerdown", touch);
       track.removeEventListener("touchstart", touch);
+      track.removeEventListener("touchmove", touch);
       track.removeEventListener("wheel", touch);
     };
   }, [autoplayMs, items]);
 
   const go = (dir: 1 | -1) => {
     const track = trackRef.current;
-    const card = track?.querySelector<HTMLElement>(".ps-card");
-    if (!track || !card) return;
-    track.scrollBy({ left: dir * (card.offsetWidth + 12), behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    if (!track) return;
+    touchedAtRef.current = Date.now();
+    const cards = Array.from(track.querySelectorAll<HTMLElement>(".ps-card"));
+    const targetIdx = Math.max(0, Math.min(cards.length - 1, active + dir));
+    const target = cards[targetIdx];
+    if (!target) return;
+    track.scrollTo({
+      left: target.offsetLeft - (track.clientWidth - target.offsetWidth) / 2,
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
   };
 
   return (
