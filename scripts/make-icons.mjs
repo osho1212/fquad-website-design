@@ -2,7 +2,12 @@
  * Builds every icon the site ships from the F.QUAD mark in public/fquad-icon.svg:
  *
  *   app/icon.svg                the browser-tab icon (Chrome, Firefox, Edge)
- *   app/favicon.ico             16, 32 and 48 px frames (Safari and older browsers)
+ *   app/favicon.ico             48, 32 and 16 px frames (Safari and older browsers). The
+ *                               largest comes first because Next reads the first frame for the
+ *                               link's sizes="" hint, and Google wants a favicon that is a
+ *                               multiple of 48 px.
+ *   app/icon1.png               192 px PNG (a multiple of 48): a raster icon for Google next to
+ *                               the SVG. Next links it automatically, with a cache-busting hash.
  *   app/apple-icon.png          180 px, full bleed (iOS home screen)
  *   public/icon-192.png         web-app manifest, purpose "any"
  *   public/icon-512.png         web-app manifest, purpose "any"; also the logo in the site's JSON-LD
@@ -72,7 +77,8 @@ function ico(frames) {
 const out = (file, data) => writeFile(path.join(ROOT, file), data).then(() => console.log("wrote", file, `${Math.round(data.length / 1024 * 10) / 10} KB`));
 
 await out("app/icon.svg", svg(RADIUS));
-await out("app/favicon.ico", ico(await Promise.all([16, 32, 48].map(async (size) => ({ size, data: await png(RADIUS, size) })))));
+await out("app/favicon.ico", ico(await Promise.all([48, 32, 16].map(async (size) => ({ size, data: await png(RADIUS, size) })))));
+await out("app/icon1.png", await png(RADIUS, 192));
 // iOS rounds the corners itself and turns transparency black, so: full bleed, opaque.
 await out("app/apple-icon.png", await sharp(await png(0, 180)).flatten({ background: PAPER }).png().toBuffer());
 await out("public/icon-192.png", await png(RADIUS, 192));

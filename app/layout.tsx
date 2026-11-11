@@ -9,7 +9,7 @@ import { StartProjectModal } from "@/components/ui/StartProjectModal";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { ScrollProgress } from "@/components/motion/ScrollProgress";
 import { Cursor } from "@/components/motion/Cursor";
-import { SITE, siteUrl } from "@/lib/site";
+import { SEEDED_META, SITE, customMeta, siteUrl } from "@/lib/site";
 import { jsonLd } from "@/lib/seo";
 import { SOCIAL_FALLBACKS } from "@/lib/social";
 import { LaunchGate } from "@/components/launch/LaunchGate";
@@ -20,25 +20,37 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
-const DEFAULT_TITLE = `${SITE.shortName} — ${SITE.tagline}`;
-
 // A per-page `metadata` export (see lib/seo.ts pageMetadata) overrides title,
-// description and share cards; this is the site-wide fallback, sourced from
-// Settings so editors don't need a code change to update it.
+// description and share cards; this is the site-wide fallback. Text an editor
+// typed into Admin → Settings wins; otherwise the studio's own wording in
+// lib/site.ts is used (the placeholders the seed once saved do not count).
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings().catch(() => null);
   const ogImageUrl = settings?.ogImage ? mediaUrl(settings.ogImage, "full") : null;
-  const title = settings?.metaTitle || DEFAULT_TITLE;
-  const description = settings?.metaDescription || SITE.description;
+  const title = customMeta(settings?.metaTitle, SEEDED_META.title) ?? SITE.title;
+  const description = customMeta(settings?.metaDescription, SEEDED_META.description) ?? SITE.description;
 
   return {
     metadataBase: new URL(siteUrl()),
     title,
     description,
+    keywords: [...SITE.keywords],
     applicationName: SITE.name,
+    authors: [{ name: SITE.name, url: siteUrl() }],
+    creator: SITE.name,
+    publisher: SITE.name,
+    category: "architecture",
     alternates: { canonical: "/" },
+    // Index everything public, and let a result carry a full-size image and a
+    // full-length snippet rather than a cropped one.
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+    },
     openGraph: {
       type: "website",
+      url: "/",
       siteName: SITE.name,
       locale: SITE.locale,
       title,
@@ -92,11 +104,13 @@ export default async function RootLayout({
   const organization = {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
+    "@id": `${origin}/#organization`,
     name: SITE.name,
-    alternateName: SITE.shortName,
+    alternateName: [...SITE.alternateNames],
     description: SITE.description,
     url: origin,
     logo: `${origin}/icon-512.png`,
+    image: `${origin}/opengraph-image`,
     foundingDate: "2005",
     slogan: SITE.tagline,
     address: {
@@ -114,7 +128,11 @@ export default async function RootLayout({
       latitude: settings?.mapLat ?? SITE.geo.lat,
       longitude: settings?.mapLng ?? SITE.geo.lng,
     },
-    areaServed: SITE.city,
+    areaServed: [
+      { "@type": "City", name: SITE.city },
+      { "@type": "State", name: SITE.region },
+    ],
+    serviceType: [...SITE.serviceTypes],
     knowsAbout: ["Architecture", "Interior design", "Interior styling", "Farmhouse design"],
     ...(settings?.email ? { email: settings.email } : {}),
     ...(settings?.phone ? { telephone: settings.phone } : {}),
@@ -124,6 +142,19 @@ export default async function RootLayout({
       SOCIAL_FALLBACKS.youtube,
       SOCIAL_FALLBACKS.facebook,
     ],
+  };
+
+  // Tells Google the site's name, so a result reads "F.QUAD Studio" rather
+  // than the bare domain, and ties the site to the studio above.
+  const website = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${origin}/#website`,
+    url: origin,
+    name: SITE.name,
+    alternateName: [...SITE.alternateNames],
+    inLanguage: "en-IN",
+    publisher: { "@id": `${origin}/#organization` },
   };
 
   return (
@@ -147,6 +178,10 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLd(organization) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd(website) }}
         />
       </head>
       <body className="bg-black text-white antialiased min-h-screen selection:bg-white selection:text-black relative font-sans">
