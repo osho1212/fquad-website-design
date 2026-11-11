@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { responsive } from "@/lib/img";
+import { prefersReducedMotion } from "@/lib/motion";
 
 interface ProjectCarouselProps {
   images: string[];
@@ -12,24 +13,78 @@ interface ProjectCarouselProps {
   sizes?: string;
 }
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
 export function ProjectCarousel({
   images,
   alt,
   aspect = "aspect-[16/10]",
   sizes = "(min-width: 1024px) 50vw, 100vw",
 }: ProjectCarouselProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   const slides = images.length > 0 ? images : [""];
+  const total = slides.length;
 
-  const go = (dir: 1 | -1) =>
-    setIndex((i) => (i + dir + slides.length) % slides.length);
+  const scrollToSlide = useCallback(
+    (targetIdx: number) => {
+      const next = (targetIdx + total) % total;
+      setIndex(next);
+      const track = trackRef.current;
+      if (!track) return;
+      const w = track.clientWidth;
+      if (w <= 0) return;
+      track.scrollTo({
+        left: next * w,
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
+      });
+    },
+    [total]
+  );
 
-  // Only the slide on show and its neighbours are fetched; the rest load when
-  // the visitor gets close, instead of every photo of every project at once.
-  const isNear = (i: number) => {
-    const d = Math.abs(i - index);
-    return Math.min(d, slides.length - d) <= 1;
-  };
+  const go = useCallback(
+    (dir: 1 | -1) => {
+      scrollToSlide(index + dir);
+    },
+    [index, scrollToSlide]
+  );
+
+  // Sync active index as the user swipes horizontally through the track.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || total <= 1) return;
+    let raf = 0;
+
+    const syncFromScroll = () => {
+      raf = 0;
+      const w = track.clientWidth;
+      if (w <= 0) return;
+      const current = Math.min(
+        total - 1,
+        Math.max(0, Math.round(track.scrollLeft / w))
+      );
+      setIndex((prev) => (prev === current ? prev : current));
+    };
+
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(syncFromScroll);
+    };
+
+    const onResize = () => {
+      const w = track.clientWidth;
+      if (w > 0) {
+        track.scrollTo({ left: index * w, behavior: "auto" });
+      }
+    };
+
+    track.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      track.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [total, index]);
 
   return (
     <div className="group/car relative w-full">
@@ -37,42 +92,60 @@ export function ProjectCarousel({
       <div
         className={`relative w-full ${aspect} overflow-hidden bg-zinc-900 border border-white/10`}
       >
-        {slides.map((src, i) => (
-          <div
-            key={`${src}-${i}`}
-            className={`absolute inset-0 transition-opacity duration-700 ease-out ${
-              i === index ? "opacity-100" : "opacity-0"
-            }`}
-            aria-hidden={i !== index}
-          >
-            {src ? (
-              isNear(i) && (
+        {/* Horizontal swipe & scroll-snap track */}
+        <div
+          ref={trackRef}
+          className="flex w-full h-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-x pan-y",
+            overscrollBehaviorX: "contain",
+          }}
+        >
+          {slides.map((src, i) => (
+            <div
+              key={`${src}-${i}`}
+              className="relative w-full h-full flex-none snap-center snap-always overflow-hidden select-none"
+              aria-hidden={i !== index}
+            >
+              {src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   {...responsive(src, sizes)}
                   alt={`${alt} — view ${i + 1}`}
-                  loading="lazy"
+                  loading={i <= 1 ? "eager" : "lazy"}
                   decoding="async"
-                  className="w-full h-full object-cover block transition-transform duration-[1200ms] ease-out group-hover/car:scale-[1.03]"
+                  draggable={false}
+                  className="w-full h-full object-cover block select-none transition-transform duration-[1200ms] ease-out md:group-hover/car:scale-[1.03]"
                 />
-              )
-            ) : (
-              <div className="w-full h-full bg-[repeating-linear-gradient(125deg,#1a1a1a_0px,#1a1a1a_1px,transparent_1px,transparent_18px)]" />
-            )}
-          </div>
-        ))}
+              ) : (
+                <div className="w-full h-full bg-[repeating-linear-gradient(125deg,#1a1a1a_0px,#1a1a1a_1px,transparent_1px,transparent_18px)]" />
+              )}
+            </div>
+          ))}
+        </div>
 
         {/* Silver edge sheen */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
-        {/* Arrows — desktop, on hover */}
-        {slides.length > 1 && (
+        {/* Slide counter badge */}
+        {total > 1 && (
+          <div
+            aria-live="polite"
+            className="pointer-events-none absolute top-3 right-3 z-10 px-2.5 py-1 bg-black/55 backdrop-blur-sm border border-white/20 text-[10px] tracking-[0.18em] font-display text-white/90 tabular-nums uppercase"
+          >
+            {pad2(index + 1)} / {pad2(total)}
+          </div>
+        )}
+
+        {/* Arrows — always accessible on touch/mobile, reveal on hover on desktop */}
+        {total > 1 && (
           <>
             <button
               type="button"
               onClick={() => go(-1)}
               aria-label="Previous image"
-              className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center border border-white/25 bg-black/50 backdrop-blur-sm text-white/80 opacity-0 group-hover/car:opacity-100 hover:bg-white hover:text-black hover:border-white transition-all duration-300"
+              className="flex absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center border border-white/25 bg-black/55 backdrop-blur-sm text-white/90 opacity-90 md:opacity-0 md:group-hover/car:opacity-100 active:bg-white active:text-black hover:bg-white hover:text-black hover:border-white transition-all duration-300 cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M15 18l-6-6 6-6" strokeLinecap="square" />
@@ -82,7 +155,7 @@ export function ProjectCarousel({
               type="button"
               onClick={() => go(1)}
               aria-label="Next image"
-              className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 items-center justify-center border border-white/25 bg-black/50 backdrop-blur-sm text-white/80 opacity-0 group-hover/car:opacity-100 hover:bg-white hover:text-black hover:border-white transition-all duration-300"
+              className="flex absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 items-center justify-center border border-white/25 bg-black/55 backdrop-blur-sm text-white/90 opacity-90 md:opacity-0 md:group-hover/car:opacity-100 active:bg-white active:text-black hover:bg-white hover:text-black hover:border-white transition-all duration-300 cursor-pointer"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M9 6l6 6-6 6" strokeLinecap="square" />
@@ -93,7 +166,7 @@ export function ProjectCarousel({
       </div>
 
       {/* Dots */}
-      {slides.length > 1 && (
+      {total > 1 && (
         <div className="flex items-center justify-center gap-0.5 mt-3">
           {slides.map((_, i) => (
             // The visible dot is 5px, but the button around it is a 28×32px
@@ -101,7 +174,7 @@ export function ProjectCarousel({
             <button
               key={i}
               type="button"
-              onClick={() => setIndex(i)}
+              onClick={() => scrollToSlide(i)}
               aria-label={`Go to image ${i + 1}`}
               aria-current={i === index}
               className="group/dot flex items-center justify-center min-w-[28px] h-8 px-1 cursor-pointer"
