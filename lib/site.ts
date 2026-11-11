@@ -37,7 +37,7 @@ export const SITE = {
   geo: { lat: 17.385, lng: 78.4867 },
   fallback: {
     email: "contact@fquadstudio.com",
-    whatsapp: "+919876543210",
+    whatsapp: "+91 76748 17987",
     address: "Hyderabad, Telangana, India",
     instagramUrl: "https://instagram.com/fquadstudio",
   },

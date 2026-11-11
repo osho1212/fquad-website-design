@@ -61,7 +61,7 @@ if ((await settingsRef.get()).exists) {
   await settingsRef.set({
     email: 'contact@fquadstudio.com',
     phone: null,
-    whatsapp: null,
+    whatsapp: '+91 76748 17987',
     address: 'Hyderabad, Telangana, India',
     instagramUrl: 'https://instagram.com/fquadstudio',
     mapLat: null,
