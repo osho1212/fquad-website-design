@@ -66,9 +66,11 @@ if ((await settingsRef.get()).exists) {
     instagramUrl: 'https://instagram.com/fquadstudio',
     mapLat: null,
     mapLng: null,
-    metaTitle: 'F.QUAD — Architecture & Interior Design Studio',
-    metaDescription:
-      'Architecture and interior design studio based in Hyderabad, working across homes, workplaces, and hospitality spaces.',
+    // Left empty on purpose: the site's own title and description (lib/site.ts)
+    // apply until an editor types their own in Admin → Settings. Saving
+    // placeholders here would override them.
+    metaTitle: null,
+    metaDescription: null,
     ogImageId: null,
   });
   console.log('Created default site settings');
