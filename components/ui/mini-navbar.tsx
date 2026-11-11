@@ -130,7 +130,7 @@ export function Navbar({
    */
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-6 lg:px-11 py-3 pointer-events-none transition-transform duration-500 ease-out ${
+      className={`fixed top-0 left-[env(safe-area-inset-left,0px)] right-[env(safe-area-inset-right,0px)] z-50 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:px-6 lg:px-11 py-3 pointer-events-none transition-transform duration-500 ease-out ${
         isVisible ? "translate-y-0" : "-translate-y-full"
       }`}
     >

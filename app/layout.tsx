@@ -69,6 +69,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Draw under Android's gesture bar (and iOS's home indicator) so the hero
+  // runs edge to edge instead of ending in a strip of page colour. Anything
+  // pinned to an edge pads itself with env(safe-area-inset-*).
+  viewportFit: "cover",
   colorScheme: "light dark",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f5f3ee" },

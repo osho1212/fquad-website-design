@@ -14,8 +14,9 @@ import { Magnetic } from "@/components/motion/Reveal";
  * clay model to finished render (public/assets/hero, exported from the studio
  * video). `d-` frames are 1440px wide for desktop, `m-` 800px for slow
  * connections. Phones held upright get their own portrait film, `p-`
- * (720×1280, 171 frames at 18fps from the 9:16 phone cut), which runs the
- * same sketch → model → render story and needs no letterboxing.
+ * (720×1280, all 285 frames of the 30fps 9:16 phone cut — sampling it any
+ * thinner made the fast camera move read as steps), which runs the same
+ * sketch → model → render story and needs no letterboxing.
  */
 const FRAME_COUNT = 189;
 /**
@@ -23,7 +24,7 @@ const FRAME_COUNT = 189;
  * (next.config.js), so a new film needs new URLs or returning visitors would
  * see old and new frames mixed. The poster class on the stage repeats it.
  */
-const FILM_VERSION = "3";
+const FILM_VERSION = "4";
 /** Frames the preloader waits on — the opening of the scrub, not all 189. */
 const PRIORITY_FRAMES = 20;
 /** First frame of the clay model / of the finished render. */
@@ -36,8 +37,8 @@ type Film = { count: number; modelFrom: number; renderFrom: number };
 const FILMS: Record<"d" | "m" | "p", Film> = {
   d: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
   m: { count: FRAME_COUNT, modelFrom: MODEL_FROM_INDEX, renderFrom: RENDER_FROM_INDEX },
-  // Pencil sketch first; shading starts ~18, the full render with sky by ~41.
-  p: { count: 171, modelFrom: 18, renderFrom: 41 },
+  // Pencil sketch first; shading starts ~30, the full render with sky by ~68.
+  p: { count: 285, modelFrom: 30, renderFrom: 68 },
 };
 
 /**
@@ -478,7 +479,10 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       if (AHEAD >= film.count) return;
       AHEAD = film.count;
       BEHIND = film.count;
-      maxInflight = slow ? 4 : 10;
+      // Each frame is small (~20 KB) and the CDN answers in ~300 ms, so the
+      // film is bound by round trips, not bandwidth; HTTP/2 carries this many
+      // at once on one connection.
+      maxInflight = slow ? 4 : 16;
       if (formatSettled) pump();
     }
 
@@ -501,7 +505,9 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       if (images[0] && decoded[0]) render();
     });
 
-    // Phase layout across the scroll distance (340vh section − 100vh pinned = 240vh):
+    // Phase layout across the scroll distance (340vh section − 100vh pinned =
+    // 240vh; on phones 220vh − 100vh = 120vh, since a thumb flick covers far
+    // less ground than a wheel and 2.4 screens of hero felt endless):
     //   0.00 → 0.50  the film scrubs: sketch → model → render
     //   0.50 → 0.66  the finished render holds under the headline
     //   0.66 → 0.88  the stage settles to paper around the F.QUAD cut-out
@@ -607,9 +613,9 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   }, [phone]);
 
   return (
-    <section id="top" ref={containerRef} className="relative h-[340vh] bg-black">
+    <section id="top" ref={containerRef} className="relative h-[340vh] max-md:h-[220vh] bg-black">
       <div
-        className={`fq-hero-stage sticky top-0 h-[100svh] w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=3')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=3')] bg-cover bg-center flex flex-col justify-center items-center${
+        className={`fq-hero-stage sticky top-0 w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=4')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=4')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
         }`}
       >
@@ -636,7 +642,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
         {/* Layer 1: headline and calls to action */}
         <div
           ref={textRef}
-          className="fq-hero-copy absolute bottom-0 left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center pointer-events-auto"
+          className="fq-hero-copy absolute bottom-[var(--hero-safe-bottom,0px)] left-0 right-0 z-10 w-full px-6 sm:px-11 pb-12 sm:pb-16 flex flex-col items-center justify-center text-center pointer-events-auto"
         >
           <h1
             className="fq-intro-item fq-hero-h1 m-0 font-bold text-[clamp(1rem,6.1vw,1.5rem)] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl whitespace-nowrap leading-none tracking-tight uppercase"
@@ -742,7 +748,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
         <div
           ref={cueRef}
           style={{ opacity: 0, display: "none" }}
-          className="absolute bottom-10 z-30 pointer-events-none flex flex-col items-center gap-2 text-white/60 text-[11px] tracking-[0.24em] uppercase"
+          className="absolute bottom-[calc(2.5rem+var(--hero-safe-bottom,0px))] z-30 pointer-events-none flex flex-col items-center gap-2 text-white/60 text-[11px] tracking-[0.24em] uppercase"
         >
           <span className="text-white/80 font-medium">{c.discoverLabel}</span>
           <div className="w-[1px] h-6 bg-gradient-to-b from-white to-transparent animate-bounce" />

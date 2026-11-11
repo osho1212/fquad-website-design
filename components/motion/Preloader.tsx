@@ -19,8 +19,10 @@ const SESSION_KEY = "fq-intro";
  * climbing the intro keeps waiting, and the moment it stops climbing the
  * intro stops waiting rather than sitting on a dead connection.
  */
-const MAX_WAIT_MS = 30000;
-const STALL_MS = 6000;
+// 30 s / 6 s let a slow phone sit on the loader for half a minute; past
+// ~10 s a visitor is more likely to leave than to wait for smoother scrolling.
+const MAX_WAIT_MS = 10000;
+const STALL_MS = 4000;
 /** Floor so the construction gets to draw itself and read as intentional. */
 const MIN_SHOW_MS = 1900;
 

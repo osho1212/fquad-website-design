@@ -90,6 +90,10 @@ html {
 body {
   margin: 0;
   padding: 0;
+  /* viewport-fit=cover (layout.tsx) puts content under a landscape notch;
+     these are 0 everywhere else. */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
   background-color: transparent;
   color: var(--foreground);
   font-family: var(--font-montserrat), sans-serif;
@@ -512,6 +516,20 @@ button, a, input, textarea, select, figure, img, div, section, nav, header, foot
   --hero-ink: #151412;
   --art-ink: var(--hero-ink);
   background-color: #f5f3ee;
+  height: 100vh;
+  --hero-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+/* The pinned stage is as tall as the screen with the browser's toolbar
+   retracted (lvh). At 100svh it fell short the moment a phone's toolbar
+   slid away mid-scroll, and the page showed through as a strip beneath it.
+   lvh never changes while scrolling, so nothing jumps either. Type anchored
+   to the bottom is lifted by what the toolbar and gesture bar can cover
+   (lvh − svh, plus the safe-area inset), so it's never hidden behind them. */
+@supports (height: 100lvh) {
+  .fq-hero-stage {
+    height: 100lvh;
+    --hero-safe-bottom: calc(100lvh - 100svh + env(safe-area-inset-bottom, 0px));
+  }
 }
 .fq-hero-stage--render {
   --hero-ink: #ffffff;
