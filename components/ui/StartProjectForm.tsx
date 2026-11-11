@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useId } from 'react';
 import { sendFile } from '@/lib/upload-client';
+import { SOCIAL_FALLBACKS } from '@/lib/social';
 
 const PROJECT_TYPES = [
   'Residential Architecture',
@@ -222,7 +223,7 @@ export function StartProjectForm({
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
-            href={`https://wa.me/919876543210?text=Hi%20F.QUAD%20Studio,%20I%20just%20submitted%20a%20project%20brief%20for%20${encodeURIComponent(name)}.`}
+            href={`https://wa.me/${SOCIAL_FALLBACKS.whatsapp}?text=Hi%20F.QUAD%20Studio,%20I%20just%20submitted%20a%20project%20brief%20for%20${encodeURIComponent(name)}.`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary text-[11px] tracking-[0.2em] px-6 py-3 uppercase font-medium"

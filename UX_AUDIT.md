@@ -101,8 +101,9 @@ page's 16px checkbox (its label is the real hit area) and nothing else. The prod
     `Permissions-Policy`. No CSP yet: the boot scripts and Maps embed need nonces first. *Open*.
 
 ### Content & data — needs the studio
-14. **Placeholder phone number is public.** The contact page falls back to `+919876543210`
-    when Settings has no WhatsApp number. Set the real number in Admin → Settings.
+14. ~~**Placeholder phone number is public.**~~ Fixed — the studio's number
+    (`+91 76748 17987`) is now the fallback in `lib/site.ts` / `lib/social.ts`, and every
+    WhatsApp link builds from it. Settings still overrides it if a number is entered there.
 15. **Two different emails** are in use (`admin@fquad.com` in code, `admin@fquad.co` in the database).
     Pick one; the code fallback is now a single constant in `lib/site.ts`.
 16. **No Privacy / Terms pages.** The footer previously linked `#`. Those links are now hidden

@@ -22,7 +22,7 @@ export interface SocialLink {
 
 export const SOCIAL_FALLBACKS = {
   instagram: 'https://instagram.com/fquadstudio',
-  whatsapp: '919876543210',
+  whatsapp: '917674817987',
   linkedin: 'https://www.linkedin.com/company/fquadstudio', // TODO: confirm
   youtube: 'https://www.youtube.com/@fquadstudio', // TODO: confirm
   facebook: 'https://www.facebook.com/fquadstudio', // TODO: confirm
