@@ -505,7 +505,9 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
       if (images[0] && decoded[0]) render();
     });
 
-    // Phase layout across the scroll distance (340vh section − 100vh pinned = 240vh):
+    // Phase layout across the scroll distance (340vh section − 100vh pinned =
+    // 240vh; on phones 220vh − 100vh = 120vh, since a thumb flick covers far
+    // less ground than a wheel and 2.4 screens of hero felt endless):
     //   0.00 → 0.50  the film scrubs: sketch → model → render
     //   0.50 → 0.66  the finished render holds under the headline
     //   0.66 → 0.88  the stage settles to paper around the F.QUAD cut-out
@@ -611,7 +613,7 @@ export function HeroSection({ content }: { content?: Record<string, any> }) {
   }, [phone]);
 
   return (
-    <section id="top" ref={containerRef} className="relative h-[340vh] bg-black">
+    <section id="top" ref={containerRef} className="relative h-[340vh] max-md:h-[220vh] bg-black">
       <div
         className={`fq-hero-stage sticky top-0 w-full overflow-hidden bg-[url('/assets/hero/d-001.webp?v=4')] max-md:portrait:bg-[url('/assets/hero/p-001.webp?v=4')] bg-cover bg-center flex flex-col justify-center items-center${
           onRender ? " fq-hero-stage--render" : ""
