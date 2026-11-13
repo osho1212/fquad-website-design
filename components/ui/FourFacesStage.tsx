@@ -62,7 +62,7 @@ export function FourFacesStage({
             key={`${s.imageUrl}-${i}`}
             {...responsive(s.imageUrl, "100vw", [828, 1200, 1920])}
             alt=""
-            className={`ff-photo${i === index ? " is-active" : ""}`}
+            className={`fq-img ff-photo${i === index ? " is-active" : ""}`}
             loading={i < 2 ? "eager" : "lazy"}
             decoding="async"
             draggable={false}

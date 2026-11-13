@@ -10,6 +10,8 @@ interface ProjectGalleryProps {
   alt: string;
   backHref: string;
   backLabel: string;
+  /** id of the element the "scroll to explore" cue scrolls to. */
+  scrollTargetId?: string;
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -25,7 +27,7 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
  * A ribbon of thumbnails overlays the bottom of the photo; picking one jumps
  * to it. Swipe, arrow keys, the arrow buttons and the ribbon all work.
  */
-export function ProjectGallery({ images, alt, backHref, backLabel }: ProjectGalleryProps) {
+export function ProjectGallery({ images, alt, backHref, backLabel, scrollTargetId }: ProjectGalleryProps) {
   const rootRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const ribbonRef = useRef<HTMLDivElement>(null);
@@ -122,6 +124,20 @@ export function ProjectGallery({ images, alt, backHref, backLabel }: ProjectGall
     ribbon.scrollTo({ left: target, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [index, ribbonOpen]);
 
+  // Lenis (smooth scroll) is exposed on window; fall back to native smooth scroll.
+  const scrollToDetails = useCallback(() => {
+    const el = scrollTargetId ? document.getElementById(scrollTargetId) : null;
+    if (!el) {
+      window.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" });
+      return;
+    }
+    const lenis = (window as unknown as {
+      __fqLenis?: { scrollTo: (t: HTMLElement, o?: { duration?: number }) => void };
+    }).__fqLenis;
+    if (lenis && !prefersReducedMotion()) lenis.scrollTo(el, { duration: 1.4 });
+    else el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+  }, [scrollTargetId]);
+
   const arrow =
     "absolute top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center border border-white/25 bg-black/55 backdrop-blur-sm text-white/90 hover:bg-white hover:text-black hover:border-white active:bg-white active:text-black transition-colors duration-300 cursor-pointer";
 
@@ -132,7 +148,7 @@ export function ProjectGallery({ images, alt, backHref, backLabel }: ProjectGall
       aria-label={`${alt} photographs`}
       // One screen tall, below the fixed navbar. svh keeps it exact on phones
       // whose browser toolbar grows and shrinks.
-      className="relative h-svh min-h-[300px] pt-[68px] sm:pt-[76px] pb-3 sm:pb-5 px-3 sm:px-8"
+      className="relative h-svh min-h-[300px] pt-[68px] sm:pt-[76px] pb-3 [@media(min-height:520px)]:pb-[56px] px-3 sm:px-8"
     >
       <div className="relative h-full w-full overflow-hidden bg-zinc-900 border border-white/10">
         {/* Photos: swipeable, snap-scrolling, each fully visible. */}
@@ -170,7 +186,7 @@ export function ProjectGallery({ images, alt, backHref, backLabel }: ProjectGall
                   fetchPriority={i === 0 ? "high" : undefined}
                   decoding="async"
                   draggable={false}
-                  className="block w-full h-full object-contain select-none"
+                  className="fq-img block w-full h-full object-contain select-none"
                 />
               </div>
             </div>
@@ -280,7 +296,7 @@ export function ProjectGallery({ images, alt, backHref, backLabel }: ProjectGall
                           loading="lazy"
                           decoding="async"
                           draggable={false}
-                          className="w-full h-full object-cover block"
+                          className="fq-img w-full h-full object-cover block"
                         />
                       </button>
                     );
@@ -291,6 +307,29 @@ export function ProjectGallery({ images, alt, backHref, backLabel }: ProjectGall
           </>
         )}
       </div>
+
+      {/* Scroll cue: tells the visitor there is more below the photographs.
+          Fades up shortly after the gallery opens, then keeps a gentle bob. */}
+      <button
+        type="button"
+        onClick={scrollToDetails}
+        aria-label="Scroll down to explore this project"
+        className="fq-scrollcue absolute inset-x-0 bottom-0 hidden h-[56px] items-center justify-center gap-3 text-white/70 hover:text-white transition-colors cursor-pointer [@media(min-height:520px)]:flex"
+      >
+        <span aria-hidden="true" className="fq-scrollcue-mouse">
+          <span className="fq-scrollcue-dot" />
+        </span>
+        <span className="text-[10px] sm:text-[11px] tracking-[0.3em] uppercase font-medium">
+          Scroll to explore
+        </span>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 10 6"
+          className="fq-scrollcue-chevron w-2.5 h-[7px]"
+        >
+          <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      </button>
     </section>
   );
 }

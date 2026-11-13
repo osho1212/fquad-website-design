@@ -121,7 +121,9 @@ export default async function ServiceDetailPage(
             <img
               {...responsive(service.image, "100vw")}
               alt={service.alt}
-              className="w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+              className="fq-img w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
             />
           </figure>
         </section>

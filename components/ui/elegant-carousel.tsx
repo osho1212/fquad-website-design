@@ -290,7 +290,7 @@ export default function ElegantCarousel({
                 {...responsive(slide.imageUrl, IMAGE_SIZES)}
                 alt={i === currentIndex ? slide.title : ''}
                 aria-hidden={i === currentIndex ? undefined : true}
-                className={`carousel-image${i === currentIndex ? ' is-active' : ''}`}
+                className={`fq-img carousel-image${i === currentIndex ? ' is-active' : ''}`}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 decoding="async"
                 draggable={false}

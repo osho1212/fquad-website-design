@@ -81,7 +81,9 @@ export default async function ServicesPage() {
             <img
               {...responsive(hero.image, "(min-width: 1024px) 50vw, 100vw")}
               alt={hero.imageAlt}
-              className="w-full h-full object-cover block transition-transform duration-700 hover:scale-105"
+              loading="lazy"
+              decoding="async"
+              className="fq-img w-full h-full object-cover block transition-transform duration-700 hover:scale-105"
             />
           </figure>
         )}
@@ -124,7 +126,9 @@ export default async function ServicesPage() {
                   <img
                     {...responsive(svc.image, "(min-width: 1024px) 40vw, 100vw")}
                     alt={svc.alt}
-                    className="w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                    className="fq-img w-full h-full object-cover block transition-transform duration-700 group-hover:scale-105"
                   />
                 </figure>
               </Link>

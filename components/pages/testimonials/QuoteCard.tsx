@@ -53,7 +53,7 @@ export function QuoteCard({ item, index }: { item: QuoteItem; index: number }) {
               height={image.height ?? 500}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 block h-full w-full object-cover"
+              className="fq-img absolute inset-0 block h-full w-full object-cover"
             />
           </div>
         )}

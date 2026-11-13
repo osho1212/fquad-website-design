@@ -67,7 +67,9 @@ export default async function StudioPage() {
             <img
               src={showcase.image}
               alt={showcase.imageAlt}
-              className="w-full h-full object-cover block"
+              loading="lazy"
+              decoding="async"
+              className="fq-img w-full h-full object-cover block"
             />
           </figure>
         )}

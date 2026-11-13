@@ -33,14 +33,20 @@ function objectPath(mediaId: string, filename: string): string {
   return `uploads/${mediaId}/${filename}`;
 }
 
+// How visible the watermark is, 0 (invisible) to 1 (solid white). It is baked
+// into every watermarked image at upload time, so changing this only affects
+// photos uploaded afterwards; already-uploaded photos keep the strength they
+// were made with until they are uploaded again.
+const WATERMARK_OPACITY = 0.1;
+
 // Sized relative to each variant's own width so the mark reads proportionally
 // the same on a 400px thumb as on a 1920px full image. Uses the official F.QUAD
-// vector logo with 0.22 opacity for an elegant, subtle watermark.
+// vector logo at WATERMARK_OPACITY for an elegant, subtle watermark.
 function watermarkSvgFor(width: number): Buffer {
   const svgWidth = Math.round(width * 0.28);
   const svgHeight = Math.round(svgWidth * (435 / 445));
   return Buffer.from(
-    `<svg width="${svgWidth}" height="${svgHeight}" viewBox="220 150 445 435" opacity="0.22" xmlns="http://www.w3.org/2000/svg">
+    `<svg width="${svgWidth}" height="${svgHeight}" viewBox="220 150 445 435" opacity="${WATERMARK_OPACITY}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <style>.cls-1{fill:#ffffff;}</style>
       </defs>

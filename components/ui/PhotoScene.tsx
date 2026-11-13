@@ -129,7 +129,7 @@ export function PhotoScene({
             draggable={false}
             loading={v === variant ? "eager" : "lazy"}
             decoding="async"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+            className={`fq-img absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
               v === variant ? "opacity-100" : "opacity-0"
             }`}
           />

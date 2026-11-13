@@ -109,11 +109,13 @@ export default async function PastProjectDetailPage(
           alt={project.name}
           backHref="/past-projects"
           backLabel={labels.backLabel}
+          scrollTargetId="project-details"
         />
       )}
 
       {/* ── Hero ────────────────────────────────────────────────── */}
       <section
+        id="project-details"
         className={`${
           project.images.length > 0 ? "pt-14 sm:pt-20" : "pt-40 sm:pt-48"
         } pb-14 px-6 sm:px-14 border-b border-white/15`}

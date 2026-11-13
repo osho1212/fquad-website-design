@@ -62,7 +62,7 @@ export function PersonCard({
               alt={person.alt?.trim() || `Portrait of ${person.name}, ${person.role}`}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out motion-reduce:transition-none [@media(hover:hover)]:group-hover:scale-[1.03]"
+              className="fq-img absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out motion-reduce:transition-none [@media(hover:hover)]:group-hover:scale-[1.03]"
             />
           ) : (
             // No photo yet: a hatched sheet with initials, so the grid keeps its rhythm.

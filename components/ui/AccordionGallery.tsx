@@ -465,6 +465,7 @@ export default function AccordionGallery({
                     : { src: item.image })}
                   alt={item.alt || item.label || ""}
                   draggable="false"
+                  className="fq-img"
                   loading="lazy"
                   decoding="async"
                 />

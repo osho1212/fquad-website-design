@@ -51,7 +51,7 @@ export function FoundersBanner({
                 height={1200}
                 loading="lazy"
                 decoding="async"
-                className="absolute inset-0 block h-full w-full object-cover object-[50%_30%]"
+                className="fq-img absolute inset-0 block h-full w-full object-cover object-[50%_30%]"
               />
             </div>
             <span className="fq-frame-b" aria-hidden="true" />

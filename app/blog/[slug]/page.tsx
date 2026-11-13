@@ -142,7 +142,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                     alt={cover.alt ?? `Cover image for “${post.title}”`}
                     loading="lazy"
                     decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="fq-img absolute inset-0 h-full w-full object-cover"
                   />
                 </div>
                 <span className="fq-frame-b" aria-hidden="true" />

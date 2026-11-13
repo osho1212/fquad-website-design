@@ -1018,6 +1018,121 @@ html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
   overflow: visible;
 }
 
+/* ── Image loading ───────────────────────────────────────────────────────
+   Photos opt in with `fq-img`. Until the image has loaded (ImageLoader sets
+   data-loaded) a soft shimmer is painted on the image's own box, so a frame is
+   never an empty hole; once it has, the shimmer goes and the photo fades in.
+   Tones come from the theme foreground, so it reads on light and dark. The
+   fade only defines its start (`from`), so images that manage their own
+   opacity (stacked carousel slides) still end at the opacity they set. */
+img.fq-img:not([data-loaded]) {
+  color: transparent; /* no alt text flashing in the box while it loads */
+  background-color: rgb(var(--fq-fg) / 0.07);
+  background-image: linear-gradient(100deg, transparent 25%, rgb(var(--fq-fg) / 0.11) 50%, transparent 75%);
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  animation: fq-shimmer 1.6s ease-in-out infinite;
+}
+img.fq-img[data-loaded='fade'] {
+  animation: fq-img-in 0.7s ease backwards;
+}
+@keyframes fq-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@keyframes fq-img-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  img.fq-img:not([data-loaded]) {
+    animation: none;
+  }
+  img.fq-img[data-loaded='fade'] {
+    animation: none;
+  }
+}
+
+/* ── Gallery scroll cue ──────────────────────────────────────────────────
+   "Scroll to explore" under a project's photographs: a mouse whose wheel dot
+   runs down, and a chevron that nudges. The whole cue fades up a moment after
+   the gallery opens. */
+.fq-scrollcue {
+  animation: fq-cue-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.1s backwards;
+}
+.fq-scrollcue-mouse {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 26px;
+  border: 1.5px solid currentColor;
+  border-radius: 9px !important;
+  opacity: 0.85;
+}
+.fq-scrollcue-dot {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 2.5px;
+  height: 5px;
+  margin-left: -1.25px;
+  border-radius: 2px !important;
+  background: currentColor;
+  animation: fq-cue-wheel 1.8s cubic-bezier(0.65, 0, 0.35, 1) 2s infinite;
+}
+.fq-scrollcue-chevron {
+  animation: fq-cue-nudge 1.8s ease-in-out 2s infinite;
+}
+@keyframes fq-cue-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes fq-cue-wheel {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  25% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes fq-cue-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fq-scrollcue,
+  .fq-scrollcue-dot,
+  .fq-scrollcue-chevron {
+    animation: none;
+  }
+  .fq-scrollcue-dot {
+    opacity: 1;
+  }
+}
+
 /* ── Cursor ───────────────────────────────────────────────────────────── */
 /* The brand arrow, as the real pointer: transparent PNGs with a metallic
    silver tail. The border follows the theme: white on dark (arrow.png), black

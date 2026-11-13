@@ -49,7 +49,7 @@ export function FeaturedQuote({
                   height={image.height ?? 1000}
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-0 block h-full w-full object-cover"
+                  className="fq-img absolute inset-0 block h-full w-full object-cover"
                 />
               </div>
               <span className="fq-frame-b" aria-hidden="true" />

@@ -149,6 +149,7 @@ export function ProjectSwipe({
               <img
                 {...responsive(item.image, "84vw", [640, 828, 1080])}
                 alt={item.alt || item.label}
+                className="fq-img"
                 loading={i < 2 ? "eager" : "lazy"}
                 decoding="async"
                 draggable={false}

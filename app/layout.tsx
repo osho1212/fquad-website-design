@@ -9,6 +9,7 @@ import { StartProjectModal } from "@/components/ui/StartProjectModal";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { ScrollProgress } from "@/components/motion/ScrollProgress";
 import { Cursor } from "@/components/motion/Cursor";
+import { ImageLoader } from "@/components/motion/ImageLoader";
 import { SEEDED_META, SITE, customMeta, siteUrl } from "@/lib/site";
 import { jsonLd } from "@/lib/seo";
 import { SOCIAL_FALLBACKS } from "@/lib/social";
@@ -202,6 +203,8 @@ export default async function RootLayout({
           <SmoothScroll />
           <ScrollProgress />
           <Cursor />
+          {/* Skeleton → fade-in for photographs (see .fq-img in globals.css) */}
+          <ImageLoader />
 
           {/* Page Content */}
           <div className="relative z-10 fq-page">{children}</div>

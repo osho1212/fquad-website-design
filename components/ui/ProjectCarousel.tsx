@@ -122,7 +122,7 @@ export function ProjectCarousel({
                       loading={i <= 1 ? "eager" : "lazy"}
                       decoding="async"
                       draggable={false}
-                      className="w-full h-full object-cover block select-none transition-transform duration-[1200ms] ease-out md:group-hover/car:scale-[1.03]"
+                      className="fq-img w-full h-full object-cover block select-none transition-transform duration-[1200ms] ease-out md:group-hover/car:scale-[1.03]"
                     />
                   );
                   // The link lives inside the scroller, so horizontal swipes still
