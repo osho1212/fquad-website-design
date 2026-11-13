@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { responsive } from "@/lib/img";
 import { prefersReducedMotion } from "@/lib/motion";
 
@@ -11,6 +12,8 @@ interface ProjectCarouselProps {
   aspect?: string;
   /** How wide the frame is drawn, so the browser picks the smallest adequate file. */
   sizes?: string;
+  /** When set, the image itself links here (swiping still works; only a tap or click follows the link). */
+  href?: string;
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -20,6 +23,7 @@ export function ProjectCarousel({
   alt,
   aspect = "aspect-[16/10]",
   sizes = "(min-width: 1024px) 50vw, 100vw",
+  href,
 }: ProjectCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
@@ -109,15 +113,35 @@ export function ProjectCarousel({
               aria-hidden={i !== index}
             >
               {src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  {...responsive(src, sizes)}
-                  alt={`${alt} — view ${i + 1}`}
-                  loading={i <= 1 ? "eager" : "lazy"}
-                  decoding="async"
-                  draggable={false}
-                  className="w-full h-full object-cover block select-none transition-transform duration-[1200ms] ease-out md:group-hover/car:scale-[1.03]"
-                />
+                (() => {
+                  const img = (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      {...responsive(src, sizes)}
+                      alt={`${alt} — view ${i + 1}`}
+                      loading={i <= 1 ? "eager" : "lazy"}
+                      decoding="async"
+                      draggable={false}
+                      className="w-full h-full object-cover block select-none transition-transform duration-[1200ms] ease-out md:group-hover/car:scale-[1.03]"
+                    />
+                  );
+                  // The link lives inside the scroller, so horizontal swipes still
+                  // scroll the track; only a genuine tap/click navigates. One link
+                  // per project is enough for keyboards: off-screen slides skip it.
+                  return href ? (
+                    <Link
+                      href={href}
+                      aria-label={`View project: ${alt}`}
+                      tabIndex={i === index ? 0 : -1}
+                      draggable={false}
+                      className="block w-full h-full cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+                    >
+                      {img}
+                    </Link>
+                  ) : (
+                    img
+                  );
+                })()
               ) : (
                 <div className="w-full h-full bg-[repeating-linear-gradient(125deg,#1a1a1a_0px,#1a1a1a_1px,transparent_1px,transparent_18px)]" />
               )}

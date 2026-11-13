@@ -1019,6 +1019,32 @@ html.js .fq-art-field[data-draw-mode='scroll'] [data-draw] {
 }
 
 /* ── Cursor ───────────────────────────────────────────────────────────── */
+/* The brand arrow, as the real pointer: transparent PNGs with a metallic
+   silver tail. The border follows the theme: white on dark (arrow.png), black
+   on light (arrow-light.png). Each is a 32px canvas (browsers drop cursors
+   larger than that near the window edge) with a 2x for retina; the hotspot
+   (1 1) is the arrow's tip. Declarations are listed fallback-first: a browser
+   keeps the last one it understands. Everything but text fields follows the
+   root cursor, which also overrides the hand on links and buttons. Bump ?v=
+   whenever the images change: /assets is cached for an hour. */
+html[data-fq-cursor] {
+  cursor: url('/assets/cursor/arrow.png?v=5') 1 1, auto !important;
+  cursor: -webkit-image-set(url('/assets/cursor/arrow.png?v=5') 1x, url('/assets/cursor/arrow@2x.png?v=5') 2x) 1 1, auto !important;
+  cursor: image-set(url('/assets/cursor/arrow.png?v=5') 1x, url('/assets/cursor/arrow@2x.png?v=5') 2x) 1 1, auto !important;
+}
+html[data-fq-cursor][data-theme='light'] {
+  cursor: url('/assets/cursor/arrow-light.png?v=5') 1 1, auto !important;
+  cursor: -webkit-image-set(url('/assets/cursor/arrow-light.png?v=5') 1x, url('/assets/cursor/arrow-light@2x.png?v=5') 2x) 1 1, auto !important;
+  cursor: image-set(url('/assets/cursor/arrow-light.png?v=5') 1x, url('/assets/cursor/arrow-light@2x.png?v=5') 2x) 1 1, auto !important;
+}
+html[data-fq-cursor] *:not(input):not(textarea):not(select):not([contenteditable='true']):not([contenteditable='']) {
+  cursor: inherit !important;
+}
+/* The old follower ring is retired; only the label badge remains. */
+.fq-cursor:not([data-mode='label']) {
+  visibility: hidden;
+}
+
 .fq-cursor {
   position: fixed;
   top: 0;

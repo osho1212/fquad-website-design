@@ -3,6 +3,7 @@ import { Navbar } from "@/components/ui/mini-navbar";
 import { Footer } from "./Footer";
 import { getPage } from "@/lib/cms/content";
 import { getSiteSettings } from "@/lib/public-content";
+import { getProjectGroups, projectCategoryHref } from "@/lib/past-projects";
 
 /**
  * The frame every inner page sits in: the floating navbar, a real <main>
@@ -19,14 +20,21 @@ export async function PageShell({
   children: React.ReactNode;
   mainClassName?: string;
 }) {
-  const [global, settings] = await Promise.all([
+  const [global, settings, groups] = await Promise.all([
     getPage("global"),
     getSiteSettings().catch(() => null),
+    getProjectGroups().catch(() => []),
   ]);
 
   return (
     <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
-      <Navbar content={global.nav} />
+      <Navbar
+        content={global.nav}
+        projectCategories={groups.map((g) => ({
+          label: g.label,
+          href: projectCategoryHref(g.id),
+        }))}
+      />
       <main id="main" tabIndex={-1} className={`outline-none ${mainClassName}`}>
         {children}
       </main>

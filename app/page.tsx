@@ -11,7 +11,7 @@ import { AwardsSection } from "@/components/sections/AwardsSection";
 import { Testimonial } from "@/components/sections/Testimonial";
 import { ContactFooter } from "@/components/sections/ContactFooter";
 import { getPage } from "@/lib/cms/content";
-import { getPastProjects } from "@/lib/past-projects";
+import { getPastProjects, getProjectGroups, projectCategoryHref } from "@/lib/past-projects";
 import { getSiteSettings } from "@/lib/public-content";
 
 // Content is read on the server and handed down as props, so every section
@@ -19,13 +19,16 @@ import { getSiteSettings } from "@/lib/public-content";
 export const revalidate = 60;
 
 export default async function Home() {
-  const [home, global, services, projects, settings] = await Promise.all([
+  const [home, global, services, allProjects, groups, settings] = await Promise.all([
     getPage("home"),
     getPage("global"),
     getPage("services"),
     getPastProjects(),
+    getProjectGroups().catch(() => []),
     getSiteSettings().catch(() => null),
   ]);
+  // The homepage showcases finished work; ongoing projects live under /past-projects.
+  const projects = allProjects.filter((p) => p.category !== "ongoing");
 
   return (
     <div className="relative bg-transparent text-white min-h-screen selection:bg-white selection:text-black">
@@ -33,7 +36,13 @@ export default async function Home() {
       <Preloader />
 
       {/* Floating Pill Mini-Navbar */}
-      <Navbar content={global.nav} />
+      <Navbar
+        content={global.nav}
+        projectCategories={groups.map((g) => ({
+          label: g.label,
+          href: projectCategoryHref(g.id),
+        }))}
+      />
 
       {/* The skip link in the root layout lands here. */}
       <main id="main" tabIndex={-1} className="outline-none">

@@ -68,8 +68,8 @@ export const globalPage: PageDef = {
             href: '/past-projects',
             children: [
               { label: 'All Projects', href: '/past-projects' },
-              { label: 'Residential', href: '/past-projects#residential' },
-              { label: 'Commercial', href: '/past-projects#commercial' },
+              { label: 'Residential', href: '/past-projects?category=residential' },
+              { label: 'Commercial', href: '/past-projects?category=commercial' },
             ],
           },
           {
@@ -145,8 +145,8 @@ export const globalPage: PageDef = {
             title: 'PROJECTS',
             links: [
               { label: 'All Projects', href: '/past-projects' },
-              { label: 'Residential', href: '/past-projects#residential' },
-              { label: 'Commercial', href: '/past-projects#commercial' },
+              { label: 'Residential', href: '/past-projects?category=residential' },
+              { label: 'Commercial', href: '/past-projects?category=commercial' },
             ],
           },
         ],
@@ -199,8 +199,8 @@ export const globalPage: PageDef = {
           {
             title: 'PROJECTS',
             links: [
-              { label: 'Residential', href: '/past-projects#residential' },
-              { label: 'Commercial', href: '/past-projects#commercial' },
+              { label: 'Residential', href: '/past-projects?category=residential' },
+              { label: 'Commercial', href: '/past-projects?category=commercial' },
             ],
           },
         ],

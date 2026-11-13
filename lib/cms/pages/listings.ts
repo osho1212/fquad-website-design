@@ -24,7 +24,7 @@ export const pastProjectsPage: PageDef = {
       ],
       defaults: {
         eyebrow: 'SELECTED WORK · {count} PROJECTS',
-        title: 'Past Projects',
+        title: 'Our Projects',
         intro: 'A record of spaces we have planned, detailed and delivered — each one shaped by its brief, its site, and the people who use it.',
       },
     },
@@ -43,7 +43,7 @@ export const pastProjectsPage: PageDef = {
           fields: [
             { key: 'name', label: 'Name', type: 'text', half: true },
             { key: 'slug', label: 'URL slug', type: 'text', half: true, help: 'Becomes /past-projects/<slug>. Changing it breaks existing links.' },
-            { key: 'category', label: 'Category', type: 'text', half: true, help: 'Must match a category key above — residential or commercial.' },
+            { key: 'category', label: 'Category', type: 'text', half: true, help: 'Must match a category key above — residential, commercial or ongoing.' },
             { key: 'type', label: 'Project type', type: 'text', half: true, help: 'Shown as the meta line and on the homepage accordion.' },
             { key: 'altName', label: 'Also known as', type: 'text', half: true, help: 'Optional second name, shown under the title.' },
             { key: 'location', label: 'Location', type: 'text', half: true },
@@ -509,7 +509,7 @@ export const pastProjectsPage: PageDef = {
     {
       key: 'groups',
       label: 'Category Headings',
-      description: 'The subheading above each group of projects.',
+      description: 'The toggle labels and the subheading above each group of projects. A category with no projects is hidden — add a project with category “ongoing” to reveal Ongoing.',
       fields: [
         {
           key: 'items',
@@ -519,7 +519,7 @@ export const pastProjectsPage: PageDef = {
           itemTitleKey: 'label',
           max: 6,
           fields: [
-            { key: 'id', label: 'Category key', type: 'text', half: true, help: 'Must match the category on the project records: residential or commercial.' },
+            { key: 'id', label: 'Category key', type: 'text', half: true, help: 'Must match the category on the project records: residential, commercial or ongoing.' },
             { key: 'label', label: 'Heading', type: 'text', half: true },
           ],
         },
@@ -531,6 +531,7 @@ export const pastProjectsPage: PageDef = {
         items: [
           { id: 'residential', label: 'Residential' },
           { id: 'commercial', label: 'Commercial' },
+          { id: 'ongoing', label: 'Ongoing' },
         ],
         countSingular: 'Project',
         countPlural: 'Projects',

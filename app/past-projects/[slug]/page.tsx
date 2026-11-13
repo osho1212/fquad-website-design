@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { PageShell } from "@/components/layout/PageShell";
 import { pageMetadata, jsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import { siteUrl } from "@/lib/site";
-import { ProjectCarousel } from "@/components/ui/ProjectCarousel";
+import { ProjectGallery } from "@/components/ui/ProjectGallery";
 import RevealOnScroll from "@/app/components/RevealOnScroll";
 import { getPastProjects, getPastProject, defaultPastProjects } from "@/lib/past-projects";
 import { getPage } from "@/lib/cms/content";
@@ -102,14 +102,31 @@ export default async function PastProjectDetailPage(
         }}
       />
 
+      {/* ── Gallery: first thing on the page, exactly one screen tall ───── */}
+      {project.images.length > 0 && (
+        <ProjectGallery
+          images={project.images}
+          alt={project.name}
+          backHref="/past-projects"
+          backLabel={labels.backLabel}
+        />
+      )}
+
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="pt-40 sm:pt-48 pb-14 px-6 sm:px-14 border-b border-white/15">
-        <Link
-          href="/past-projects"
-          className="fq-link inline-flex items-center gap-2 min-h-[32px] text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors mb-8"
-        >
-          {labels.backLabel}
-        </Link>
+      <section
+        className={`${
+          project.images.length > 0 ? "pt-14 sm:pt-20" : "pt-40 sm:pt-48"
+        } pb-14 px-6 sm:px-14 border-b border-white/15`}
+      >
+        {/* With a gallery above, the back link lives on it. */}
+        {project.images.length === 0 && (
+          <Link
+            href="/past-projects"
+            className="fq-link inline-flex items-center gap-2 min-h-[32px] text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors mb-8"
+          >
+            {labels.backLabel}
+          </Link>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 lg:gap-16">
           <div>
@@ -152,18 +169,6 @@ export default async function PastProjectDetailPage(
           )}
         </div>
       </section>
-
-      {/* ── Gallery ─────────────────────────────────────────────── */}
-      {project.images.length > 0 && (
-        <section className="px-6 sm:px-14 py-14">
-          <ProjectCarousel
-            images={project.images}
-            alt={project.name}
-            aspect="aspect-[16/9]"
-            sizes="100vw"
-          />
-        </section>
-      )}
 
       {/* ── Chapters ────────────────────────────────────────────── */}
       <section className="px-6 sm:px-14">

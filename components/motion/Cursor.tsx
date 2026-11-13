@@ -5,9 +5,13 @@ import { usePathname } from "next/navigation";
 import { damp, hasFinePointer, onFrame, prefersReducedMotion } from "@/lib/motion";
 
 /**
- * A quiet follower ring. The native cursor stays (hiding it hurts precision
- * and accessibility); the ring trails it on a spring and grows over anything
- * clickable. Elements can opt in to a label with `data-cursor-label="View"`.
+ * The site's pointer is the brand arrow (public/assets/cursor), applied as a
+ * real CSS cursor: no lag, exact hotspot, and the native cursor stays in
+ * charge (text fields keep their I-beam). `data-fq-cursor` on <html> turns it
+ * on for fine pointers outside /admin; see "Cursor" in globals.css.
+ *
+ * The follower element survives only as the label badge: elements can opt in
+ * with `data-cursor-label="View"` and it trails the pointer on a spring.
  * Fine pointers only — never rendered for touch.
  */
 export function Cursor() {
@@ -15,6 +19,14 @@ export function Cursor() {
   const ringRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const hidden = pathname.startsWith("/admin");
+
+  // The brand arrow: touch devices and the admin keep their normal pointer.
+  useEffect(() => {
+    if (hidden || !hasFinePointer()) return;
+    const root = document.documentElement;
+    root.setAttribute("data-fq-cursor", "");
+    return () => root.removeAttribute("data-fq-cursor");
+  }, [hidden]);
 
   useEffect(() => {
     const ring = ringRef.current;

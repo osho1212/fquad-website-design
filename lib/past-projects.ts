@@ -8,6 +8,7 @@
 
 import { getPage } from '@/lib/cms/content';
 import { defaultsFor } from '@/lib/cms/schema';
+import { devSampleOngoing } from '@/lib/dev-sample-ongoing';
 
 export interface ProjectChapter {
   num: string;
@@ -58,8 +59,46 @@ function normalise(item: Partial<PastProject>): PastProject {
 export async function getPastProjects(): Promise<PastProject[]> {
   const content = await getPage('past_projects');
   const items: Partial<PastProject>[] = content.catalog?.items ?? [];
-  return items.map(normalise).filter((project) => project.slug);
+  const projects = items.map(normalise).filter((project) => project.slug);
+  // Local-preview placeholder only; empty in production (see dev-sample-ongoing).
+  return [...projects, ...devSampleOngoing()];
 }
+
+export interface ProjectGroup {
+  id: ProjectCategory;
+  label: string;
+}
+
+/** The categories the site always supports, in display order. */
+const REQUIRED_GROUPS: ProjectGroup[] = [
+  { id: 'residential', label: 'Residential' },
+  { id: 'commercial', label: 'Commercial' },
+  { id: 'ongoing', label: 'Ongoing' },
+];
+
+/**
+ * The categories that have at least one project, in display order. A category
+ * with nothing in it is left out, so "Ongoing" stays hidden — in the toggle and
+ * in the navbar dropdown — until the first ongoing project is added.
+ *
+ * Categories saved in the CMS come first; any of the three standard ones the
+ * saved list lacks (e.g. "ongoing", on a site saved before it existed) are
+ * appended, so the new category works without re-saving Category Headings.
+ */
+export async function getProjectGroups(): Promise<ProjectGroup[]> {
+  const [content, projects] = await Promise.all([getPage('past_projects'), getPastProjects()]);
+
+  const configured: ProjectGroup[] = (content.groups?.items ?? []).filter(
+    (g: Partial<ProjectGroup>) => g?.id
+  );
+  const known = new Set(configured.map((g) => g.id));
+  const all = [...configured, ...REQUIRED_GROUPS.filter((g) => !known.has(g.id))];
+
+  return all.filter((g) => projects.some((p) => p.category === g.id));
+}
+
+/** Where a category's toggle / dropdown entry points. */
+export const projectCategoryHref = (id: ProjectCategory) => `/past-projects?category=${id}`;
 
 export async function getPastProject(slug: string): Promise<PastProject | undefined> {
   const projects = await getPastProjects();

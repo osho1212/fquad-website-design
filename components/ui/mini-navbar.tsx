@@ -10,7 +10,12 @@ import { withDefaults } from "@/lib/cms/schema";
 interface NavLink {
   label: string;
   href: string;
+  /** Sub-links, shown in a dropdown on desktop and indented in the mobile menu. */
+  children?: NavLink[];
 }
+
+/** The nav entry that owns the project categories. */
+const PROJECTS_HREF = "/past-projects";
 
 /**
  * A link is active when the current path matches its route (including nested
@@ -60,16 +65,111 @@ const AnimatedNavLink = ({
   );
 };
 
+/**
+ * A tab that opens a menu of sub-links on hover or keyboard focus. The tab
+ * itself still links to its own page, so clicking it behaves as before.
+ */
+const NavDropdown = ({
+  link,
+  isActive,
+}: {
+  link: NavLink;
+  isActive: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  // Close on navigation, and on Escape or a click outside.
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(e) => {
+        if (!wrapRef.current?.contains(e.relatedTarget as Node)) setOpen(false);
+      }}
+    >
+      <AnimatedNavLink href={link.href} isActive={isActive}>
+        <span className="inline-flex items-center gap-1.5">
+          {link.label}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 10 6"
+            className={`w-2 h-[6px] transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+          >
+            <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </span>
+      </AnimatedNavLink>
+
+      {/* pt-2 bridges the gap so the pointer can travel from tab to menu. */}
+      <div
+        className={`absolute left-0 top-full pt-2 min-w-full transition-all duration-200 ${
+          open
+            ? "opacity-100 translate-y-0 visible"
+            : "opacity-0 -translate-y-1 invisible pointer-events-none"
+        }`}
+      >
+        <ul
+          aria-label={`${link.label} categories`}
+          className="m-0 p-1 list-none min-w-[210px] bg-[#0e0e0e]/95 backdrop-blur-2xl border border-white/20"
+        >
+          {link.children?.map((child) => (
+            <li key={child.label}>
+              <Link
+                href={child.href}
+                onClick={() => setOpen(false)}
+                className="block px-4 py-3 text-[11px] tracking-[0.18em] uppercase whitespace-nowrap text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10 transition-colors"
+              >
+                {child.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
 export function Navbar({
   content,
   links,
+  projectCategories,
 }: {
   content?: Record<string, any>;
   /** Overrides the CMS links — used where a page needs its own menu. */
   links?: NavLink[];
+  /**
+   * Project categories that currently have projects (Residential, Commercial,
+   * and Ongoing once it has one). They become the PROJECTS dropdown.
+   */
+  projectCategories?: NavLink[];
 }) {
   const c = withDefaults("global", "nav", content);
-  const navLinks: NavLink[] = links ?? c.links ?? [];
+  const baseLinks: NavLink[] = links ?? c.links ?? [];
+  const navLinks: NavLink[] = baseLinks.map((link) =>
+    link.href === PROJECTS_HREF && projectCategories?.length
+      ? { ...link, children: projectCategories }
+      : link
+  );
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -170,15 +270,23 @@ export function Navbar({
           className="pointer-events-auto hidden lg:inline-flex items-center gap-1 px-2 bg-[#121212]/80 backdrop-blur-2xl border border-white/20 rounded-none font-display"
           style={{ fontFamily: "var(--font-good-times)" }}
         >
-          {navLinks.map((link) => (
-            <AnimatedNavLink
-              key={link.label}
-              href={link.href}
-              isActive={isLinkActive(link, pathname)}
-            >
-              {link.label}
-            </AnimatedNavLink>
-          ))}
+          {navLinks.map((link) =>
+            link.children?.length ? (
+              <NavDropdown
+                key={link.label}
+                link={link}
+                isActive={isLinkActive(link, pathname)}
+              />
+            ) : (
+              <AnimatedNavLink
+                key={link.label}
+                href={link.href}
+                isActive={isLinkActive(link, pathname)}
+              >
+                {link.label}
+              </AnimatedNavLink>
+            )
+          )}
         </nav>
       </div>
 
@@ -209,19 +317,31 @@ export function Navbar({
         {navLinks.map((link) => {
           const active = isLinkActive(link, pathname);
           return (
-            <Link
-              key={link.label}
-              href={link.href}
-              onClick={() => setIsOpen(false)}
-              aria-current={active ? "page" : undefined}
-              className={`w-full py-3 min-h-[48px] flex items-center text-[11px] tracking-[0.2em] uppercase rounded-none border-b transition-colors ${
-                active
-                  ? "text-white font-bold border-white"
-                  : "text-white/70 hover:text-white border-white/10"
-              }`}
-            >
-              {link.label}
-            </Link>
+            <React.Fragment key={link.label}>
+              <Link
+                href={link.href}
+                onClick={() => setIsOpen(false)}
+                aria-current={active ? "page" : undefined}
+                className={`w-full py-3 min-h-[48px] flex items-center text-[11px] tracking-[0.2em] uppercase rounded-none border-b transition-colors ${
+                  active
+                    ? "text-white font-bold border-white"
+                    : "text-white/70 hover:text-white border-white/10"
+                }`}
+              >
+                {link.label}
+              </Link>
+              {link.children?.map((child) => (
+                <Link
+                  key={child.label}
+                  href={child.href}
+                  onClick={() => setIsOpen(false)}
+                  className="w-full py-3 pl-5 min-h-[44px] flex items-center text-[10px] tracking-[0.2em] uppercase border-b border-white/10 text-white/55 hover:text-white transition-colors"
+                >
+                  <span aria-hidden="true" className="mr-3 w-3 h-px bg-white/30" />
+                  {child.label}
+                </Link>
+              ))}
+            </React.Fragment>
           );
         })}
       </nav>
