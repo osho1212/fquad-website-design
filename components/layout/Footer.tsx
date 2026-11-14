@@ -112,6 +112,19 @@ export function Footer({
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-10 pt-5 border-t border-white/10 text-[11px] tracking-[0.14em] text-white/50 uppercase">
         <span>{fill(f.copyright, { year: new Date().getFullYear() })}</span>
+        {/* Build credit. Sits between the copyright and the legal links on a
+            wide screen, and on its own line once the bar stacks. */}
+        <span className="text-white/40">
+          Developed by{" "}
+          <a
+            href="https://www.potentiaa.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fq-link inline-block py-1.5 hover:text-white transition-colors"
+          >
+            Potentiaa
+          </a>
+        </span>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
           {legalLinks.map((link: FooterLink, i: number) => (
             <Link

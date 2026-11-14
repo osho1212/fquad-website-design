@@ -16,6 +16,9 @@ interface Settings {
   metaDescription: string;
   ogImageId: string | null;
   ogImage: MediaItem | null;
+  /** Both are typed as percentages; blank means "use the default". */
+  watermarkOpacity: string;
+  watermarkScale: string;
 }
 
 const empty: Settings = {
@@ -30,7 +33,23 @@ const empty: Settings = {
   metaDescription: '',
   ogImageId: null,
   ogImage: null,
+  watermarkOpacity: '',
+  watermarkScale: '',
 };
+
+/** A stored fraction (0.05) shown in the box as a percentage ("5"). */
+function toPercentText(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  return String(Math.round(value * 1000) / 10);
+}
+
+/** What the box holds back to a fraction; blank clears the setting. */
+function fromPercentText(text: string): number | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  const number = Number(trimmed);
+  return Number.isFinite(number) ? number / 100 : null;
+}
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(empty);
@@ -38,6 +57,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [pickerFor, setPickerFor] = useState<'ogImage' | null>(null);
+  const [error, setError] = useState('');
+  const [watermarkDefaults, setWatermarkDefaults] = useState({ opacity: 0.05, scale: 0.168 });
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -56,8 +77,11 @@ export default function SettingsPage() {
             metaDescription: data.settings.metaDescription || '',
             ogImageId: data.settings.ogImageId,
             ogImage: data.settings.ogImage,
+            watermarkOpacity: toPercentText(data.settings.watermarkOpacity),
+            watermarkScale: toPercentText(data.settings.watermarkScale),
           });
         }
+        if (data.watermarkDefaults) setWatermarkDefaults(data.watermarkDefaults);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -78,8 +102,9 @@ export default function SettingsPage() {
   async function handleSave() {
     setSaving(true);
     setSaved(false);
+    setError('');
     try {
-      await fetch('/api/admin/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,8 +118,15 @@ export default function SettingsPage() {
           metaTitle: settings.metaTitle || null,
           metaDescription: settings.metaDescription || null,
           ogImageId: settings.ogImageId,
+          watermarkOpacity: fromPercentText(settings.watermarkOpacity),
+          watermarkScale: fromPercentText(settings.watermarkScale),
         }),
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error || 'Could not save. Please try again.');
+        return;
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } finally {
@@ -155,6 +187,38 @@ export default function SettingsPage() {
           <MediaSlot item={settings.ogImage} onChoose={() => setPickerFor('ogImage')} />
         </Field>
       </SectionBlock>
+
+      <SectionBlock title="Watermark">
+        <p style={{ color: '#7A7870', fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+          The F.QUAD mark painted into every project photo. It is baked in when a
+          photo is uploaded, so changing these affects photos uploaded from now
+          on — to change the ones already on the site, run{' '}
+          <code style={{ background: '#F4F2ED', padding: '1px 5px', borderRadius: 3 }}>npm run watermark:rebuild</code>.
+          Leave a box empty to use the default.
+        </p>
+        <Field label={`STRENGTH (%) — DEFAULT ${toPercentText(watermarkDefaults.opacity)}`}>
+          <input
+            style={inputStyle}
+            inputMode="decimal"
+            value={settings.watermarkOpacity}
+            onChange={(e) => update('watermarkOpacity', e.target.value)}
+            placeholder={toPercentText(watermarkDefaults.opacity)}
+          />
+        </Field>
+        <Field label={`SIZE (% OF PHOTO WIDTH) — DEFAULT ${toPercentText(watermarkDefaults.scale)}`}>
+          <input
+            style={inputStyle}
+            inputMode="decimal"
+            value={settings.watermarkScale}
+            onChange={(e) => update('watermarkScale', e.target.value)}
+            placeholder={toPercentText(watermarkDefaults.scale)}
+          />
+        </Field>
+      </SectionBlock>
+
+      {error && (
+        <p style={{ color: '#B3261E', fontSize: 14, marginBottom: 12 }}>{error}</p>
+      )}
 
       <button onClick={handleSave} disabled={saving} style={saveButtonStyle}>
         {saving ? 'SAVING…' : saved ? 'SAVED ✓' : 'SAVE ALL CHANGES'}

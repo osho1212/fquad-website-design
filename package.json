@@ -17,6 +17,7 @@
     "icons": "node scripts/make-icons.mjs",
     "photos:modern": "node scripts/encode-photo-formats.mjs",
     "sketch:images": "node scripts/make-sketches.mjs",
+    "watermark:rebuild": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/rewatermark.mjs",
     "db:import": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/import-sqlite.mjs",
     "emulators": "firebase emulators:start --only firestore,storage,auth --project demo-fquad --import=.firebase-data --export-on-exit"
   },
