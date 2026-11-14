@@ -38,6 +38,14 @@ type MediaFields = {
   variants: Variant[];
   folderId: string | null;
   createdAt: Date;
+  /**
+   * True for pictures uploaded as a backdrop (hero slides), which carry no
+   * watermark. Recorded so scripts/rewatermark.mjs knows not to put one on
+   * them when it rebuilds the sizes.
+   */
+  background: boolean | null;
+  /** The watermark baked into the current files, for the rebuild script. */
+  watermark: { opacity: number; scale: number; rebuiltAt?: Date } | null;
 }
 export type MediaRow = Row<MediaFields>;
 
@@ -73,6 +81,8 @@ export const media = {
         variants: [],
         folderId: null,
         createdAt: new Date(),
+        background: false,
+        watermark: null,
         ...data,
       } as MediaFields,
       id
@@ -159,6 +169,10 @@ export type SettingsFields = {
   metaTitle: string | null;
   metaDescription: string | null;
   ogImageId: string | null;
+  /** Watermark strength, 0 (invisible) to 1 (solid). Unset means the default. */
+  watermarkOpacity: number | null;
+  /** Watermark width as a fraction of the picture's width. Unset means the default. */
+  watermarkScale: number | null;
 }
 const settingsTable = table<SettingsFields>('siteSettings');
 const SETTINGS_BLANK: SettingsFields = {
@@ -172,6 +186,8 @@ const SETTINGS_BLANK: SettingsFields = {
   metaTitle: null,
   metaDescription: null,
   ogImageId: null,
+  watermarkOpacity: null,
+  watermarkScale: null,
 };
 
 export const siteSettings = {

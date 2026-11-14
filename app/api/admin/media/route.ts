@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { media } from '@/lib/db';
-import { processImage, deleteMediaFiles } from '@/lib/media';
+import { media, siteSettings } from '@/lib/db';
+import { processImage, deleteMediaFiles, type WatermarkSettings } from '@/lib/media';
 import { deleteObject, readObject, statObject } from '@/lib/storage';
 import { requireAdmin } from '@/lib/admin-guard';
 import { cleanLine } from '@/lib/forms';
+import { normaliseWatermark } from '@/lib/watermark.mjs';
+
+/** What was baked in, so the rebuild script can tell a photo is already current. */
+function watermarkStamp(settings: WatermarkSettings | null) {
+  const { opacity, scale } = normaliseWatermark(settings);
+  return { opacity, scale };
+}
 
 // The media library is never static: it lists live uploads and runs image
 // processing.
@@ -57,7 +64,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const original = await readObject(incoming);
-    const result = await processImage(original, uploadId, isBackground);
+    // The watermark the editor has set (Admin -> Settings), baked in now.
+    const settings = await siteSettings.get().catch(() => null);
+    const result = await processImage(original, uploadId, isBackground, { watermark: settings });
     const main = result.variants.find((v) => v.label === 'full');
 
     const created = await media.create(
@@ -67,6 +76,8 @@ export async function POST(req: NextRequest) {
         path: main?.path || '',
         alt,
         folderId,
+        background: isBackground,
+        watermark: isBackground ? null : watermarkStamp(settings),
         width: result.width ?? null,
         height: result.height ?? null,
         variants: result.variants.map((v) => ({
