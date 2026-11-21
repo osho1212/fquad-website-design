@@ -42,11 +42,12 @@ const WEIGHTS = { fonts: 0.05, film: 0.67, images: 0.28 };
 const FILM_GATE = 0.5;
 
 /**
- * The longest any single image may hold the intro. A large source photo
- * being optimised for the first time (AVIF encoding, before any CDN has it
- * cached) can take several seconds on its own; past this it is counted as
- * settled and the rest of the page stops waiting on it. It still finishes
- * loading — it just no longer gates the reveal.
+ * The longest any single image may hold the intro. Photographs are served
+ * straight from storage now rather than optimised on demand, so the old
+ * several-second AVIF encode is gone — but a 1920 px frame on a slow
+ * connection, or a cold read from the bucket, can still take a while. Past
+ * this an image is counted as settled and the rest of the page stops waiting
+ * on it. It still finishes loading — it just no longer gates the reveal.
  */
 const IMAGE_CEILING_MS = 6000;
 

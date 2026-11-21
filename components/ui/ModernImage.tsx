@@ -9,15 +9,22 @@ import { modernSources } from "@/lib/photo-sources";
  * example an older upload that never got a WebP, the picture drops to the
  * JPEG alone instead of showing a broken image: a browser that picks a
  * <source> does not fall back to the next one when its file fails to load.
+ *
+ * A `srcSet` of its own wins over the modern formats. Those <source> copies
+ * come in one size each, and a <source> the browser picks shuts out the
+ * <img> underneath it — so offering a single 1920 px WebP beside a srcSet
+ * that reaches down to 400 px would hand phones the largest file on the page.
+ * Where there are several sizes (uploads, via lib/img.ts) size wins; where
+ * there is only one (shipped /assets photos) format wins.
  */
 export function ModernImage({
   src,
   alt,
   ...rest
-}: Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src" | "srcSet"> & { src: string; alt: string }) {
+}: Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> & { src: string; alt: string }) {
   const [plain, setPlain] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
-  const sources = plain ? [] : modernSources(src);
+  const sources = plain || rest.srcSet ? [] : modernSources(src);
 
   // An image that failed before the page became interactive never reports it.
   useEffect(() => {

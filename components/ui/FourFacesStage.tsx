@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react";
 import { responsive } from "@/lib/img";
+import { ModernImage } from "@/components/ui/ModernImage";
 import "./FourFacesStage.css";
 
 export interface FaceSlide {
@@ -55,10 +56,14 @@ export function FourFacesStage({
         onNavigate(Math.max(0, Math.min(n - 1, index + (dx < 0 ? 1 : -1))));
       }}
     >
-      {/* Photographs */}
+      {/* Photographs. Every face's photo is laid in at once and these are the
+          heaviest files the site ships, so they go through <picture> for their
+          AVIF/WebP copies — a bare JPEG set here is well over 2 MB. Safe to
+          wrap: .ff-photo is position:absolute, so it lays itself out against
+          .ff and ignores the <picture> in between. */}
       <div className="ff-photos" aria-hidden="true">
         {slides.map((s, i) => (
-          <img
+          <ModernImage
             key={`${s.imageUrl}-${i}`}
             {...responsive(s.imageUrl, "100vw", [828, 1200, 1920])}
             alt=""
