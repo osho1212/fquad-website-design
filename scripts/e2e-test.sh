@@ -135,7 +135,12 @@ check "served as jpeg" image/jpeg "$(curl -s -o /dev/null -w '%{content_type}' $
 check "served as webp" image/webp "$(curl -s -o /dev/null -w '%{content_type}' $B/uploads/$mid/full.webp)"
 check "the upload area is cleaned up" 404 "$(stored incoming/$mid/original)"
 check "the finished sizes are in storage" 200 "$(stored uploads/$mid/full.jpg)"
-check "optimiser reads it" 200 "$(code "$B/_next/image?url=%2Fuploads%2F$mid%2Ffull.jpg&w=640&q=72")"
+# The four renditions above are what the site serves. Nothing is resized on
+# demand any more: routing photographs through /_next/image asked the host to
+# redo work the upload pipeline had already done, and when the transformation
+# quota ran out the optimiser answered 402 and every uncached photo on the
+# live site broke. images.unoptimized keeps the route shut.
+check "the optimiser is off" 404 "$(code "$B/_next/image?url=%2Fuploads%2F$mid%2Ffull.jpg&w=640&q=72")"
 check "media list has it" 1 "$(get -b $T/s $B/api/admin/media; node -e 'const j=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log(j.media.some(m=>m.id===process.argv[2])?1:0)' $T/body $mid)"
 check "alt text saved" "A test photo" "$(code -b $T/s -X PATCH -H "$J" -d '{"alt":"A test photo"}' $B/api/admin/media/$mid >/dev/null; field media.alt)"
 check "a folder can be made" 201 "$(code -b $T/s -X POST -H "$J" -d '{"name":"E2E folder"}' $B/api/admin/media-folders)"

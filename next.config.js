@@ -6,9 +6,15 @@ const nextConfig = {
   // sharp ships a native binary, so it stays out of the server bundle.
   serverExternalPackages: ['sharp'],
   images: {
-    unoptimized: false,
-    formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60,
+    // Nothing is resized on demand. Every photograph already ships in the
+    // sizes and formats it is served in — uploads get thumb/medium/full from
+    // lib/image-pipeline.mjs, shipped /assets photos get AVIF and WebP copies
+    // from scripts/encode-photo-formats.mjs — so routing them through
+    // /_next/image only asked the host to redo work and bill for it. When the
+    // transformation quota ran out in November 2026 the optimiser answered
+    // 402 and every uncached photo on the live site broke. This keeps the
+    // door shut: see lib/img.ts and lib/photo-sources.ts for what replaced it.
+    unoptimized: true,
   },
   headers: async () => {
     // Cache rules are scoped to static media only. A blanket '/:path*' rule also

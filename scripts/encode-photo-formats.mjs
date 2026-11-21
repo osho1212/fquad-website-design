@@ -1,13 +1,15 @@
 /**
- * Writes AVIF and WebP copies beside the What We Do and How We Work photos
- * (public/assets/images/wwd-*.jpg and hww-*.jpg). The site serves AVIF first,
- * then WebP, then the JPEG (see lib/photo-sources.ts), so every browser gets
- * the smallest file it can read. The JPEG stays as the fallback and master.
+ * Writes AVIF and WebP copies beside every shipped photograph in
+ * public/assets/images. The site serves AVIF first, then WebP, then the JPEG
+ * (see lib/photo-sources.ts), so every browser gets the smallest file it can
+ * read. The JPEG stays as the fallback and master.
  *
  *   node scripts/encode-photo-formats.mjs            # build anything missing
  *   node scripts/encode-photo-formats.mjs --force    # rebuild everything
  *
- * Run it after adding a wwd-* or hww-* photo.
+ * Run it after adding a photo to public/assets/images. A JPEG with no copies
+ * beside it still works — <picture> falls back to it — but it goes out at
+ * full weight, and these are the largest files the site ships.
  */
 import sharp from "sharp";
 import { readdir, stat } from "node:fs/promises";
@@ -23,7 +25,10 @@ const WEBP = { quality: 76, effort: 5 };
 const AVIF = { quality: 55, effort: 4 };
 
 const kb = (n) => `${Math.round(n / 1024)} KB`;
-const names = (await readdir(DIR)).filter((f) => /^(wwd|hww)-[a-z0-9-]+\.jpg$/.test(f)).sort();
+// Mirrors SHIPPED in lib/photo-sources.ts, so what is encoded here is exactly
+// what the site knows how to ask for. Finder's " 2" duplicates have a space in
+// the name and are skipped by the same token.
+const names = (await readdir(DIR)).filter((f) => /^[a-z0-9-]+\.jpg$/.test(f)).sort();
 let made = 0;
 
 for (const file of names) {
