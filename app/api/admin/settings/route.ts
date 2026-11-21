@@ -21,13 +21,20 @@ export async function GET() {
  * A watermark box: a number inside its allowed range, or null to go back to
  * the default. Anything else is rejected rather than silently clamped, so a
  * mistyped value cannot quietly change every future upload.
+ *
+ * A box that was not sent at all is not a mistyped one. Only the fields
+ * present in the body are applied, so an editor saving their phone number
+ * sends no watermark values and must not be turned away: `undefined` means
+ * "leave it alone", while null or empty text means "put it back to the
+ * default". Both return null here; what separates them is whether the key
+ * reaches the patch below.
  */
 function watermarkNumber(
   value: unknown,
   limits: { min: number; max: number },
   label: string
 ): { ok: true; value: number | null } | { ok: false; error: string } {
-  if (value === null || value === '') return { ok: true, value: null };
+  if (value === undefined || value === null || value === '') return { ok: true, value: null };
   const number = Number(value);
   if (!Number.isFinite(number)) return { ok: false, error: `${label} must be a number.` };
   if (number < limits.min || number > limits.max) {
