@@ -3,7 +3,6 @@
 import React, { useRef } from "react";
 import { InView } from "@/components/motion/InView";
 import { Magnetic, RevealText } from "@/components/motion/Reveal";
-import { RoomScene } from "@/components/three/RoomScene";
 import { useStartProjectModal } from "@/components/ui/StartProjectModalContext";
 import { Footer } from "@/components/layout/Footer";
 import { withDefaults, toLines } from "@/lib/cms/schema";
@@ -43,7 +42,7 @@ export function ContactFooter({
       {/* Full-bleed: the section's own px-* padding sets the edge inset, matching
           the other homepage sections. No max-width cap. */}
       <div className="w-full">
-        {/* Top CTA Area — headline and buttons beside an interactive 3D quad */}
+        {/* Top CTA Area — headline and buttons beside a reserved, empty slot */}
         <InView className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-10 items-center pb-12 sm:pb-16 border-b border-white/15">
           <div>
             <RevealText
@@ -84,13 +83,15 @@ export function ContactFooter({
             </div>
           </div>
 
-          <div className="fq-fade relative h-[44vh] sm:h-[50vh] lg:h-[min(58vh,540px)]" style={{ ["--i" as string]: 3 }}>
-            <RoomScene
-              variant="lounge"
-              className="absolute inset-0"
-              label="The studio's material library: travertine, marble, oak, walnut, brass, bouclé, velvet and terrazzo samples orbit a leather chair in a lit arched niche; the sample nearest your pointer comes forward"
-            />
-          </div>
+          {/* PLACEHOLDER: intentionally empty. This slot used to hold the 3D
+              lounge scene (components/three/RoomScene, now unused). Something
+              else is planned for here; drop it inside this div, which keeps the
+              column's height so the layout doesn't shift. */}
+          <div
+            data-slot="contact-cta-visual"
+            aria-hidden="true"
+            className="relative h-[44vh] sm:h-[50vh] lg:h-[min(58vh,540px)]"
+          />
         </InView>
       </div>
     </section>

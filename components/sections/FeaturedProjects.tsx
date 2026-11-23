@@ -166,7 +166,7 @@ export function FeaturedProjects({
           height the viewport leaves between header and footnote. */}
       <div
         className="relative z-10 w-full hidden md:block md:flex-1 md:min-h-0"
-        data-cursor-label="View project"
+        data-cursor-label="Click to view"
         onPointerEnter={() => (hoverRef.current = true)}
         onPointerLeave={() => (hoverRef.current = false)}
       >

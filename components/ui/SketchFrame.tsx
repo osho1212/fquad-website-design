@@ -165,12 +165,18 @@ export function SketchFrame({
   images,
   active,
   progressRef,
+  progressIndexRef,
   onProgress,
   className = "",
 }: {
   images: SketchFrameImage[];
   active: number;
   progressRef?: React.RefObject<number | null>;
+  /** Which image `progressRef` currently belongs to, written in the same frame
+   *  as the progress. `active` reaches this component a render later, so
+   *  without this a step change would briefly apply the new step's progress to
+   *  the outgoing image (flashing its photo, or blank paper, as it fades). */
+  progressIndexRef?: React.RefObject<number | null>;
   /** Called when the active image's stage changes: its progress, and how far
    *  the colour has come in (0–1), e.g. to restyle a caption over the frame. */
   onProgress?: (t: number, color: number) => void;
@@ -179,8 +185,8 @@ export function SketchFrame({
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const rootRef = useRef<HTMLDivElement>(null);
   const groupRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const live = useRef({ active, progressRef, onProgress });
-  live.current = { active, progressRef, onProgress };
+  const live = useRef({ active, progressRef, progressIndexRef, onProgress });
+  live.current = { active, progressRef, progressIndexRef, onProgress };
 
   useEffect(() => {
     const root = rootRef.current;
@@ -190,7 +196,8 @@ export function SketchFrame({
     let lastActive = -1;
 
     const write = (t: number) => {
-      const { active: idx, onProgress: cb } = live.current;
+      const { active, progressIndexRef, onProgress: cb } = live.current;
+      const idx = progressIndexRef?.current ?? active;
       const group = groupRefs.current[idx];
       if (!group || (Math.abs(t - last) < 0.0005 && idx === lastActive)) return;
       last = t;
