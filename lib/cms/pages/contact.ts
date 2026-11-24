@@ -54,7 +54,7 @@ export const contactPage: PageDef = {
         instagramLabel: 'Instagram',
         instagramHandle: '@fquadstudio',
         hoursLabel: 'Hours',
-        hours: 'Monday – Saturday, 10:00 – 19:00',
+        hours: 'Monday – Saturday, 10:00 – 18:00',
         followLabel: 'Follow',
         whatsappButton: 'WhatsApp',
         workButton: 'View Work',

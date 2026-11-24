@@ -56,6 +56,8 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
   const figureRef = useRef<HTMLElement>(null);
   /** The active step's own progress (0–1), written by the frame loop below. */
   const stepProgress = useRef(0);
+  /** The step `stepProgress` belongs to, updated in the same frame. */
+  const stepIndex = useRef(0);
   const [wide, setWide] = useState(false);
   const [active, setActive] = useState(0);
 
@@ -97,6 +99,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
       // a lead-in: its rough sketch (the first quarter) is drawn while the
       // section scrolls into view, so the frame is never blank paper on arrival.
       const local = clamp(p * steps.length - idx);
+      stepIndex.current = idx;
       stepProgress.current =
         idx === 0 ? 0.25 * clamp(1 - r.top / vh) + 0.75 * local : local;
     };
@@ -214,6 +217,7 @@ export function ProcessSection({ content }: { content?: Record<string, any> }) {
               images={steps.map(stepImage)}
               active={active}
               progressRef={stepProgress}
+              progressIndexRef={stepIndex}
               onProgress={(_t, color) =>
                 figureRef.current?.style.setProperty("--sketch-color", color.toFixed(3))
               }
